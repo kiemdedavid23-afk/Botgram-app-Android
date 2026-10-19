@@ -1,0 +1,114 @@
+# EXEMPLE NON TESTÉ : à copier dans le dépôt de L'APPLICATION (.github/workflows/android-release.yml), pas dans celui du Worker.
+# Contrat : docs/APP-VERSIONS.md §8. À adapter : chemin du projet Android, nom du module, URL du Worker.
+#
+# Secrets à créer dans le dépôt de l'application :
+#   ANDROID_KEYSTORE_BASE64   le fichier .jks encodé en base64 (base64 -w0 botgram.jks). À CONSERVER À VIE : sans la même clé,
+#                             Android refuse toute mise à jour de l'application installée.
+#   ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+#   RELEASE_PUBLISH_TOKEN     exactement la même valeur que le secret du Worker
+# Le dépôt (ou au moins ses Releases) doit être PUBLIC, sinon l'application ne peut pas télécharger l'APK.
+# RELEASE_URL_PREFIX du Worker doit valoir : https://github.com/<compte>/<dépôt>/releases/download/
+
+name: Android release
+
+on:
+  push:
+    tags: ['v*']            # ex. : git tag v1.4.0 && git push --tags
+  workflow_dispatch:
+    inputs:
+      force_update:
+        description: "Mise à jour obligatoire (les builds plus anciens seront bloqués)"
+        type: boolean
+        default: false
+      notify:
+        description: "Envoyer la notification de nouvelle version"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write           # créer la Release
+
+env:
+  WORKER_URL: https://api.exemple.invalid
+  PLATFORM: android
+  CHANNEL: direct           # doit être le canal compilé dans l'application (X-App-Channel)
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+
+      - name: Numéros de version
+        id: ver
+        run: |
+          # versionCode : doit AUGMENTER à chaque build. Le numéro d'exécution du workflow convient (jamais réutilisé).
+          echo "code=${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          NAME="${GITHUB_REF_NAME#v}"
+          [ "${GITHUB_REF_TYPE}" = "tag" ] || NAME="0.0.${{ github.run_number }}"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+
+      - run: npm ci
+
+      - name: Clé de signature
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
+
+      - name: Compiler l'APK signé
+        working-directory: android
+        env:
+          VERSION_CODE: ${{ steps.ver.outputs.code }}
+          VERSION_NAME: ${{ steps.ver.outputs.name }}
+          KEYSTORE_PATH: ${{ runner.temp }}/release.jks
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        # build.gradle doit lire ces variables (versionCode, versionName, signingConfig). À écrire avec l'application.
+        run: ./gradlew assembleRelease
+
+      - name: Préparer le fichier
+        id: apk
+        run: |
+          SRC=$(ls android/app/build/outputs/apk/release/*.apk | head -n1)
+          FILE="botgram-${{ steps.ver.outputs.name }}-${{ steps.ver.outputs.code }}.apk"
+          cp "$SRC" "$FILE"
+          echo "file=$FILE" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(sha256sum "$FILE" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          echo "size=$(stat -c %s "$FILE")" >> "$GITHUB_OUTPUT"
+
+      - name: Créer la Release GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="build-${{ steps.ver.outputs.code }}"
+          gh release create "$TAG" "${{ steps.apk.outputs.file }}" \
+            --title "Botgram ${{ steps.ver.outputs.name }}" \
+            --notes "Build ${{ steps.ver.outputs.code }} — sha256 ${{ steps.apk.outputs.sha256 }}"
+
+      - name: Enregistrer la version dans le Worker
+        env:
+          RELEASE_PUBLISH_TOKEN: ${{ secrets.RELEASE_PUBLISH_TOKEN }}
+          CODE: ${{ steps.ver.outputs.code }}
+          NAME: ${{ steps.ver.outputs.name }}
+          FORCE: ${{ inputs.force_update || 'false' }}
+          NOTIFY: ${{ inputs.notify || 'true' }}
+        run: |
+          URL="https://github.com/${{ github.repository }}/releases/download/build-${CODE}/${{ steps.apk.outputs.file }}"
+          MIN=0; [ "$FORCE" = "true" ] && MIN="$CODE"
+          jq -n \
+            --arg platform "$PLATFORM" --arg channel "$CHANNEL" \
+            --argjson code "$CODE" --arg name "$NAME" --arg url "$URL" \
+            --arg sha "${{ steps.apk.outputs.sha256 }}" --argjson size "${{ steps.apk.outputs.size }}" \
+            --argjson min "$MIN" --arg commit "${{ github.sha }}" --argjson notify "$NOTIFY" \
+            '{platform:$platform, channel:$channel, version_code:$code, version_name:$name, download_url:$url,
+              sha256:$sha, size_bytes:$size, min_supported_code:$min, commit_sha:$commit, notify:$notify}' > body.json
+          # Rejouable : relancer ce pas avec le même contenu répond 200 (created: false).
+          curl --fail-with-body -sS -X POST "$WORKER_URL/v1/ci/releases" \
+            -H "Authorization: Bearer $RELEASE_PUBLISH_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data @body.json

@@ -1,0 +1,46 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env & secrets
+.env
+.env.local
+.env.*.local
+*.keystore
+google-services.json
+GoogleService-Info.plist
+
+# Build
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+*.apk
+*.aab
+*.hprof
+
+# Metro / RN
+.metro-health-check*
+*.jsbundle
+.expo/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Tests / coverage
+coverage/
+.jest/
+
+# Misc
+*.log
+*.tmp
+.cache/
