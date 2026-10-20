@@ -39,7 +39,7 @@ type MemberStore = {
   clear: () => void;
 };
 
-export const useMemberStore = create<MemberStore>((set, get) => ({
+export const useMemberStore = create<MemberStore>(set => ({
   member: null,
   fieldErrors: {},
   saving: false,

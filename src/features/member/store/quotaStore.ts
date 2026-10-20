@@ -10,6 +10,7 @@ import {
   cacheDelete,
 } from '../../../core/storage';
 import {registerMemberDataCleaner} from '../../../core/utils/memberData';
+import {fireAndForget} from '../../../core/utils/fireAndForget';
 
 const CACHE_KEY = 'quota';
 const TTL_MS = 3 * 60 * 1000;
@@ -101,7 +102,7 @@ export const useQuotaStore = create<QuotaStore>((set, get) => ({
   clear: () => {
     set({quota: null, lastFetch: 0, offline: false, loading: false});
     loadInflight = null;
-    void cacheDelete(CACHE_KEY);
+    fireAndForget(cacheDelete(CACHE_KEY));
   },
 }));
 
