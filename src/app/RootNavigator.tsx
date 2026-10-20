@@ -3,10 +3,10 @@
  * ShellSwitcher uniquement sous __DEV__.
  */
 import React, {useEffect, useState} from 'react';
-import {View, ActivityIndicator} from 'react-native';
+import {View, ActivityIndicator, Pressable, Text, StyleSheet} from 'react-native';
 import {NavigationContainer, DefaultTheme, DarkTheme} from '@react-navigation/native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
-import {useTheme} from '../shared/theme';
+import {useTheme, space, fontSize, fontWeight, radii} from '../shared/theme';
 import {useAuthStore} from '../features/auth/store/authStore';
 import {fireAndForget} from '../core/utils/fireAndForget';
 import {WelcomeScreen} from '../features/auth/screens/WelcomeScreen';
@@ -19,12 +19,11 @@ import {authColors} from '../shared/theme/authColors';
 import {BrandBar} from '../shared/components/BrandBar';
 import {EmptyScreen} from '../shared/components/EmptyScreen';
 import {BottomNav, type MemberTabId} from '../shared/components/BottomNav';
-import {Pressable, Text} from 'react-native';
 
 function Booting(): React.JSX.Element {
   const {colors} = useTheme();
   return (
-    <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bgSecondary}}>
+    <View style={[styles.flexCenter, {backgroundColor: colors.bgSecondary}]}>
       <ActivityIndicator color={colors.accent} />
     </View>
   );
@@ -40,10 +39,10 @@ function AuthFlow(): React.JSX.Element {
 
   if (step === 'welcome') {
     return (
-      <View style={{flex: 1}}>
+      <View style={styles.flex}>
         {endReason ? (
-          <View style={{padding: 12, backgroundColor: authColors.bg}}>
-            <Text style={{color: authColors.danger, textAlign: 'center'}}>
+          <View style={[styles.banner, {backgroundColor: authColors.bg}]}>
+            <Text style={[styles.bannerText, {color: authColors.danger}]}>
               {endReason === 'revoked' ? 'Session révoquée' : 'Session expirée'}
             </Text>
           </View>
@@ -87,19 +86,19 @@ function MemberShell(): React.JSX.Element {
   const offline = useAuthStore(s => s.offline);
 
   return (
-    <View style={{flex: 1, backgroundColor: colors.bgSecondary}}>
+    <View style={[styles.flex, {backgroundColor: colors.bgSecondary}]}>
       <BrandBar title="Botgram" />
       {offline ? (
-        <View style={{padding: 12, backgroundColor: colors.bgTertiary}}>
-          <Text style={{color: colors.textSecondary, textAlign: 'center'}}>Hors ligne</Text>
+        <View style={[styles.banner, {backgroundColor: colors.bgTertiary}]}>
+          <Text style={[styles.bannerText, {color: colors.textSecondary}]}>Hors ligne</Text>
         </View>
       ) : null}
       <EmptyScreen title={tab === 'settings' ? 'Paramètres' : 'Tableau de bord'} subtitle="Étape 2 — auth" />
       {tab === 'settings' ? (
         <Pressable
           onPress={() => signOut()}
-          style={{marginHorizontal: 22, marginTop: 16, paddingVertical: 14, backgroundColor: colors.bgTertiary, borderRadius: 12, alignItems: 'center'}}>
-          <Text style={{color: colors.danger, fontSize: 16, fontWeight: '600'}}>Se déconnecter</Text>
+          style={[styles.logoutBtn, {backgroundColor: colors.bgTertiary}]}>
+          <Text style={[styles.logoutText, {color: colors.danger}]}>Se déconnecter</Text>
         </Pressable>
       ) : null}
       <BottomNav activeTab={tab} onTabPress={setTab} />
@@ -150,3 +149,23 @@ export function RootNavigator(): React.JSX.Element {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  // flex:1 — conteneur racine plein écran (layout RN standard)
+  flex: {flex: 1},
+  // centrage booting (ActivityIndicator)
+  flexCenter: {flex: 1, justifyContent: 'center', alignItems: 'center'},
+  // padding 12 — bandeau hors-ligne / fin de session (proche sheet section padding 0 14 6, Design tokens §5)
+  banner: {padding: 12},
+  bannerText: {textAlign: 'center'},
+  // marginHorizontal 22 = authMetrics.bodyPaddingH (Auth.css body) ; paddingVertical 14 ≈ fieldPaddingV ; borderRadius 12 = radii.md (Design tokens §3 md 12)
+  logoutBtn: {
+    marginHorizontal: 22,
+    marginTop: space.md,
+    paddingVertical: 14,
+    borderRadius: radii.md,
+    alignItems: 'center',
+  },
+  // fontSize 16 = fontSize.msgDefault ; fontWeight 600 = fontWeight.semibold (Design tokens §4)
+  logoutText: {fontSize: fontSize.msgDefault, fontWeight: fontWeight.semibold},
+});
