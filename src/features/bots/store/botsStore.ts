@@ -20,6 +20,7 @@ import {
   cacheDelete,
 } from '../../../core/storage';
 import {registerMemberDataCleaner} from '../../../core/utils/memberData';
+import {fireAndForget} from '../../../core/utils/fireAndForget';
 import type {HttpResult} from '../../../core/api/session';
 
 const CACHE_KEY = 'bots.list';
@@ -267,7 +268,7 @@ export const useBotsStore = create<BotsStore>((set, get) => ({
   clear: () => {
     set({bots: [], lastFetch: 0, offline: false, loading: false, busy: {}});
     inflight.clear();
-    void cacheDelete(CACHE_KEY);
+    fireAndForget(cacheDelete(CACHE_KEY));
   },
 }));
 
