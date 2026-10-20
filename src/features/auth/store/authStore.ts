@@ -1,7 +1,7 @@
 /**
  * Store d'authentification. Tokens uniquement en Keychain.
  */
-import {create} from 'zustand';
+import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {onSessionEvent, type SessionEndReason} from '../../../core/api/session';
 import {me, logout as logoutApi, type Member} from '../../../core/api/endpoints/auth';
 import {getRefreshToken, clearTokens, saveTokenPair} from '../../../core/storage';
@@ -112,7 +112,7 @@ AppState.addEventListener('change', next => {
   if (next === 'active') {
     const s = useAuthStore.getState();
     if ((s.offline || s.member === null) && s.state === 'signedIn') {
-      void safeBoot();
+      fireAndForget(safeBoot());
     }
   }
 });
