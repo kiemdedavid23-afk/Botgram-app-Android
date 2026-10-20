@@ -255,19 +255,20 @@ describe('associateStore', () => {
 
   it('double soumission impossible', async () => {
     useAssociateStore.getState().setToken('123:ABC');
-    let resolveHttp: (v: unknown) => void = () => undefined;
-    mockHttp.mockImplementation(
-      () =>
-        new Promise(r => {
-          resolveHttp = r as (v: unknown) => void;
-        }),
-    );
+    let resolveHttp!: (v: Awaited<ReturnType<typeof http>>) => void;
+    const deferred = new Promise<Awaited<ReturnType<typeof http>>>(resolve => {
+      resolveHttp = resolve;
+    });
+    mockHttp.mockImplementation(() => deferred);
     const p1 = useAssociateStore.getState().confirm();
     const p2 = useAssociateStore.getState().confirm();
+    // second call rejects immediately with busy; only one HTTP request
+    expect(mockHttp).toHaveBeenCalledTimes(1);
     resolveHttp(ok({bot: sampleBot()}, 201));
     const [r1, r2] = await Promise.all([p1, p2]);
-    const reasons = [r1, r2].map(r => (r.ok ? 'ok' : r.reason));
-    expect(reasons).toContain('busy');
+    const outcomes = [r1, r2];
+    expect(outcomes.filter(r => r.ok).length).toBe(1);
+    expect(outcomes.some(r => !r.ok && r.reason === 'busy')).toBe(true);
   });
 
   it('jeton jamais écrit en cache ni Keychain', async () => {
