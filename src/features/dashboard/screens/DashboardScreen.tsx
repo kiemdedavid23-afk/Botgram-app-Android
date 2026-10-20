@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {View, Text, ScrollView, Pressable, StyleSheet, RefreshControl} from 'react-native';
 import {useTheme, space, fontSize} from '../../../shared/theme';
 import {authColors} from '../../../shared/theme/authColors';
@@ -15,8 +15,8 @@ export function DashboardScreen(): React.JSX.Element {
   const offline = useBotsStore(s => s.offline);
 
   useEffect(() => {
-    void loadBots();
-    void loadQuota();
+    fireAndForget(loadBots());
+    fireAndForget(loadQuota());
   }, [loadBots, loadQuota]);
 
   const active = bots.find(b => b.selected);
@@ -24,7 +24,7 @@ export function DashboardScreen(): React.JSX.Element {
   return (
     <ScrollView
       style={{flex: 1, backgroundColor: colors.bgSecondary}}
-      refreshControl={<RefreshControl refreshing={false} onRefresh={() => { void loadBots(true); void loadQuota(true); }} />}>
+      refreshControl={<RefreshControl refreshing={false} onRefresh={() => { fireAndForget(loadBots(true)); fireAndForget(loadQuota(true)); }} />}>
       {offline ? <Text style={styles.banner}>{texts.offline}</Text> : null}
       <View style={styles.section}>
         <Text style={[styles.title, {color: colors.textPrimary}]}>{texts.quotaTitle}</Text>
