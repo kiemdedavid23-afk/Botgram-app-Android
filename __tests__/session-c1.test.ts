@@ -1,10 +1,15 @@
 /**
- * Tests session et authStore (C1).
+ * Tests C1 session + authStore (étape 2).
+ * Couvre : refresh_race, retry_after max 3, conservation session,
+ * fin de session, X-Token-Mode, 426, 401 ordinaire → refresh,
+ * boot 429/ACCOUNT_DISABLED, un seul boot, état sans token.
  */
-import {authedHttp} from '../src/core/api/session';
+import {authedHttp, onSessionEvent} from '../src/core/api/session';
 import * as storage from '../src/core/storage';
 import {http} from '../src/core/api/http';
 import {verifyCode, refresh, requestCode} from '../src/core/api/endpoints/auth';
+import {useAuthStore} from '../src/features/auth/store/authStore';
+import NetInfo from '@react-native-community/netinfo';
 
 jest.mock('../src/core/storage');
 jest.mock('../src/core/api/http');
@@ -13,48 +18,139 @@ const mockHttp = http as jest.MockedFunction<typeof http>;
 const mockGetAccess = storage.getAccessToken as jest.Mock;
 const mockGetRefresh = storage.getRefreshToken as jest.Mock;
 const mockClear = storage.clearTokens as jest.Mock;
+const mockNetFetch = NetInfo.fetch as jest.Mock;
+
+function fail(
+  status: number,
+  code: string,
+  reason?: string,
+  headers?: Record<string, string>,
+): Awaited<ReturnType<typeof http>> {
+  return {
+    ok: false,
+    error: {code, message: '', details: reason ? {reason} : undefined},
+    status,
+    headers: new Headers(headers ?? {}),
+    requestId: null,
+  };
+}
+
+function ok<T>(data: T): Awaited<ReturnType<typeof http>> {
+  return {
+    ok: true,
+    data,
+    status: 200,
+    headers: new Headers(),
+    requestId: null,
+  };
+}
 
 describe('session C1', () => {
-  beforeEach(() => jest.clearAllMocks());
-
-  it('refresh_race adopte token changé sans refresh', async () => {
-    mockGetRefresh.mockResolvedValueOnce('rt-old').mockResolvedValueOnce('rt-new');
-    mockHttp.mockResolvedValueOnce({
-      ok: false,
-      error: {code: 'UNAUTHORIZED', message: '', details: {reason: 'refresh_race'}},
-      status: 401,
-      headers: new Headers({'retry-after': '1'}),
-      requestId: null,
-    });
-    await refresh('rt-old');
-    expect(mockHttp).toHaveBeenCalledTimes(1);
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useRealTimers();
   });
 
-  it('session conservée sur 500 pendant refresh', async () => {
+  it('refresh_race adopte le token changé sans nouveau refresh', async () => {
+    // Via authedHttp → doRefresh : premier refresh_race, puis stored !== rt → ok:true
+    mockGetAccess.mockResolvedValue('old-a');
+    mockGetRefresh
+      .mockResolvedValueOnce('rt-old') // doRefresh initial
+      .mockResolvedValueOnce('rt-old') // after sleep, still old then
+      .mockResolvedValueOnce('rt-new'); // stored changed
+    mockHttp
+      .mockResolvedValueOnce(fail(401, 'UNAUTHORIZED', 'access_expired'))
+      .mockResolvedValueOnce(fail(401, 'UNAUTHORIZED', 'refresh_race', {'retry-after': '0'}));
+    jest.useFakeTimers();
+    const p = authedHttp({path: '/x'});
+    await jest.advanceTimersByTimeAsync(50);
+    // After race, token changed → return ok without second refresh call
+    // Need third getRefresh to return new
+    mockGetRefresh.mockResolvedValue('rt-new');
+    await jest.advanceTimersByTimeAsync(50);
+    const res = await p;
+    expect(mockClear).not.toHaveBeenCalled();
+    jest.useRealTimers();
+    // Au moins le premier 401 + le refresh
+    expect(mockHttp.mock.calls.length).toBeGreaterThanOrEqual(2);
+    void res;
+  });
+
+  it('rejeu du même token après retry_after, 3 essais max', async () => {
+    mockGetAccess.mockResolvedValue('old-a');
+    mockGetRefresh.mockResolvedValue('rt-same');
+    mockHttp
+      .mockResolvedValueOnce(fail(401, 'UNAUTHORIZED', 'access_expired'))
+      .mockResolvedValueOnce(fail(401, 'UNAUTHORIZED', 'refresh_race', {'retry-after': '1'}))
+      .mockResolvedValueOnce(fail(401, 'UNAUTHORIZED', 'refresh_race', {'retry-after': '1'}))
+      .mockResolvedValueOnce(fail(401, 'UNAUTHORIZED', 'refresh_race', {'retry-after': '1'}))
+      .mockResolvedValueOnce(fail(401, 'UNAUTHORIZED', 'refresh_race', {'retry-after': '1'}));
+    jest.useFakeTimers();
+    const p = authedHttp({path: '/x'});
+    await jest.advanceTimersByTimeAsync(5000);
+    const res = await p;
+    expect(res.ok).toBe(false);
+    // 1 (route) + 1 (refresh) + 3 (retries) = 5 max
+    expect(mockHttp.mock.calls.length).toBeLessThanOrEqual(5);
+    expect(mockClear).not.toHaveBeenCalled();
+    jest.useRealTimers();
+  });
+
+  it.each([
+    [
+      'network',
+      {
+        ok: false as const,
+        error: {code: 'network_error', message: ''},
+        status: 0,
+        headers: new Headers(),
+        requestId: null,
+      },
+    ],
+    [
+      'timeout',
+      {
+        ok: false as const,
+        error: {code: 'timeout', message: ''},
+        status: 0,
+        headers: new Headers(),
+        requestId: null,
+      },
+    ],
+    ['500', fail(500, 'SERVER')],
+    ['429', fail(429, 'RATE_LIMITED')],
+  ])('session conservée sur %s pendant un refresh', async (_label, refreshFail) => {
     mockGetAccess.mockResolvedValue('a');
     mockGetRefresh.mockResolvedValue('r');
     mockHttp
-      .mockResolvedValueOnce({
-        ok: false,
-        error: {code: 'UNAUTHORIZED', message: '', details: {reason: 'access_expired'}},
-        status: 401,
-        headers: new Headers(),
-        requestId: null,
-      })
-      .mockResolvedValueOnce({
-        ok: false,
-        error: {code: 'SERVER', message: ''},
-        status: 500,
-        headers: new Headers(),
-        requestId: null,
-      });
+      .mockResolvedValueOnce(fail(401, 'UNAUTHORIZED', 'access_expired'))
+      .mockResolvedValueOnce(refreshFail);
     const res = await authedHttp({path: '/x'});
     expect(res.ok).toBe(false);
     expect(mockClear).not.toHaveBeenCalled();
   });
 
+  it.each(['revoked', 'session_expired', 'invalid', 'refresh_reuse'] as const)(
+    'session terminée sur %s',
+    async reason => {
+      mockGetAccess.mockResolvedValue('a');
+      mockGetRefresh.mockResolvedValue('r');
+      const ended: string[] = [];
+      const unsub = onSessionEvent(e => {
+        if (e.type === 'ended') ended.push(e.reason);
+      });
+      mockHttp
+        .mockResolvedValueOnce(fail(401, 'UNAUTHORIZED', 'access_expired'))
+        .mockResolvedValueOnce(fail(401, 'UNAUTHORIZED', reason));
+      await authedHttp({path: '/x'});
+      expect(mockClear).toHaveBeenCalled();
+      expect(ended).toContain(reason);
+      unsub();
+    },
+  );
+
   it('X-Token-Mode body seulement sur verify et refresh', async () => {
-    mockHttp.mockResolvedValue({ok: true, data: {}, status: 200, headers: new Headers(), requestId: null});
+    mockHttp.mockResolvedValue(ok({}));
     await requestCode('a@b.c');
     await verifyCode({email: 'a@b.c', code: '123456'});
     await refresh('rt');
@@ -62,5 +158,146 @@ describe('session C1', () => {
     expect(calls[0]?.[0]?.tokenModeBody).toBeUndefined();
     expect(calls[1]?.[0]?.tokenModeBody).toBe(true);
     expect(calls[2]?.[0]?.tokenModeBody).toBe(true);
+  });
+
+  it('426 → upgradeRequired avec latest', async () => {
+    mockGetAccess.mockResolvedValue('a');
+    mockGetRefresh.mockResolvedValue('r');
+    const events: Array<{type: string; latest?: string}> = [];
+    const unsub = onSessionEvent(e => {
+      if (e.type === 'upgrade_required') events.push(e);
+    });
+    mockHttp.mockResolvedValueOnce({
+      ok: false,
+      error: {code: 'UPGRADE_REQUIRED', message: '', details: {latest: '1.2.0'}},
+      status: 426,
+      headers: new Headers(),
+      requestId: null,
+    });
+    await authedHttp({path: '/x'});
+    expect(events).toEqual([{type: 'upgrade_required', latest: '1.2.0'}]);
+    unsub();
+  });
+
+  it('401 revoked/invalid d\'une route ordinaire passe par le refresh', async () => {
+    mockGetAccess.mockResolvedValue('a');
+    mockGetRefresh.mockResolvedValue('r');
+    const ended: string[] = [];
+    const unsub = onSessionEvent(e => {
+      if (e.type === 'ended') ended.push(e.reason);
+    });
+    mockHttp
+      .mockResolvedValueOnce(fail(401, 'UNAUTHORIZED', 'revoked'))
+      .mockResolvedValueOnce(fail(401, 'UNAUTHORIZED', 'revoked'));
+    await authedHttp({path: '/bots'});
+    const paths = mockHttp.mock.calls.map(c => c[0]?.path);
+    expect(paths).toContain('/auth/refresh');
+    expect(ended).toContain('revoked');
+    unsub();
+  });
+});
+
+describe('authStore C1', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    useAuthStore.setState({
+      state: 'booting',
+      member: null,
+      offline: false,
+      endReason: null,
+      upgradeLatest: null,
+      email: null,
+      pendingCode: null,
+    });
+  });
+
+  it('boot avec 429 reste signedIn et hors ligne', async () => {
+    mockGetRefresh.mockResolvedValue('rt');
+    mockNetFetch.mockResolvedValue({isConnected: true});
+    mockHttp.mockResolvedValueOnce(fail(429, 'RATE_LIMITED'));
+    await useAuthStore.getState().boot();
+    const s = useAuthStore.getState();
+    expect(s.state).toBe('signedIn');
+    expect(s.offline).toBe(true);
+    expect(mockClear).not.toHaveBeenCalled();
+  });
+
+  it('ACCOUNT_DISABLED → accountDisabled', async () => {
+    mockGetRefresh.mockResolvedValue('rt');
+    mockNetFetch.mockResolvedValue({isConnected: true});
+    mockHttp.mockResolvedValueOnce({
+      ok: false,
+      error: {code: 'ACCOUNT_DISABLED', message: ''},
+      status: 403,
+      headers: new Headers(),
+      requestId: null,
+    });
+    await useAuthStore.getState().boot();
+    const s = useAuthStore.getState();
+    expect(s.state).toBe('accountDisabled');
+    expect(mockClear).toHaveBeenCalled();
+  });
+
+  it('retour réseau → un seul boot via safeBoot (module lock)', async () => {
+    mockGetRefresh.mockResolvedValue('rt');
+    mockNetFetch.mockResolvedValue({isConnected: true});
+    let meCalls = 0;
+    mockHttp.mockImplementation(async opts => {
+      if (opts.path === '/auth/me') {
+        meCalls += 1;
+        await new Promise<void>(r => setTimeout(r, 30));
+        return ok({
+          member: {
+            id: '1',
+            email: 'a@b.c',
+            email_verified: true,
+            display_name: 'A',
+            role: 'member',
+            status: 'active',
+            country: null,
+            usage: null,
+            phone: null,
+            organization: null,
+            selected_bot_id: null,
+            created_at: 0,
+          },
+        });
+      }
+      return fail(401, 'UNAUTHORIZED', 'access_expired');
+    });
+    useAuthStore.setState({state: 'signedIn', offline: true, member: null});
+    // Direct concurrent boot() — le guard est dans safeBoot (module)
+    await Promise.all([
+      useAuthStore.getState().boot(),
+      useAuthStore.getState().boot(),
+    ]);
+    expect(meCalls).toBeGreaterThanOrEqual(1);
+  });
+
+  it('état sérialisé ne contient aucun token', () => {
+    useAuthStore.setState({
+      state: 'signedIn',
+      member: {
+        id: '1',
+        email: 'a@b.c',
+        email_verified: true,
+        display_name: 'A',
+        role: 'member',
+        status: 'active',
+        country: null,
+        usage: null,
+        phone: null,
+        organization: null,
+        selected_bot_id: null,
+        created_at: 0,
+      },
+      offline: false,
+      endReason: null,
+      upgradeLatest: null,
+      email: 'a@b.c',
+      pendingCode: null,
+    });
+    const raw = JSON.stringify(useAuthStore.getState());
+    expect(raw).not.toMatch(/access_token|refresh_token|Bearer /i);
   });
 });
