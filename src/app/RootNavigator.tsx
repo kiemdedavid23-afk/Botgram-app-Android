@@ -8,6 +8,7 @@ import {NavigationContainer, DefaultTheme, DarkTheme} from '@react-navigation/na
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {useTheme} from '../shared/theme';
 import {useAuthStore} from '../features/auth/store/authStore';
+import {fireAndForget} from '../core/utils/fireAndForget';
 import {WelcomeScreen} from '../features/auth/screens/WelcomeScreen';
 import {EmailScreen} from '../features/auth/screens/EmailScreen';
 import {CodeScreen} from '../features/auth/screens/CodeScreen';
