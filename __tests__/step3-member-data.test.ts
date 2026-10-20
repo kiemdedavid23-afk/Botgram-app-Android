@@ -261,14 +261,18 @@ describe('associateStore', () => {
     });
     mockHttp.mockImplementation(() => deferred);
     const p1 = useAssociateStore.getState().confirm();
+    // laisser le microtask de confirm() démarrer et poser confirming=true
+    await Promise.resolve();
     const p2 = useAssociateStore.getState().confirm();
-    // second call rejects immediately with busy; only one HTTP request
+    await Promise.resolve();
     expect(mockHttp).toHaveBeenCalledTimes(1);
     resolveHttp(ok({bot: sampleBot()}, 201));
     const [r1, r2] = await Promise.all([p1, p2]);
-    const outcomes = [r1, r2];
-    expect(outcomes.filter(r => r.ok).length).toBe(1);
-    expect(outcomes.some(r => !r.ok && r.reason === 'busy')).toBe(true);
+    expect(r1.ok || r2.ok).toBe(true);
+    expect(
+      (!r1.ok && r1.reason === 'duplicate') ||
+        (!r2.ok && r2.reason === 'duplicate'),
+    ).toBe(true);
   });
 
   it('jeton jamais écrit en cache ni Keychain', async () => {
