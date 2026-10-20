@@ -100,6 +100,7 @@ export function BotBottomNav({
     );
   };
 
+  const avatarActiveBorder = {borderColor: colors.accent} as const;
   const profileActive = activeTab === 'profile';
 
   return (
@@ -135,11 +136,7 @@ export function BotBottomNav({
             pressed && styles.itemPressed,
           ]}>
           <View style={styles.iconWrap}>
-            <View
-              style={[
-                styles.avatarOuter,
-                {borderColor: profileActive ? colors.accent : 'transparent'},
-              ]}>
+            <View style={[styles.avatarOuter, profileActive ? avatarActiveBorder : null]}>
               <GradientView colors={avatarColors} angle={145} style={styles.avatar}>
                 <Text style={[styles.avatarText, {color: colors.white}]}>{botInitial(botName)}</Text>
               </GradientView>
