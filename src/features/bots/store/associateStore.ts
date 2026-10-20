@@ -48,7 +48,7 @@ export type ConfirmResult =
         | 'rate_limited'
         | 'error'
         | 'no_token'
-        | 'busy';
+        | 'duplicate';
     };
 
 type AssociateStore = {
@@ -128,7 +128,7 @@ export const useAssociateStore = create<AssociateStore>((set, get) => ({
       return {ok: false, reason: 'no_token'};
     }
     if (get().confirming) {
-      return {ok: false, reason: 'busy'};
+      return {ok: false, reason: 'duplicate'};
     }
     set({confirming: true});
     try {
