@@ -45,35 +45,51 @@ function ok<T>(data: T): Awaited<ReturnType<typeof http>> {
   };
 }
 
+function installDefaultMocks(): void {
+  mockGetAccess.mockResolvedValue(null);
+  mockGetRefresh.mockResolvedValue(null);
+  mockClear.mockResolvedValue(undefined);
+  mockNetFetch.mockResolvedValue({isConnected: true});
+  mockHttp.mockReset();
+}
+
 describe('session C1', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
+    installDefaultMocks();
+  });
+
+  afterEach(() => {
     jest.useRealTimers();
   });
 
   it('refresh_race adopte le token changé sans nouveau refresh', async () => {
-    // Via authedHttp → doRefresh : premier refresh_race, puis stored !== rt → ok:true
+    // doRefresh : getRefresh → rt-old, refresh → race, sleep ≥1s, getRefresh → rt-new → ok sans 2e refresh
     mockGetAccess.mockResolvedValue('old-a');
     mockGetRefresh
       .mockResolvedValueOnce('rt-old') // doRefresh initial
-      .mockResolvedValueOnce('rt-old') // after sleep, still old then
-      .mockResolvedValueOnce('rt-new'); // stored changed
+      .mockResolvedValueOnce('rt-new'); // après attente : autre instance a renouvelé
     mockHttp
       .mockResolvedValueOnce(fail(401, 'UNAUTHORIZED', 'access_expired'))
-      .mockResolvedValueOnce(fail(401, 'UNAUTHORIZED', 'refresh_race', {'retry-after': '0'}));
+      .mockResolvedValueOnce(
+        fail(401, 'UNAUTHORIZED', 'refresh_race', {'retry-after': '0'}),
+      )
+      .mockResolvedValueOnce(ok({replayed: true})); // rejeu route après adopt
+
     jest.useFakeTimers();
     const p = authedHttp({path: '/x'});
-    await jest.advanceTimersByTimeAsync(50);
-    // After race, token changed → return ok without second refresh call
-    // Need third getRefresh to return new
-    mockGetRefresh.mockResolvedValue('rt-new');
-    await jest.advanceTimersByTimeAsync(50);
+    // retry-after '0' est borné à 1 s dans session.ts
+    await jest.advanceTimersByTimeAsync(1000);
     const res = await p;
+
+    expect(res.ok).toBe(true);
     expect(mockClear).not.toHaveBeenCalled();
-    jest.useRealTimers();
-    // Au moins le premier 401 + le refresh
-    expect(mockHttp.mock.calls.length).toBeGreaterThanOrEqual(2);
-    void res;
+    const refreshCalls = mockHttp.mock.calls.filter(
+      c => c[0]?.path === '/auth/refresh',
+    );
+    expect(refreshCalls).toHaveLength(1);
+    // 1 route + 1 refresh + 1 rejeu route = 3
+    expect(mockHttp.mock.calls.length).toBe(3);
   });
 
   it('rejeu du même token après retry_after, 3 essais max', async () => {
@@ -81,19 +97,29 @@ describe('session C1', () => {
     mockGetRefresh.mockResolvedValue('rt-same');
     mockHttp
       .mockResolvedValueOnce(fail(401, 'UNAUTHORIZED', 'access_expired'))
-      .mockResolvedValueOnce(fail(401, 'UNAUTHORIZED', 'refresh_race', {'retry-after': '1'}))
-      .mockResolvedValueOnce(fail(401, 'UNAUTHORIZED', 'refresh_race', {'retry-after': '1'}))
-      .mockResolvedValueOnce(fail(401, 'UNAUTHORIZED', 'refresh_race', {'retry-after': '1'}))
-      .mockResolvedValueOnce(fail(401, 'UNAUTHORIZED', 'refresh_race', {'retry-after': '1'}));
+      .mockResolvedValueOnce(
+        fail(401, 'UNAUTHORIZED', 'refresh_race', {'retry-after': '1'}),
+      )
+      .mockResolvedValueOnce(
+        fail(401, 'UNAUTHORIZED', 'refresh_race', {'retry-after': '1'}),
+      )
+      .mockResolvedValueOnce(
+        fail(401, 'UNAUTHORIZED', 'refresh_race', {'retry-after': '1'}),
+      )
+      .mockResolvedValueOnce(
+        fail(401, 'UNAUTHORIZED', 'refresh_race', {'retry-after': '1'}),
+      );
+
     jest.useFakeTimers();
     const p = authedHttp({path: '/x'});
-    await jest.advanceTimersByTimeAsync(5000);
+    // 3 tentatives × retry-after 1 s
+    await jest.advanceTimersByTimeAsync(3100);
     const res = await p;
+
     expect(res.ok).toBe(false);
-    // 1 (route) + 1 (refresh) + 3 (retries) = 5 max
-    expect(mockHttp.mock.calls.length).toBeLessThanOrEqual(5);
+    // 1 (route) + 1 (refresh initial) + 3 (essais) = 5
+    expect(mockHttp.mock.calls.length).toBe(5);
     expect(mockClear).not.toHaveBeenCalled();
-    jest.useRealTimers();
   });
 
   it.each([
@@ -199,7 +225,8 @@ describe('session C1', () => {
 
 describe('authStore C1', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
+    installDefaultMocks();
     useAuthStore.setState({
       state: 'booting',
       member: null,
@@ -209,6 +236,10 @@ describe('authStore C1', () => {
       email: null,
       pendingCode: null,
     });
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('boot avec 429 reste signedIn et hors ligne', async () => {
