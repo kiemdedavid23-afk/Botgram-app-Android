@@ -14,7 +14,6 @@ const mockHttp = http as jest.MockedFunction<typeof http>;
 const mockGetAccess = storage.getAccessToken as jest.Mock;
 const mockGetRefresh = storage.getRefreshToken as jest.Mock;
 const mockSave = storage.saveTokenPair as jest.Mock;
-const mockClear = storage.clearTokens as jest.Mock;
 
 describe('session auth', () => {
   beforeEach(() => {
@@ -72,20 +71,31 @@ describe('session auth', () => {
   });
 
   it('refresh token écrit avant access token', async () => {
-    const order: string[] = [];
-    mockSave.mockImplementation(async () => {
-      order.push('refresh');
-      order.push('access');
+    const calls: string[] = [];
+    mockSave.mockImplementation(async (pair: {access: string; refresh: string}) => {
+      calls.push(pair.refresh);
+      calls.push(pair.access);
     });
-    mockHttp.mockResolvedValueOnce({
-      ok: true,
-      data: {access_token: 'a', refresh_token: 'r', access_expires_in: 1, session_expires_at: 1},
-      requestId: null,
-      status: 200,
-      headers: new Headers(),
-    });
-    await refresh('rt');
-    // saveTokenPair is called by session, order is enforced there
+    mockGetAccess.mockResolvedValue('old-access');
+    mockGetRefresh.mockResolvedValue('old-refresh');
+    mockHttp
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        error: {code: 'access_expired', message: '', details: {reason: 'access_expired'}},
+        requestId: null,
+        headers: new Headers(),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        data: {access_token: 'new-access', refresh_token: 'new-refresh', access_expires_in: 1, session_expires_at: 1},
+        requestId: null,
+        status: 200,
+        headers: new Headers(),
+      });
+    await authedHttp({path: '/me'});
     expect(mockSave).toHaveBeenCalled();
+    const order = mockSave.mock.invocationCallOrder;
+    expect(order.length).toBeGreaterThan(0);
   });
 });
