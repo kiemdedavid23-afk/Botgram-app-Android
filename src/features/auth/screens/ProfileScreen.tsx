@@ -86,11 +86,11 @@ export function ProfileScreen({email, code, onSuccess, onBack}: Props): React.JS
         {fields.display_name ? <Text style={styles.fieldError}>{fields.display_name}</Text> : null}
 
         <Pressable style={styles.field} onPress={() => setPicker('country')}>
-          <Text style={{fontSize: authMetrics.fieldFontSize, color: authColors.text}}>{countryName}</Text>
+          <Text style={styles.fieldValue}>{countryName}</Text>
         </Pressable>
 
         <Pressable style={styles.field} onPress={() => setPicker('usage')}>
-          <Text style={{fontSize: authMetrics.fieldFontSize, color: authColors.text}}>{usage}</Text>
+          <Text style={styles.fieldValue}>{usage}</Text>
         </Pressable>
 
         <TextInput
@@ -113,7 +113,7 @@ export function ProfileScreen({email, code, onSuccess, onBack}: Props): React.JS
         />
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Pressable style={[styles.btn, {opacity: busy ? 0.6 : 1}]} onPress={submit} disabled={busy}>
+        <Pressable style={[styles.btn, busy ? styles.btnDisabled : null]} onPress={submit} disabled={busy}>
           <Text style={styles.btnText}>{texts.finish}</Text>
         </Pressable>
       </ScrollView>
@@ -122,7 +122,7 @@ export function ProfileScreen({email, code, onSuccess, onBack}: Props): React.JS
         <View style={styles.sheet}>
           <View style={styles.sheetCard}>
             <Text style={styles.sheetTitle}>{picker === 'country' ? texts.country : texts.usage}</Text>
-            <ScrollView style={{maxHeight: 360}}>
+            <ScrollView style={styles.pickerScroll}>
               {(picker === 'country' ? COUNTRIES.map(c => c.code) : [...USAGES]).map(item => (
                 <Pressable
                   key={item}
@@ -132,14 +132,14 @@ export function ProfileScreen({email, code, onSuccess, onBack}: Props): React.JS
                     else setUsage(item as (typeof USAGES)[number]);
                     setPicker(null);
                   }}>
-                  <Text style={{fontSize: 17, color: authColors.text}}>
+                  <Text style={styles.pickerItemText}>
                     {picker === 'country' ? COUNTRIES.find(c => c.code === item)?.name : item}
                   </Text>
                 </Pressable>
               ))}
             </ScrollView>
             <Pressable style={styles.sheetClose} onPress={() => setPicker(null)}>
-              <Text style={{color: authColors.accent, fontWeight: '600'}}>Fermer</Text>
+              <Text style={styles.pickerClose}>Fermer</Text>
             </Pressable>
           </View>
         </View>
@@ -169,4 +169,14 @@ const styles = StyleSheet.create({
   sheetTitle: {fontSize: 18, fontWeight: '600', textAlign: 'center', marginBottom: 12, color: authColors.text},
   sheetItem: {paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: authColors.border},
   sheetClose: {marginTop: 12, padding: authMetrics.sheetButtonPadding, backgroundColor: authColors.sheetButton, borderRadius: authMetrics.sheetButtonRadius, alignItems: 'center'},
+  // opacity 0.6 — busy (Auth.css)
+  btnDisabled: {opacity: 0.6},
+  // maxHeight 360 — liste pays/usages (Auth.css sheet)
+  pickerScroll: {maxHeight: 360},
+  // fontSize 17 = authMetrics.fieldFontSize (Auth.css)
+  pickerItemText: {fontSize: 17, color: authColors.text},
+  // fontWeight 600 — bouton Fermer sheet (Auth.css / Design tokens §4)
+  pickerClose: {color: authColors.accent, fontWeight: '600'},
+  // fieldFontSize 17 — Auth.css champ (authMetrics.fieldFontSize)
+  fieldValue: {fontSize: authMetrics.fieldFontSize, color: authColors.text},
 });

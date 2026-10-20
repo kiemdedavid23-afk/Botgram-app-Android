@@ -49,7 +49,7 @@ export function EmailScreen({onSent, onBack}: Props): React.JSX.Element {
           onBlur={() => setFocused(false)}
         />
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Pressable style={[styles.btn, {opacity: busy ? 0.6 : 1}]} onPress={submit} disabled={busy}>
+        <Pressable style={[styles.btn, busy ? styles.btnDisabled : null]} onPress={submit} disabled={busy}>
           <Text style={styles.btnText}>{texts.sendCode}</Text>
         </Pressable>
       </View>
@@ -71,4 +71,6 @@ const styles = StyleSheet.create({
   error: {color: authColors.danger, marginTop: 12, textAlign: 'center'},
   btn: {marginTop: 32, alignSelf: 'center', backgroundColor: authColors.accent, paddingHorizontal: 32, paddingVertical: 12, borderRadius: 20},
   btnText: {color: authColors.white, fontWeight: '600', fontSize: 16},
+  // opacity 0.6 — état busy (Auth.css)
+  btnDisabled: {opacity: 0.6},
 });

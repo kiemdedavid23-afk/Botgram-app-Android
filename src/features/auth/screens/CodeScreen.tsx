@@ -112,13 +112,16 @@ export function CodeScreen({email, expiresIn, onNeedsProfile, onSuccess, onBack}
         />
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <Pressable
-          style={[styles.btn, {opacity: busy || expired || code.length !== 6 ? 0.5 : 1}]}
+          style={[styles.btn, busy || expired || code.length !== 6 ? styles.btnDisabled : null]}
           onPress={submit}
           disabled={busy || expired || code.length !== 6}>
           <Text style={styles.btnText}>{texts.verify}</Text>
         </Pressable>
-        <Pressable style={{marginTop: 20, opacity: resendLeft > 0 ? 0.5 : 1}} onPress={resend} disabled={resendLeft > 0 || busy}>
-          <Text style={{color: authColors.accent, textAlign: 'center'}}>
+        <Pressable
+          style={[styles.resend, resendLeft > 0 ? styles.resendDisabled : null]}
+          onPress={resend}
+          disabled={resendLeft > 0 || busy}>
+          <Text style={styles.resendText}>
             {resendLeft > 0 ? texts.resendIn(resendLeft) : texts.resend}
           </Text>
         </Pressable>
@@ -146,4 +149,10 @@ const styles = StyleSheet.create({
   error: {color: authColors.danger, marginTop: 16, textAlign: 'center'},
   btn: {marginTop: 32, backgroundColor: authColors.accent, paddingHorizontal: 32, paddingVertical: 12, borderRadius: 20},
   btnText: {color: authColors.white, fontWeight: '600'},
+  // opacity 0.5 — état désactivé (Auth.css bouton verify disabled)
+  btnDisabled: {opacity: 0.5},
+  // marginTop 20 — espacement sous le bouton (Auth.css resend)
+  resend: {marginTop: 20},
+  resendDisabled: {opacity: 0.5},
+  resendText: {color: authColors.accent, textAlign: 'center'},
 });

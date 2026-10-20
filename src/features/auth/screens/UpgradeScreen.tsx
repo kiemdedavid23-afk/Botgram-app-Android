@@ -11,7 +11,7 @@ export function UpgradeScreen(): React.JSX.Element {
     <View style={[styles.root, {backgroundColor: colors.bgSecondary}]}>
       <Text style={[styles.title, {color: colors.textPrimary}]}>{texts.upgradeTitle}</Text>
       <Text style={[styles.body, {color: colors.textSecondary}]}>{texts.upgradeBody}</Text>
-      {latest ? <Text style={{color: colors.accent, marginTop: 12}}>Version : {latest}</Text> : null}
+      {latest ? <Text style={[styles.latest, {color: colors.accent}]}>Version : {latest}</Text> : null}
     </View>
   );
 }
@@ -20,4 +20,6 @@ const styles = StyleSheet.create({
   root: {flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32},
   title: {fontSize: fontSize.pageHeader, fontWeight: '700', marginBottom: 16},
   body: {fontSize: fontSize.listSubtitle, textAlign: 'center'},
+  // marginTop 12 — espacement sous le corps (Auth.css / Upgrade)
+  latest: {marginTop: 12},
 });
