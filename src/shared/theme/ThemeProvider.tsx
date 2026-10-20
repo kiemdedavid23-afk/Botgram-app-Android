@@ -85,7 +85,7 @@ export function ThemeProvider({children}: Props): React.JSX.Element {
     }
     fireAndForget(cacheSetString(APPEARANCE_STORAGE_KEY, JSON.stringify(appearance)).catch(() => {
       // Cache indisponible : l'apparence reste en mémoire, aucune erreur remontée.
-    });
+        }));
   }, [appearance, hydrated]);
 
   const mode = resolveMode(appearance, systemScheme);
