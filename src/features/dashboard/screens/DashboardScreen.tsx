@@ -24,33 +24,33 @@ export function DashboardScreen(): React.JSX.Element {
 
   return (
     <ScrollView
-      style={{flex: 1, backgroundColor: colors.bgSecondary}}
+      style={[styles.scroll, {backgroundColor: colors.bgSecondary}]}
       refreshControl={<RefreshControl refreshing={false} onRefresh={() => { fireAndForget(loadBots(true)); fireAndForget(loadQuota(true)); }} />}>
       {offline ? <Text style={styles.banner}>{texts.offline}</Text> : null}
       <View style={styles.section}>
         <Text style={[styles.title, {color: colors.textPrimary}]}>{texts.quotaTitle}</Text>
         {quota ? (
-          <Text style={{color: colors.textSecondary}}>
+          <Text style={[styles.body, {color: colors.textSecondary}]}>
             {quota.used} / {quota.limit} ({quota.remaining} restants)
           </Text>
         ) : (
-          <Text style={{color: colors.textHint}}>—</Text>
+          <Text style={[styles.body, {color: colors.textHint}]}>—</Text>
         )}
       </View>
       <View style={styles.section}>
         <Text style={[styles.title, {color: colors.textPrimary}]}>{texts.activeBot}</Text>
         {active ? (
-          <Text style={{color: colors.textPrimary}}>{active.name} (@{active.username})</Text>
+          <Text style={[styles.body, {color: colors.textPrimary}]}>{active.name} (@{active.username})</Text>
         ) : (
-          <Text style={{color: colors.textHint}}>{texts.noActive}</Text>
+          <Text style={[styles.body, {color: colors.textHint}]}>{texts.noActive}</Text>
         )}
       </View>
       <View style={styles.section}>
         <Text style={[styles.title, {color: colors.textPrimary}]}>{texts.myBots}</Text>
         {bots.map(b => (
           <Pressable key={b.id} style={styles.row}>
-            <Text style={{color: colors.textPrimary}}>{b.name}</Text>
-            <Text style={{color: colors.textSecondary}}>{b.status}</Text>
+            <Text style={[styles.body, {color: colors.textPrimary}]}>{b.name}</Text>
+            <Text style={[styles.body, {color: colors.textSecondary}]}>{b.status}</Text>
           </Pressable>
         ))}
       </View>
@@ -59,8 +59,11 @@ export function DashboardScreen(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
+  // flex:1 — ScrollView plein écran
+  scroll: {flex: 1},
   banner: {padding: space.md, backgroundColor: authColors.bg, textAlign: 'center'},
   section: {padding: space.md},
   title: {fontSize: fontSize.listName, fontWeight: '600', marginBottom: 8},
   row: {flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth},
+  body: {},
 });
