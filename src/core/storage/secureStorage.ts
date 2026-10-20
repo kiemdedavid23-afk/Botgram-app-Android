@@ -73,14 +73,13 @@ export async function getOrCreateMmkvKey(): Promise<string> {
   return generated;
 }
 
-function generateRandomKey(byteLength: number): string {
-  // ATTENTION : Math.random n'est PAS un CSPRNG.
-  // Cette implémentation est temporaire et non cryptographique.
-  // Options proposées au propriétaire (voir LIVRAISONS.md) :
-  // 1. Ajouter react-native-get-random-values (hors liste fermée) et utiliser crypto.getRandomValues.
-  // 2. Générer la clé hors de l'app (env/secret CI) et l'injecter.
-  // En attendant, on refuse de générer une clé faible.
-  throw new Error(
-    'Génération de clé MMKV non implémentée : CSPRNG requis. Voir LIVRAISONS.md pour les options.',
-  );
+function generateRandomKey(_byteLength: number): string {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const arr = new Uint8Array(16);
+  crypto.getRandomValues(arr);
+  let out = '';
+  for (let i = 0; i < 16; i += 1) {
+    out += alphabet[arr[i]! % alphabet.length];
+  }
+  return out;
 }
