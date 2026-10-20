@@ -1,2 +1,1 @@
-/** API publique de la feature bots (étape 3). */
-export {};
+export {useBotsStore} from './store/botsStore'; export {useAssociateStore} from './store/associateStore';
