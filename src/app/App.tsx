@@ -8,7 +8,6 @@ function AppStatusBar(): React.JSX.Element {
   return (
     <StatusBar
       barStyle={mode === 'dark' ? 'light-content' : 'dark-content'}
-      backgroundColor={colors.bgPrimary}
     />
   );
 }
