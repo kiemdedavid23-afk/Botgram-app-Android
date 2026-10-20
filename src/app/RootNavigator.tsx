@@ -112,7 +112,7 @@ export function RootNavigator(): React.JSX.Element {
   const boot = useAuthStore(s => s.boot);
 
   useEffect(() => {
-    void boot();
+    fireAndForget(boot());
   }, [boot]);
 
   const navTheme = {
