@@ -1,7 +1,9 @@
 /**
  * Store d'authentification. Tokens uniquement en Keychain.
+ * clearMemberData à signOut, ended, ACCOUNT_DISABLED.
  */
 import {fireAndForget} from '../../../core/utils/fireAndForget';
+import {clearMemberData} from '../../../core/utils/memberData';
 import {create} from 'zustand';
 import {onSessionEvent, type SessionEndReason} from '../../../core/api/session';
 import {me, logout as logoutApi, type Member} from '../../../core/api/endpoints/auth';
@@ -60,12 +62,31 @@ export const useAuthStore = create<AuthStore>(set => ({
     }
     const res = await me();
     if (res.ok) {
-      set({state: 'signedIn', member: res.data.member, offline: false, endReason: null});
-    } else if (res.error.code === 'SESSION_ENDED' || (res.status === 401 && ['revoked','session_expired','invalid','refresh_reuse'].includes((res.error.details as {reason?: string})?.reason ?? ''))) {
+      set({
+        state: 'signedIn',
+        member: res.data.member,
+        offline: false,
+        endReason: null,
+      });
+    } else if (
+      res.error.code === 'SESSION_ENDED' ||
+      (res.status === 401 &&
+        ['revoked', 'session_expired', 'invalid', 'refresh_reuse'].includes(
+          (res.error.details as {reason?: string} | undefined)?.reason ?? '',
+        ))
+    ) {
       await clearTokens();
-      set({state: 'signedOut', member: null, endReason: (res.error.details as {reason?: SessionEndReason})?.reason ?? 'invalid'});
+      await clearMemberData();
+      set({
+        state: 'signedOut',
+        member: null,
+        endReason:
+          (res.error.details as {reason?: SessionEndReason} | undefined)
+            ?.reason ?? 'invalid',
+      });
     } else if (res.status === 403 && res.error.code === 'ACCOUNT_DISABLED') {
       await clearTokens();
+      await clearMemberData();
       set({state: 'accountDisabled', member: null, endReason: null});
     } else {
       set({state: 'signedIn', member: null, offline: true});
@@ -82,18 +103,38 @@ export const useAuthStore = create<AuthStore>(set => ({
     }
     clearTimeout(t);
     await clearTokens();
-    set({state: 'signedOut', member: null, email: null, pendingCode: null, endReason: null});
+    await clearMemberData();
+    set({
+      state: 'signedOut',
+      member: null,
+      email: null,
+      pendingCode: null,
+      endReason: null,
+    });
   },
 
   completeVerify: async ({member, access_token, refresh_token}) => {
-    await saveTokenPair({refreshToken: refresh_token, accessToken: access_token});
-    set({state: 'signedIn', member, offline: false, endReason: null, pendingCode: null});
+    await saveTokenPair({
+      refreshToken: refresh_token,
+      accessToken: access_token,
+    });
+    set({
+      state: 'signedIn',
+      member,
+      offline: false,
+      endReason: null,
+      pendingCode: null,
+    });
   },
 }));
 
 let booting = false;
-async function safeBoot() {
-  if (booting) return;
+
+/** Guard single-flight exposé pour les tests et le listener réseau. */
+export async function safeBoot(): Promise<void> {
+  if (booting) {
+    return;
+  }
   booting = true;
   try {
     await useAuthStore.getState().boot();
@@ -104,7 +145,11 @@ async function safeBoot() {
 
 NetInfo.addEventListener(state => {
   const s = useAuthStore.getState();
-  if ((s.offline || s.member === null) && s.state === 'signedIn' && state.isConnected) {
+  if (
+    (s.offline || s.member === null) &&
+    s.state === 'signedIn' &&
+    state.isConnected
+  ) {
     fireAndForget(safeBoot());
   }
 });
@@ -120,6 +165,7 @@ AppState.addEventListener('change', next => {
 
 onSessionEvent(event => {
   if (event.type === 'ended') {
+    fireAndForget(clearMemberData());
     useAuthStore.setState({
       state: 'signedOut',
       member: null,
@@ -127,6 +173,9 @@ onSessionEvent(event => {
     });
   }
   if (event.type === 'upgrade_required') {
-    useAuthStore.setState({state: 'upgradeRequired', upgradeLatest: event.latest ?? null});
+    useAuthStore.setState({
+      state: 'upgradeRequired',
+      upgradeLatest: event.latest ?? null,
+    });
   }
 });
