@@ -14,9 +14,9 @@ export function BotManageScreen({botId, onBack}: Props): React.JSX.Element {
 
   if (!bot) {
     return (
-      <View style={{flex: 1, backgroundColor: colors.bgSecondary}}>
+      <View style={[styles.root, {backgroundColor: colors.bgSecondary}]}>
         <AuthHeader title="Bot" onBack={onBack} />
-        <Text style={{color: colors.textSecondary, padding: space.md}}>Bot introuvable</Text>
+        <Text style={[styles.missing, {color: colors.textSecondary}]}>Bot introuvable</Text>
       </View>
     );
   }
@@ -25,12 +25,12 @@ export function BotManageScreen({botId, onBack}: Props): React.JSX.Element {
     <View style={[styles.root, {backgroundColor: colors.bgSecondary}]}>
       <AuthHeader title={bot.name} onBack={onBack} />
       <View style={styles.body}>
-        <Text style={{color: colors.textPrimary, fontSize: fontSize.listName}}>@{bot.username}</Text>
-        <Text style={{color: colors.textSecondary, marginTop: 4}}>{bot.status}</Text>
+        <Text style={[styles.username, {color: colors.textPrimary}]}>@{bot.username}</Text>
+        <Text style={[styles.status, {color: colors.textSecondary}]}>{bot.status}</Text>
         <Pressable
           style={[styles.action, {backgroundColor: colors.bgTertiary}]}
           onPress={() => replace({...bot, muted: !bot.muted})}>
-          <Text style={{color: colors.textPrimary}}>{bot.muted ? texts.unmute : texts.mute}</Text>
+          <Text style={[styles.actionText, {color: colors.textPrimary}]}>{bot.muted ? texts.unmute : texts.mute}</Text>
         </Pressable>
       </View>
     </View>
@@ -38,7 +38,14 @@ export function BotManageScreen({botId, onBack}: Props): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
+  // flex:1 — plein écran
   root: {flex: 1},
   body: {flex: 1, padding: space.md},
+  // padding space.md (Design tokens §5)
+  missing: {padding: space.md},
+  username: {fontSize: fontSize.listName},
+  // marginTop 4 = space.xs (Design tokens §5 xs 4)
+  status: {marginTop: space.xs},
   action: {marginTop: 16, padding: 14, borderRadius: 12, alignItems: 'center'},
+  actionText: {},
 });
