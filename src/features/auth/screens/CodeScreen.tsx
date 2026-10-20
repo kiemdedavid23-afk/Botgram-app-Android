@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react';
+import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform} from 'react-native';
 import {authColors, authMetrics} from '../../../shared/theme/authColors';
 import {texts} from '../texts';
@@ -102,7 +103,7 @@ export function CodeScreen({email, expiresIn, onNeedsProfile, onSuccess, onBack}
             const next = ['', '', '', '', '', ''];
             for (let i = 0; i < clean.length; i += 1) next[i] = clean[i] ?? '';
             setDigits(next);
-            if (clean.length === 6 && !expired) void submit();
+            if (clean.length === 6 && !expired) fireAndForget(submit());
           }}
           keyboardType="number-pad"
           autoComplete="one-time-code"
