@@ -4,7 +4,7 @@ import {ThemeProvider, useTheme} from '../shared/theme';
 import {RootNavigator} from './RootNavigator';
 
 function AppStatusBar(): React.JSX.Element {
-  const {mode, colors} = useTheme();
+  const {mode} = useTheme();
   return (
     <StatusBar
       barStyle={mode === 'dark' ? 'light-content' : 'dark-content'}
