@@ -5,7 +5,7 @@
 import {authedHttp} from '../src/core/api/session';
 import * as storage from '../src/core/storage';
 import {http} from '../src/core/api/http';
-import {logout, refresh} from '../src/core/api/endpoints/auth';
+import {logout} from '../src/core/api/endpoints/auth';
 
 jest.mock('../src/core/storage');
 jest.mock('../src/core/api/http');
