@@ -1,2 +1,1 @@
-/** API publique de la feature dashboard (étape 1 : vide). */
-export {};
+export {DashboardScreen} from './screens/DashboardScreen';
