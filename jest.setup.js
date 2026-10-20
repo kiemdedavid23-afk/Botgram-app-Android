@@ -1,3 +1,4 @@
+/* eslint-env jest */
 /**
  * Setup Jest : mocks des modules natifs.
  */
