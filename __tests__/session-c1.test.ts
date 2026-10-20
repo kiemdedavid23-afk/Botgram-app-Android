@@ -59,8 +59,8 @@ describe('session C1', () => {
     await verifyCode({email: 'a@b.c', code: '123456'});
     await refresh('rt');
     const calls = mockHttp.mock.calls;
-    expect(calls[0][0].tokenModeBody).toBeUndefined();
-    expect(calls[1][0].tokenModeBody).toBe(true);
-    expect(calls[2][0].tokenModeBody).toBe(true);
+    expect(calls[0]?.[0]?.tokenModeBody).toBeUndefined();
+    expect(calls[1]?.[0]?.tokenModeBody).toBe(true);
+    expect(calls[2]?.[0]?.tokenModeBody).toBe(true);
   });
 });

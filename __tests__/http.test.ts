@@ -69,7 +69,7 @@ describe('http client', () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.code).toBe('UPGRADE_REQUIRED');
-      expect(result.error.details?.latest).toBe('1.2.0');
+      expect((result.error.details as {latest?: string}).latest).toBe('1.2.0');
     }
   });
 
