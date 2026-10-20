@@ -63,7 +63,7 @@ async function doRefresh(): Promise<{ok: true} | {ok: false; end?: SessionEndRea
     if (Number.isNaN(retryAfter) || retryAfter < 1) retryAfter = 1;
     if (retryAfter > 30) retryAfter = 30;
     for (let attempt = 0; attempt < 3; attempt += 1) {
-      await new Promise(r => setTimeout(r, retryAfter * 1000));
+      await new Promise<void>(resolve => { setTimeout(() => resolve(), retryAfter * 1000); });
       const stored = await getRefreshToken();
       if (stored && stored !== rt) {
         // autre instance a renouvelé : adopter et rejouer sans nouveau refresh
