@@ -1,29 +1,31 @@
 /**
  * Composant de dégradé réutilisable basé sur react-native-svg.
- * Utilisé pour avatar, fonds d'écran, marque.
+ * Angle CSS : 0° = vers le haut, 90° = vers la droite, 180° = vers le bas.
+ * Formule centrée : x1 = 50 - 50·sinθ, y1 = 50 + 50·cosθ, x2 = 50 + 50·sinθ, y2 = 50 - 50·cosθ.
+ * Pour rectangles non carrés : onLayout + gradientUnits="userSpaceOnUse" + L = |w·sinθ| + |h·cosθ|.
  */
-import React from 'react';
-import {StyleSheet, View, type StyleProp, type ViewStyle} from 'react-native';
+import React, {useId, useState} from 'react';
+import {StyleSheet, View, type StyleProp, type ViewStyle, type LayoutChangeEvent} from 'react-native';
 import Svg, {Defs, LinearGradient, Rect, Stop} from 'react-native-svg';
 
 type Props = {
   colors: string[];
-  /** Angle CSS en degrés (0 = bas vers haut, 90 = gauche vers droite) */
+  /** Angle CSS en degrés (0 = vers le haut) */
   angle?: number;
   style?: StyleProp<ViewStyle>;
   children?: React.ReactNode;
 };
 
-function angleToPoints(angle: number): {x1: string; y1: string; x2: string; y2: string} {
-  // Approximation simple pour les angles courants (145, 135, 160, 180)
-  const rad = ((angle - 90) * Math.PI) / 180;
-  const x2 = 50 + Math.cos(rad) * 50;
-  const y2 = 50 + Math.sin(rad) * 50;
+/** Points en pourcentage, centrés sur le milieu. */
+export function angleToPoints(angle: number): {x1: number; y1: number; x2: number; y2: number} {
+  const rad = (angle * Math.PI) / 180;
+  const sin = Math.sin(rad);
+  const cos = Math.cos(rad);
   return {
-    x1: '0%',
-    y1: '0%',
-    x2: `${Math.max(0, Math.min(100, x2))}%`,
-    y2: `${Math.max(0, Math.min(100, y2))}%`,
+    x1: 50 - 50 * sin,
+    y1: 50 + 50 * cos,
+    x2: 50 + 50 * sin,
+    y2: 50 - 50 * cos,
   };
 }
 
@@ -33,14 +35,56 @@ export function GradientView({
   style,
   children,
 }: Props): React.JSX.Element {
-  const {x1, y1, x2, y2} = angleToPoints(angle);
-  const id = `grad-${colors.join('-').replace(/[^a-z0-9]/gi, '')}`;
+  const id = useId().replace(/:/g, '');
+  const [size, setSize] = useState<{w: number; h: number} | null>(null);
+
+  const onLayout = (e: LayoutChangeEvent) => {
+    const {width, height} = e.nativeEvent.layout;
+    if (width > 0 && height > 0) {
+      setSize({w: width, h: height});
+    }
+  };
+
+  const rad = (angle * Math.PI) / 180;
+  const sin = Math.sin(rad);
+  const cos = Math.cos(rad);
+
+  let gradientProps: {
+    x1: string | number;
+    y1: string | number;
+    x2: string | number;
+    y2: string | number;
+    gradientUnits?: 'userSpaceOnUse' | 'objectBoundingBox';
+  };
+
+  if (size) {
+    const L = Math.abs(size.w * sin) + Math.abs(size.h * cos);
+    const cx = size.w / 2;
+    const cy = size.h / 2;
+    const dx = (L / 2) * sin;
+    const dy = -(L / 2) * cos;
+    gradientProps = {
+      x1: cx - dx,
+      y1: cy - dy,
+      x2: cx + dx,
+      y2: cy + dy,
+      gradientUnits: 'userSpaceOnUse',
+    };
+  } else {
+    const p = angleToPoints(angle);
+    gradientProps = {
+      x1: `${p.x1}%`,
+      y1: `${p.y1}%`,
+      x2: `${p.x2}%`,
+      y2: `${p.y2}%`,
+    };
+  }
 
   return (
-    <View style={[styles.root, style]}>
+    <View style={[styles.root, style]} onLayout={onLayout}>
       <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
         <Defs>
-          <LinearGradient id={id} x1={x1} y1={y1} x2={x2} y2={y2}>
+          <LinearGradient id={id} {...gradientProps}>
             {colors.map((c, i) => (
               <Stop
                 key={i}

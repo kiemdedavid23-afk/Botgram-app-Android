@@ -16,6 +16,7 @@ import {
 import {MessagesSquare, CircleUser, Settings} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {GradientView} from './GradientView';
+import {useTheme, getShadow, navPillBorder, gradients, fontWeight, fontSize, space, radii} from '../theme';
 
 export type BotTabId = 'chats' | 'contacts' | 'settings' | 'profile';
 
@@ -134,18 +135,15 @@ export function BotBottomNav({
             pressed && styles.itemPressed,
           ]}>
           <View style={styles.iconWrap}>
-            <GradientView
-              colors={avatarColors}
-              angle={145}
+            <View
               style={[
-                styles.avatar,
-                profileActive && {
-                  borderWidth: 2,
-                  borderColor: colors.accent,
-                },
+                styles.avatarOuter,
+                {borderColor: profileActive ? colors.accent : 'transparent'},
               ]}>
-              <Text style={[styles.avatarText, {color: colors.white}]}>{botInitial(botName)}</Text>
-            </GradientView>
+              <GradientView colors={avatarColors} angle={145} style={styles.avatar}>
+                <Text style={[styles.avatarText, {color: colors.white}]}>{botInitial(botName)}</Text>
+              </GradientView>
+            </View>
           </View>
           <Text
             style={[
@@ -222,6 +220,16 @@ const styles = StyleSheet.create({
     fontSize: fontSize.badge,
     fontWeight: fontWeight.bold,
     lineHeight: fontSize.badge,
+  },
+  avatarOuter: {
+    width: 28,
+    height: 28,
+    margin: -2,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   avatar: {
     width: space.navAvatarSize,
