@@ -26,7 +26,7 @@ function fieldMessage(reason: string): string {
 export function ProfileScreen({email, code, onSuccess, onBack}: Props): React.JSX.Element {
   const [displayName, setDisplayName] = useState('');
   const [country, setCountry] = useState('BF');
-  const [usage, setUsage] = useState(USAGES[0]);
+  const [usage, setUsage] = useState<(typeof USAGES)[number]>(USAGES[0]);
   const [phone, setPhone] = useState('');
   const [organization, setOrganization] = useState('');
   const [busy, setBusy] = useState(false);
