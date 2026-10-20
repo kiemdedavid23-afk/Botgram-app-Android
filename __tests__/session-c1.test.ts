@@ -8,7 +8,7 @@ import {authedHttp, onSessionEvent} from '../src/core/api/session';
 import * as storage from '../src/core/storage';
 import {http} from '../src/core/api/http';
 import {verifyCode, refresh, requestCode} from '../src/core/api/endpoints/auth';
-import {useAuthStore} from '../src/features/auth/store/authStore';
+import {useAuthStore, safeBoot} from '../src/features/auth/store/authStore';
 import NetInfo from '@react-native-community/netinfo';
 
 jest.mock('../src/core/storage');
@@ -18,6 +18,7 @@ const mockHttp = http as jest.MockedFunction<typeof http>;
 const mockGetAccess = storage.getAccessToken as jest.Mock;
 const mockGetRefresh = storage.getRefreshToken as jest.Mock;
 const mockClear = storage.clearTokens as jest.Mock;
+const mockSavePair = storage.saveTokenPair as jest.Mock;
 const mockNetFetch = NetInfo.fetch as jest.Mock;
 
 function fail(
@@ -49,6 +50,7 @@ function installDefaultMocks(): void {
   mockGetAccess.mockResolvedValue(null);
   mockGetRefresh.mockResolvedValue(null);
   mockClear.mockResolvedValue(undefined);
+  mockSavePair.mockResolvedValue(undefined);
   mockNetFetch.mockResolvedValue({isConnected: true});
   mockHttp.mockReset();
 }
@@ -64,21 +66,19 @@ describe('session C1', () => {
   });
 
   it('refresh_race adopte le token changé sans nouveau refresh', async () => {
-    // doRefresh : getRefresh → rt-old, refresh → race, sleep ≥1s, getRefresh → rt-new → ok sans 2e refresh
     mockGetAccess.mockResolvedValue('old-a');
     mockGetRefresh
-      .mockResolvedValueOnce('rt-old') // doRefresh initial
-      .mockResolvedValueOnce('rt-new'); // après attente : autre instance a renouvelé
+      .mockResolvedValueOnce('rt-old')
+      .mockResolvedValueOnce('rt-new');
     mockHttp
       .mockResolvedValueOnce(fail(401, 'UNAUTHORIZED', 'access_expired'))
       .mockResolvedValueOnce(
         fail(401, 'UNAUTHORIZED', 'refresh_race', {'retry-after': '0'}),
       )
-      .mockResolvedValueOnce(ok({replayed: true})); // rejeu route après adopt
+      .mockResolvedValueOnce(ok({replayed: true}));
 
     jest.useFakeTimers();
     const p = authedHttp({path: '/x'});
-    // retry-after '0' est borné à 1 s dans session.ts
     await jest.advanceTimersByTimeAsync(1000);
     const res = await p;
 
@@ -88,7 +88,6 @@ describe('session C1', () => {
       c => c[0]?.path === '/auth/refresh',
     );
     expect(refreshCalls).toHaveLength(1);
-    // 1 route + 1 refresh + 1 rejeu route = 3
     expect(mockHttp.mock.calls.length).toBe(3);
   });
 
@@ -112,14 +111,18 @@ describe('session C1', () => {
 
     jest.useFakeTimers();
     const p = authedHttp({path: '/x'});
-    // 3 tentatives × retry-after 1 s
     await jest.advanceTimersByTimeAsync(3100);
     const res = await p;
 
     expect(res.ok).toBe(false);
-    // 1 (route) + 1 (refresh initial) + 3 (essais) = 5
     expect(mockHttp.mock.calls.length).toBe(5);
     expect(mockClear).not.toHaveBeenCalled();
+    // chaque essai rejoue le même refresh token
+    const refreshBodies = mockHttp.mock.calls
+      .filter(c => c[0]?.path === '/auth/refresh')
+      .map(c => (c[0]?.body as {refresh_token?: string} | undefined)?.refresh_token);
+    expect(refreshBodies.length).toBe(4); // 1 initial + 3 essais
+    expect(refreshBodies.every(t => t === 'rt-same')).toBe(true);
   });
 
   it.each([
@@ -297,38 +300,55 @@ describe('authStore C1', () => {
       return fail(401, 'UNAUTHORIZED', 'access_expired');
     });
     useAuthStore.setState({state: 'signedIn', offline: true, member: null});
-    // Direct concurrent boot() — le guard est dans safeBoot (module)
-    await Promise.all([
-      useAuthStore.getState().boot(),
-      useAuthStore.getState().boot(),
-    ]);
-    expect(meCalls).toBeGreaterThanOrEqual(1);
+    // chemin réel : safeBoot (même guard que le listener NetInfo)
+    await Promise.all([safeBoot(), safeBoot()]);
+    expect(meCalls).toBe(1);
   });
 
-  it('état sérialisé ne contient aucun token', () => {
-    useAuthStore.setState({
-      state: 'signedIn',
-      member: {
-        id: '1',
-        email: 'a@b.c',
-        email_verified: true,
-        display_name: 'A',
-        role: 'member',
-        status: 'active',
-        country: null,
-        usage: null,
-        phone: null,
-        organization: null,
-        selected_bot_id: null,
-        created_at: 0,
-      },
-      offline: false,
-      endReason: null,
-      upgradeLatest: null,
+  it('état sérialisé ne contient aucun token après verify/refresh', async () => {
+    const member = {
+      id: '1',
       email: 'a@b.c',
-      pendingCode: null,
-    });
+      email_verified: true,
+      display_name: 'A',
+      role: 'member',
+      status: 'active',
+      country: null,
+      usage: null,
+      phone: null,
+      organization: null,
+      selected_bot_id: null,
+      created_at: 0,
+    };
+    mockHttp.mockResolvedValueOnce(
+      ok({
+        member,
+        is_new: false,
+        access_token: 'atk-secret',
+        refresh_token: 'rtk-secret',
+        access_expires_in: 7200,
+        session_expires_at: Date.now() + 86400000,
+      }),
+    );
+    const res = await verifyCode({email: 'a@b.c', code: '123456'});
+    expect(res.ok).toBe(true);
+    if (res.ok && 'access_token' in res.data) {
+      await useAuthStore.getState().completeVerify({
+        member: res.data.member,
+        access_token: res.data.access_token,
+        refresh_token: res.data.refresh_token,
+      });
+    }
+    // tokens écrits uniquement via Keychain (saveTokenPair), jamais dans le store
     const raw = JSON.stringify(useAuthStore.getState());
-    expect(raw).not.toMatch(/access_token|refresh_token|Bearer /i);
+    expect(raw).not.toMatch(/access_token|refresh_token|atk-secret|rtk-secret|Bearer /i);
+    // saveTokenPair a reçu les jetons (Keychain), pas le cache MMKV
+    expect(mockSavePair).toHaveBeenCalledWith({
+      refreshToken: 'rtk-secret',
+      accessToken: 'atk-secret',
+    });
+    // aucune écriture cache attendue pour les tokens
+    const mockCacheSet = storage.cacheSetString as jest.Mock;
+    expect(mockCacheSet).not.toHaveBeenCalled();
   });
 });
