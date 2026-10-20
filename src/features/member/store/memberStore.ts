@@ -99,15 +99,19 @@ export const useMemberStore = create<MemberStore>(set => ({
   confirmAccountDelete: async code => {
     set({deletePhase: 'deleting', deleteError: null});
     const res = await confirmDelete(code);
-    if (res.ok && res.data.deleted) {
-      await clearTokens();
-      await clearMemberData();
-      set({
-        member: null,
-        deletePhase: 'done',
-        deleteError: null,
-      });
-      return 'ok';
+    if (res.ok) {
+      if (res.data.deleted) {
+        await clearTokens();
+        await clearMemberData();
+        set({
+          member: null,
+          deletePhase: 'done',
+          deleteError: null,
+        });
+        return 'ok';
+      }
+      set({deletePhase: 'code_sent', deleteError: null});
+      return 'error';
     }
     if (res.error.code === 'CODE_INVALID') {
       set({deletePhase: 'code_sent', deleteError: 'CODE_INVALID'});
