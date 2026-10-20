@@ -8,6 +8,7 @@ import React, {
   type ReactNode,
 } from 'react';
 import {Appearance, type ColorSchemeName} from 'react-native';
+import {fireAndForget} from '../../core/utils/fireAndForget';
 import {
   defaultAppearance,
   getColors,
@@ -82,7 +83,7 @@ export function ThemeProvider({children}: Props): React.JSX.Element {
     if (!hydrated) {
       return;
     }
-    void cacheSetString(APPEARANCE_STORAGE_KEY, JSON.stringify(appearance)).catch(() => {
+    fireAndForget(cacheSetString(APPEARANCE_STORAGE_KEY, JSON.stringify(appearance)).catch(() => {
       // Cache indisponible : l'apparence reste en mémoire, aucune erreur remontée.
     });
   }, [appearance, hydrated]);
