@@ -1,0 +1,50 @@
+/**
+ * Couleurs fixes des écrans d'authentification (toujours clair, comme le site).
+ * Source : Auth.css. Aucune couleur en dur dans les écrans.
+ */
+export const authColors = {
+  bg: '#ffffff',
+  text: '#000000',
+  textMuted: '#8e8e93',
+  accent: '#2AABEE',
+  border: '#e1e1e1',
+  borderFocus: '#2AABEE',
+  codeBorder: '#d0d0d0',
+  danger: '#d93025',
+  fabBg: '#2AABEE',
+  fabShadow: 'rgba(42,171,238,0.4)',
+  sheetOverlay: 'rgba(0,0,0,0.35)',
+  sheetBg: '#ffffff',
+  sheetButton: '#f2f2f2',
+  logoShadow: 'rgba(10,127,176,0.35)',
+  white: '#ffffff',
+} as const;
+
+export const authMetrics = {
+  logoSize: 128,
+  logoRadius: 28,
+  logoMarginBottom: 22,
+  titleSize: 28,
+  titleWeight: '600' as const,
+  subtitleSize: 16,
+  subtitleMaxWidth: 280,
+  subtitleLineHeight: 1.4,
+  fabSize: 56,
+  fabRight: 20,
+  fabBottom: 24,
+  headHeight: 56,
+  fieldFontSize: 17,
+  fieldPaddingV: 14,
+  fieldPaddingH: 2,
+  codeBoxWidth: 42,
+  codeBoxHeight: 48,
+  codeFontSize: 24,
+  codeGap: 10,
+  codeBorderWidth: 2,
+  bodyPaddingH: 22,
+  bodyPaddingTop: 8,
+  helpSize: 15,
+  sheetRadius: 16,
+  sheetButtonRadius: 12,
+  sheetButtonPadding: 12,
+} as const;

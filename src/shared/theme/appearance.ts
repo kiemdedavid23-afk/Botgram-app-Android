@@ -1,11 +1,8 @@
+import {type ThemeMode, type ColorTokens, lightColors, darkColors} from './colors';
+import {type ShadowStyle, shadows} from './shadows';
+
 /** Couleurs de nom (réglage utilisateur) */
-export const nameColors = [
-  '#c44d8a',
-  '#2AABEE',
-  '#e67e22',
-  '#27ae60',
-  '#8e44ad',
-] as const;
+export const nameColors = ['#c44d8a', '#2AABEE', '#e67e22', '#27ae60', '#8e44ad'] as const;
 
 export type WallpaperId = 'home' | 'chick' | 'snow' | 'gem' | 'ocean';
 
@@ -50,9 +47,6 @@ export function getColors(mode: ThemeMode): ColorTokens {
   return mode === 'dark' ? darkColors : lightColors;
 }
 
-export function getShadow(
-  name: keyof typeof shadows,
-  mode: ThemeMode,
-): ShadowStyle {
+export function getShadow(name: keyof typeof shadows, mode: ThemeMode): ShadowStyle {
   return shadows[name][mode];
 }

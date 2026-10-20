@@ -10,13 +10,7 @@ export type ShadowStyle = {
   shadowOffset: {width: number; height: number};
 };
 
-export function getShadow(
-  name: keyof typeof shadows,
-  mode: 'light' | 'dark',
-): ShadowStyle {
-  return shadows[name][mode];
-}
-
+export const shadows = {
   sm: {
     light: {
       elevation: 1,
@@ -83,6 +77,13 @@ export function getShadow(
     },
   },
 } as const;
+
+export function getShadow(
+  name: keyof typeof shadows,
+  mode: 'light' | 'dark',
+): ShadowStyle {
+  return shadows[name][mode];
+}
 
 /** Liseré de la pilule (border 1 px) */
 export const navPillBorder = {

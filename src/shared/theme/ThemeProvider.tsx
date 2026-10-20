@@ -45,7 +45,7 @@ export function ThemeProvider({children}: Props): React.JSX.Element {
   const [appearance, setAppearanceState] =
     useState<AppearanceSettings>(defaultAppearance);
   const [systemScheme, setSystemScheme] = useState<ColorSchemeName>(
-    Appearance.getColorScheme(),
+    Appearance.getColorScheme() ?? 'light',
   );
   const [hydrated, setHydrated] = useState(false);
 
@@ -73,7 +73,7 @@ export function ThemeProvider({children}: Props): React.JSX.Element {
 
   useEffect(() => {
     const sub = Appearance.addChangeListener(({colorScheme}) => {
-      setSystemScheme(colorScheme);
+      setSystemScheme(colorScheme ?? 'light');
     });
     return () => sub.remove();
   }, []);
@@ -82,7 +82,9 @@ export function ThemeProvider({children}: Props): React.JSX.Element {
     if (!hydrated) {
       return;
     }
-    void cacheSetString(APPEARANCE_STORAGE_KEY, JSON.stringify(appearance));
+    void cacheSetString(APPEARANCE_STORAGE_KEY, JSON.stringify(appearance)).catch(() => {
+      // Cache indisponible : l'apparence reste en mémoire, aucune erreur remontée.
+    });
   }, [appearance, hydrated]);
 
   const mode = resolveMode(appearance, systemScheme);

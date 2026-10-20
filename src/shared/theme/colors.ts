@@ -55,10 +55,7 @@ export const lightColors: ColorTokens = {
   overlay: 'rgba(0,0,0,0.45)',
 };
 
-export function getColors(mode: ThemeMode): ColorTokens {
-  return mode === 'dark' ? darkColors : lightColors;
-}
-
+export const darkColors: ColorTokens = {
   bgPrimary: '#212121',
   bgSecondary: '#0f0f0f',
   bgTertiary: '#2c2c2c',
@@ -82,3 +79,7 @@ export function getColors(mode: ThemeMode): ColorTokens {
   black: '#000000',
   overlay: 'rgba(0,0,0,0.45)',
 };
+
+export function getColors(mode: ThemeMode): ColorTokens {
+  return mode === 'dark' ? darkColors : lightColors;
+}
