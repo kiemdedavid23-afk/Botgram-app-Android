@@ -3,6 +3,7 @@
  * - credentials: 'omit' (pas de cookie, pas d'Origin → CSRF OK)
  * - En-têtes X-App-* sur toutes les requêtes
  * - Pas d'en-tête Origin
+ * - fetch ne lève jamais (réseau, timeout, abort, lecture corps)
  */
 import {env} from '../config/env';
 
@@ -78,7 +79,6 @@ function baseHeaders(options: HttpRequestOptions): Record<string, string> {
   if (options.headers) {
     for (const [k, v] of Object.entries(options.headers)) {
       if (k.toLowerCase() === 'origin') {
-        // Refuse explicitement tout Origin (contrat CSRF)
         continue;
       }
       headers[k] = v;
@@ -88,15 +88,33 @@ function baseHeaders(options: HttpRequestOptions): Record<string, string> {
   return headers;
 }
 
+function statusToErrorCode(status: number): string {
+  if (status === 401) return 'http_401';
+  if (status === 429) return 'http_429';
+  if (status >= 500) return 'http_5xx';
+  if (status >= 400) return `http_${status}`;
+  return 'unexpected_response';
+}
+
 /**
  * Point d'entrée HTTP unique. Aucun autre fichier ne doit appeler fetch.
  */
 export async function http<T>(options: HttpRequestOptions): Promise<HttpResult<T>> {
+  if (options.signal?.aborted) {
+    return {
+      ok: false,
+      error: {code: 'aborted', message: 'Requête annulée'},
+      requestId: null,
+      status: 0,
+      headers: new Headers(),
+    };
+  }
+
   const url = buildUrl(options.path);
   const method = options.method ?? (options.body !== undefined ? 'POST' : 'GET');
   const headers = baseHeaders(options);
 
-  let body: BodyInit | undefined;
+  let body: string | FormData | null | undefined;
   if (options.body instanceof FormData) {
     body = options.body;
   } else if (options.body !== undefined) {
@@ -106,51 +124,50 @@ export async function http<T>(options: HttpRequestOptions): Promise<HttpResult<T
   const controller = new AbortController();
   const timeout = options.timeoutMs ?? 30000;
   const timeoutId = setTimeout(() => controller.abort(), timeout);
-  const signal = options.signal
-    ? (() => {
-        options.signal!.addEventListener('abort', () => controller.abort());
-        return controller.signal;
-      })()
-    : controller.signal;
 
-  let response: Response;
+  const onCallerAbort = () => controller.abort();
+  if (options.signal) {
+    options.signal.addEventListener('abort', onCallerAbort);
+  }
+
+  let response: Response | undefined;
   try {
     response = await fetch(url, {
       method,
       headers,
       body,
       credentials: 'omit',
-      signal,
+      signal: controller.signal,
     });
-  } catch (err) {
-    clearTimeout(timeoutId);
-    const isAbort = err instanceof Error && (err.name === 'AbortError' || controller.signal.aborted);
-    const code = isAbort ? (options.signal?.aborted ? 'aborted' : 'timeout') : 'network_error';
-    return {
-      ok: false,
-      error: {code, message: code === 'timeout' ? 'Délai dépassé' : 'Erreur réseau'},
-      requestId: null,
-      status: 0,
-      headers: new Headers(),
-    };
-  }
-  clearTimeout(timeoutId);
 
-  // Succès sans corps (202/204)
-  if (response.status === 202 || response.status === 204 || response.headers.get('content-length') === '0') {
-    return {
-      ok: true,
-      data: null as unknown as T,
-      requestId: response.headers.get('x-request-id'),
-      status: response.status,
-      headers: response.headers,
-    };
-  }
+    const requestId = response.headers.get('x-request-id');
+    const text = await response.text();
 
-  const requestId = response.headers.get('x-request-id');
-  const text = await response.text();
-  let parsed: unknown = null;
-  if (text.length > 0) {
+    const isEmpty = text.length === 0 || response.headers.get('content-length') === '0';
+
+    if (isEmpty) {
+      if (response.status >= 200 && response.status < 300) {
+        return {
+          ok: true,
+          data: null as unknown as T,
+          requestId,
+          status: response.status,
+          headers: response.headers,
+        };
+      }
+      return {
+        ok: false,
+        error: {
+          code: statusToErrorCode(response.status),
+          message: `Erreur HTTP ${response.status}`,
+        },
+        requestId,
+        status: response.status,
+        headers: response.headers,
+      };
+    }
+
+    let parsed: unknown = null;
     try {
       parsed = JSON.parse(text) as unknown;
     } catch {
@@ -163,51 +180,69 @@ export async function http<T>(options: HttpRequestOptions): Promise<HttpResult<T
         raw: text.slice(0, 500),
       };
     }
-  }
 
-  if (
-    parsed !== null &&
-    typeof parsed === 'object' &&
-    'ok' in parsed &&
-    (parsed as {ok: unknown}).ok === true &&
-    'data' in parsed
-  ) {
-    const p = parsed as {ok: true; data: T; request_id?: string};
-    return {
-      ok: true,
-      data: p.data,
-      requestId: p.request_id ?? requestId,
-      status: response.status,
-      headers: response.headers,
-    };
-  }
+    if (
+      parsed !== null &&
+      typeof parsed === 'object' &&
+      'ok' in parsed &&
+      (parsed as {ok: unknown}).ok === true &&
+      'data' in parsed
+    ) {
+      const p = parsed as {ok: true; data: T; request_id?: string};
+      return {
+        ok: true,
+        data: p.data,
+        requestId: p.request_id ?? requestId,
+        status: response.status,
+        headers: response.headers,
+      };
+    }
 
-  if (
-    parsed !== null &&
-    typeof parsed === 'object' &&
-    'ok' in parsed &&
-    (parsed as {ok: unknown}).ok === false &&
-    'error' in parsed
-  ) {
-    const p = parsed as {ok: false; error: HttpErrorBody; request_id?: string};
+    if (
+      parsed !== null &&
+      typeof parsed === 'object' &&
+      'ok' in parsed &&
+      (parsed as {ok: unknown}).ok === false &&
+      'error' in parsed
+    ) {
+      const p = parsed as {ok: false; error: HttpErrorBody; request_id?: string};
+      return {
+        ok: false,
+        error: p.error,
+        requestId: p.request_id ?? requestId,
+        status: response.status,
+        headers: response.headers,
+      };
+    }
+
     return {
       ok: false,
-      error: p.error,
-      requestId: p.request_id ?? requestId,
+      error: {
+        code: response.status === 426 ? 'UPGRADE_REQUIRED' : statusToErrorCode(response.status),
+        message: 'Réponse inattendue du serveur',
+      },
+      requestId,
       status: response.status,
       headers: response.headers,
+      raw: text.slice(0, 500),
     };
+  } catch (err) {
+    const isAbort = err instanceof Error && (err.name === 'AbortError' || controller.signal.aborted);
+    const code = isAbort ? (options.signal?.aborted ? 'aborted' : 'timeout') : 'network_error';
+    return {
+      ok: false,
+      error: {
+        code,
+        message: code === 'timeout' ? 'Délai dépassé' : code === 'aborted' ? 'Requête annulée' : 'Erreur réseau',
+      },
+      requestId: null,
+      status: 0,
+      headers: response?.headers ?? new Headers(),
+    };
+  } finally {
+    clearTimeout(timeoutId);
+    if (options.signal) {
+      options.signal.removeEventListener('abort', onCallerAbort);
+    }
   }
-
-  return {
-    ok: false,
-    error: {
-      code: response.status === 426 ? 'UPGRADE_REQUIRED' : 'unexpected_response',
-      message: 'Réponse inattendue du serveur',
-    },
-    requestId,
-    status: response.status,
-    headers: response.headers,
-    raw: text.slice(0, 500),
-  };
 }
