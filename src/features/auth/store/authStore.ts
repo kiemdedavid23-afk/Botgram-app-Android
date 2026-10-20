@@ -2,8 +2,9 @@
  * Store d'authentification. Tokens uniquement en Keychain.
  */
 import {fireAndForget} from '../../../core/utils/fireAndForget';
+import {create} from 'zustand';
 import {onSessionEvent, type SessionEndReason} from '../../../core/api/session';
-import {me, logout as logoutApi, type Member} from '../../../core/api/endpoints/auth';
+import {me, logout as logoutApi, verifyCode, type Member} from '../../../core/api/endpoints/auth';
 import {getRefreshToken, clearTokens, saveTokenPair} from '../../../core/storage';
 import {AppState} from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
