@@ -36,7 +36,9 @@ export const gestionMetrics = {
   /** badge */
   badgePadV: 3,
   badgePadH: 10,
-  badgeFont: 11,
+  badgeFont: 11, // GestionPage.css badge
+  metaFont: 12, // session meta line
+  prefLabelFont: 12, // pref row label
   /** dialog */
   dialogMaxWidth: 360,
   dialogRadius: 22,
