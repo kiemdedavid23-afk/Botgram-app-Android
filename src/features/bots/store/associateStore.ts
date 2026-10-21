@@ -31,6 +31,7 @@ export type VerifyResult =
   | 'validation'
   | 'network'
   | 'rate_limited'
+  | 'duplicate'
   | 'error';
 
 export type ConfirmResult =
@@ -95,12 +96,15 @@ export const useAssociateStore = create<AssociateStore>((set, get) => ({
 
   setStep: s => set({step: s}),
 
-  setToken: t => set({token: t}),
+  setToken: t => set({token: t, preview: null}),
 
   verify: async () => {
     const token = get().token;
-    if (!token || get().verifying) {
+    if (!token) {
       return 'error';
+    }
+    if (get().verifying) {
+      return 'duplicate';
     }
     set({verifying: true});
     try {
