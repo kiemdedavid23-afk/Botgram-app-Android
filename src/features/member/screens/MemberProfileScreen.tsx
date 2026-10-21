@@ -13,6 +13,7 @@ import {ProfileHero} from '../components/ProfileHero';
 import {ProfileSections} from '../components/ProfileSections';
 import {EditProfileSheet} from '../components/EditProfileSheet';
 import {DeleteAccountDialog} from '../components/DeleteAccountDialog';
+import {fireAndForget} from '../../../core/utils/fireAndForget';
 
 type Props = {
   onGoDashboard?: () => void;
@@ -49,7 +50,7 @@ export function MemberProfileScreen({
   if (!member) {
     return (
       <View style={[styles.root, {backgroundColor: colors.bgSecondary}]}>
-        <Text style={{color: colors.textSecondary, padding: 24}}>—</Text>
+        <Text style={[styles.empty, {color: colors.textSecondary}]}>—</Text>
       </View>
     );
   }
@@ -74,7 +75,7 @@ export function MemberProfileScreen({
           onEdit={() => setEditing(true)}
           onGoDashboard={onGoDashboard}
           onLogout={() => {
-            void signOut();
+            fireAndForget(signOut());
           }}
           onDelete={() => setDeleting(true)}
         />
@@ -100,5 +101,8 @@ const styles = StyleSheet.create({
     paddingTop: m.scrollPadTop,
     paddingBottom: m.scrollPadBottom,
     gap: m.sectionGap,
+  },
+  empty: {
+    padding: m.emptyPad,
   },
 });
