@@ -1,10 +1,10 @@
 /**
  * Onglet Paramètres membre — MemberSettingsPage.tsx + settings-list.css.
- * Documentation absente de l'app → non créée (signalée LIVRAISONS).
+ * Documentation absente ; lien Gestion → stack Gestion (L4a).
  */
 import React from 'react';
 import {View, Text, Pressable, StyleSheet, ScrollView} from 'react-native';
-import {UserRound, LogOut} from 'lucide-react-native';
+import {UserRound, LogOut, SlidersHorizontal} from 'lucide-react-native';
 import {
   useTheme,
   settingsMetrics as sm,
@@ -16,10 +16,12 @@ import {fireAndForget} from '../../../core/utils/fireAndForget';
 
 type Props = {
   onGoProfile: () => void;
+  onGoGestion?: () => void;
 };
 
 export function MemberSettingsScreen({
   onGoProfile,
+  onGoGestion,
 }: Props): React.JSX.Element {
   const {colors, mode} = useTheme();
   const signOut = useAuthStore(s => s.signOut);
@@ -59,6 +61,27 @@ export function MemberSettingsScreen({
           <View style={[styles.sep, {backgroundColor: colors.bgSecondary}]} />
 
           <Pressable
+            onPress={onGoGestion}
+            style={({pressed}) => [
+              styles.row,
+              pressed && {backgroundColor: colors.bgSecondary},
+            ]}>
+            <View style={[styles.icon, {backgroundColor: colors.accent}]}>
+              <SlidersHorizontal size={sm.iconInner} color={colors.white} />
+            </View>
+            <View style={styles.labels}>
+              <Text style={[styles.title, {color: colors.textPrimary}]}>
+                {texts.gestion}
+              </Text>
+              <Text style={[styles.sub, {color: colors.textSecondary}]}>
+                {texts.gestionSub}
+              </Text>
+            </View>
+          </Pressable>
+
+          <View style={[styles.sep, {backgroundColor: colors.bgSecondary}]} />
+
+          <Pressable
             onPress={() => {
               fireAndForget(signOut());
             }}
@@ -89,7 +112,7 @@ const styles = StyleSheet.create({
   root: {flex: 1},
   content: {
     paddingTop: sm.cardMarginTop,
-    paddingBottom: 32,
+    paddingBottom: sm.scrollPadBottom,
   },
   card: {
     marginHorizontal: sm.cardMarginH,
@@ -111,17 +134,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  labels: {
-    flex: 1,
-    gap: 2,
-  },
-  title: {
-    fontSize: sm.titleSize,
-    fontWeight: sm.titleWeight,
-  },
-  sub: {
-    fontSize: sm.subSize,
-  },
+  labels: {flex: 1, gap: 2},
+  title: {fontSize: sm.titleSize, fontWeight: sm.titleWeight},
+  sub: {fontSize: sm.subSize},
   sep: {
     height: 1,
     marginLeft: sm.rowPadH + sm.iconSize + sm.rowGap,
