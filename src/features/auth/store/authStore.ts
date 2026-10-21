@@ -1,6 +1,7 @@
 /**
  * Store d'authentification. Tokens uniquement en Keychain.
  * clearMemberData à signOut, ended, ACCOUNT_DISABLED.
+ * authStore.member = source unique du membre.
  */
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {clearMemberData} from '../../../core/utils/memberData';
@@ -28,6 +29,7 @@ type AuthStore = {
   pendingCode: string | null;
   setEmail: (email: string | null) => void;
   setPendingCode: (code: string | null) => void;
+  setMember: (m: Member | null) => void;
   boot: () => Promise<void>;
   signOut: (message?: string) => Promise<void>;
   completeVerify: (result: {
@@ -36,6 +38,25 @@ type AuthStore = {
     refresh_token: string;
   }) => Promise<void>;
 };
+
+/**
+ * Transition commune : jetons + caches membre effacés, état signedOut.
+ * Utilisée par signOut, ended, ACCOUNT_DISABLED, suppression de compte.
+ */
+export async function applySignedOut(
+  endReason: SessionEndReason | null = null,
+): Promise<void> {
+  await clearTokens();
+  await clearMemberData();
+  useAuthStore.setState({
+    state: 'signedOut',
+    member: null,
+    email: null,
+    pendingCode: null,
+    endReason,
+    offline: false,
+  });
+}
 
 export const useAuthStore = create<AuthStore>(set => ({
   state: 'booting',
@@ -48,6 +69,7 @@ export const useAuthStore = create<AuthStore>(set => ({
 
   setEmail: email => set({email}),
   setPendingCode: code => set({pendingCode: code}),
+  setMember: m => set({member: m}),
 
   boot: async () => {
     const rt = await getRefreshToken();
@@ -75,15 +97,10 @@ export const useAuthStore = create<AuthStore>(set => ({
           (res.error.details as {reason?: string} | undefined)?.reason ?? '',
         ))
     ) {
-      await clearTokens();
-      await clearMemberData();
-      set({
-        state: 'signedOut',
-        member: null,
-        endReason:
-          (res.error.details as {reason?: SessionEndReason} | undefined)
-            ?.reason ?? 'invalid',
-      });
+      await applySignedOut(
+        (res.error.details as {reason?: SessionEndReason} | undefined)
+          ?.reason ?? 'invalid',
+      );
     } else if (res.status === 403 && res.error.code === 'ACCOUNT_DISABLED') {
       await clearTokens();
       await clearMemberData();
@@ -102,15 +119,7 @@ export const useAuthStore = create<AuthStore>(set => ({
       // ignore
     }
     clearTimeout(t);
-    await clearTokens();
-    await clearMemberData();
-    set({
-      state: 'signedOut',
-      member: null,
-      email: null,
-      pendingCode: null,
-      endReason: null,
-    });
+    await applySignedOut(null);
   },
 
   completeVerify: async ({member, access_token, refresh_token}) => {
@@ -132,9 +141,7 @@ let booting = false;
 
 /** Guard single-flight exposé pour les tests et le listener réseau. */
 export async function safeBoot(): Promise<void> {
-  if (booting) {
-    return;
-  }
+  if (booting) return;
   booting = true;
   try {
     await useAuthStore.getState().boot();
@@ -165,12 +172,7 @@ AppState.addEventListener('change', next => {
 
 onSessionEvent(event => {
   if (event.type === 'ended') {
-    fireAndForget(clearMemberData());
-    useAuthStore.setState({
-      state: 'signedOut',
-      member: null,
-      endReason: event.reason,
-    });
+    fireAndForget(applySignedOut(event.reason));
   }
   if (event.type === 'upgrade_required') {
     useAuthStore.setState({
