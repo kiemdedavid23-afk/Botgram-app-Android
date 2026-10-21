@@ -1,5 +1,5 @@
 /**
- * Tests store association : succès, erreurs, nettoyage jeton, AppState.
+ * Tests store association : succès, erreurs, nettoyage jeton, abandon.
  */
 const mockPreview = jest.fn();
 const mockCreate = jest.fn();
@@ -163,5 +163,14 @@ describe('associateStore', () => {
     useAssociateStore.getState().clearToken();
     expect(useAssociateStore.getState().token).toBeNull();
     expect(useAssociateStore.getState().revealed).toBe(false);
+  });
+
+  it('abandon resets token when leaving flow', () => {
+    useAssociateStore.getState().setToken('secret-abandon');
+    useAssociateStore.getState().setAcknowledged(true);
+    useAssociateStore.getState().reset();
+    expect(useAssociateStore.getState().token).toBeNull();
+    expect(useAssociateStore.getState().acknowledged).toBe(false);
+    expect(useAssociateStore.getState().preview).toBeNull();
   });
 });
