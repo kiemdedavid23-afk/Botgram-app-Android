@@ -3,8 +3,6 @@
  * Le jeton Telegram reste EN MÉMOIRE SEULEMENT (jamais MMKV, Keychain, logs).
  * Effacé à la réussite, à l'abandon et au passage en arrière-plan (AppState).
  *
- * Emplacement : src/features/associate/store/associateStore.ts
- * Imports core : ../../../core/... (3 niveaux vers src/)
  */
 import {create} from 'zustand';
 import {AppState, type AppStateStatus} from 'react-native';
