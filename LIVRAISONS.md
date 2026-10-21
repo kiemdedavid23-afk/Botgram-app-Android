@@ -1,5 +1,11 @@
 # LIVRAISONS — L4a Gestion (bots, appareils, préférences)
 
+## Correctif CI L4a
+- Tests : `beforeEach` remet `cacheDelete`/`cacheGetString`/`cacheSetString` en `mockResolvedValue` **avant** `clear()` (comme step3).
+- Lint : `TIMEZONES` retiré de PrefsSection (cycle fuseau dans GestionScreen via `TIMEZONES` de format.ts — sélecteur « Automatique » + liste, pas oublié).
+- Styles en ligne → StyleSheet + métriques (DevicesSection, PrefsSection, GestionScreen, CountryPicker, EditProfileSheet).
+
+
 ## Navigation
 Route **MemberStack `Gestion`**, entrée depuis l’onglet **Paramètres** (ligne « Gestion »). Pas de nouvel onglet BottomNav.
 
