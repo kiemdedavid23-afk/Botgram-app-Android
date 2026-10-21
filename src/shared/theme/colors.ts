@@ -22,6 +22,8 @@ export type ColorTokens = {
   bubbleIn: string;
   bubbleInText: string;
   online: string;
+  onlineSoft: string;
+  divider: string;
   danger: string;
   warn: string;
   navBg: string;
@@ -48,6 +50,8 @@ export const lightColors: ColorTokens = {
   bubbleIn: '#ffffff',
   bubbleInText: '#000000',
   online: '#0ac630',
+  onlineSoft: 'rgba(10,198,48,0.12)', // DashboardPage.css pastille Actif clair
+  divider: 'rgba(0,0,0,0.06)', // settings-common.css .chat-settings__header
   danger: '#e53935',
   warn: '#f59e0b', // DashboardPage.css quota arc ≥65%
   navBg: 'rgba(255,255,255,0.92)',
@@ -74,6 +78,8 @@ export const darkColors: ColorTokens = {
   bubbleIn: '#182533',
   bubbleInText: '#ffffff',
   online: '#0ac630',
+  onlineSoft: 'rgba(10,198,48,0.18)', // DashboardPage.css pastille Actif sombre
+  divider: 'rgba(0,0,0,0.06)', // settings-common.css .chat-settings__header
   danger: '#e53935',
   warn: '#f59e0b', // DashboardPage.css quota arc ≥65%
   navBg: 'rgba(33,33,33,0.92)',
