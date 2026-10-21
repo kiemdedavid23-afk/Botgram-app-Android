@@ -7,7 +7,6 @@ import {Palette, Languages, Clock} from 'lucide-react-native';
 import {useTheme, gestionMetrics as g, getShadow} from '../../../shared/theme';
 import {texts} from '../texts';
 import {
-  TIMEZONES,
   timezoneLabel,
   deviceTimezone,
 } from '../utils/format';
@@ -106,8 +105,8 @@ function PrefRow({
         {icon}
       </View>
       <View style={styles.prefLabels}>
-        <Text style={{color: colors.textSecondary, fontSize: 12}}>{label}</Text>
-        <Text style={{color: colors.textPrimary, fontWeight: '600'}}>
+        <Text style={[styles.prefLabel, {color: colors.textSecondary}]}>{label}</Text>
+        <Text style={[styles.prefValue, {color: colors.textPrimary}]}>
           {value}
         </Text>
       </View>
@@ -140,5 +139,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   prefLabels: {flex: 1},
+  prefLabel: {fontSize: g.prefLabelFont},
+  prefValue: {fontWeight: '600'},
 });
 

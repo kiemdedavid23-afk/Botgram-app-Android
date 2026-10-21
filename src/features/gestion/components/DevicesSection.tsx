@@ -54,19 +54,14 @@ export function DevicesSection({
                   numberOfLines={1}>
                   {s.device}
                 </Text>
-                <Text style={{color: colors.textSecondary, fontSize: 12}}>
+                <Text style={[styles.metaLine, {color: colors.textSecondary}]}>
                   {texts.createdAt} {shortDate(s.created_at)} · {texts.lastActive}{' '}
                   {timeAgo(s.last_active_at)}
                 </Text>
                 {s.current ? (
                   <View
                     style={[styles.badge, {backgroundColor: colors.accentSoft}]}>
-                    <Text
-                      style={{
-                        color: colors.accent,
-                        fontSize: 11,
-                        fontWeight: '700',
-                      }}>
+                    <Text style={[styles.badgeText, {color: colors.accent}]}>
                       {texts.badgeCurrent}
                     </Text>
                   </View>
@@ -74,7 +69,7 @@ export function DevicesSection({
               </View>
               {!s.current ? (
                 <Pressable onPress={() => onRevoke(s.id)}>
-                  <Text style={{color: colors.danger, fontWeight: '600'}}>
+                  <Text style={[styles.revoke, {color: colors.danger}]}>
                     {texts.revokeDevice}
                   </Text>
                 </Pressable>
@@ -86,7 +81,7 @@ export function DevicesSection({
       <Pressable
         onPress={onLogoutAll}
         style={[styles.logoutAll, {backgroundColor: colors.dangerSoft}]}>
-        <Text style={{color: colors.danger, fontWeight: '700'}}>
+        <Text style={[styles.logoutAllText, {color: colors.danger}]}>
           {texts.logoutAll}
         </Text>
       </Pressable>
@@ -132,4 +127,8 @@ const styles = StyleSheet.create({
     borderRadius: g.cardRadius,
     alignItems: 'center',
   },
+  metaLine: {fontSize: g.metaFont},
+  badgeText: {fontSize: g.badgeFont, fontWeight: '700'},
+  revoke: {fontWeight: '600'},
+  logoutAllText: {fontWeight: '700'},
 });
