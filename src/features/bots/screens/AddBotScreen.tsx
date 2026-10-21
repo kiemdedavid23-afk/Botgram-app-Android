@@ -1,48 +1,46 @@
 /**
- * Écran « Ajouter un bot » — AddBotPage.css (carte Associer uniquement).
- * Appui Associer : inerte en L3a (parcours L3b).
+ * Écran « Ajouter un bot » — AddBotPage.tsx / AddBotPage.css.
  */
 import React, {useRef} from 'react';
-import {View, Text, Pressable, StyleSheet, Animated, ScrollView} from 'react-native';
+import {View, Text, Pressable, StyleSheet, Animated} from 'react-native';
 import {Link2, ChevronRight} from 'lucide-react-native';
 import {SettingsShell} from '../../../shared/components/SettingsShell';
-import {useTheme, dashboardMetrics as dm} from '../../../shared/theme';
+import {
+  useTheme,
+  dashboardMetrics as dm,
+} from '../../../shared/theme';
 import {texts} from '../../dashboard/texts';
+import {useReducedMotion} from '../../../shared/hooks/useReducedMotion';
 
 type Props = {
   onBack: () => void;
+  onAssociate: () => void;
 };
 
-export function AddBotScreen({onBack}: Props): React.JSX.Element {
+export function AddBotScreen({onBack, onAssociate}: Props): React.JSX.Element {
   const {colors} = useTheme();
+  const reduceMotion = useReducedMotion();
   const scale = useRef(new Animated.Value(1)).current;
+
+  const animatePress = (to: number) => {
+    if (reduceMotion) return;
+    Animated.timing(scale, {
+      toValue: to,
+      duration: dm.pressDurationMs,
+      useNativeDriver: true,
+    }).start();
+  };
 
   return (
     <SettingsShell title={texts.addBot} onBack={onBack}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        style={{backgroundColor: colors.bgSecondary}}>
+      <View style={styles.body}>
         <Text style={[styles.intro, {color: colors.textSecondary}]}>
           {texts.addBotIntro}
         </Text>
         <Pressable
-          onPressIn={() => {
-            Animated.timing(scale, {
-              toValue: dm.pressScale,
-              duration: 150,
-              useNativeDriver: true,
-            }).start();
-          }}
-          onPressOut={() => {
-            Animated.timing(scale, {
-              toValue: 1,
-              duration: 150,
-              useNativeDriver: true,
-            }).start();
-          }}
-          onPress={() => {
-            // L3a : inerte — parcours d'association en L3b
-          }}>
+          onPressIn={() => animatePress(dm.pressScale)}
+          onPressOut={() => animatePress(1)}
+          onPress={onAssociate}>
           <Animated.View
             style={[
               styles.card,
@@ -52,7 +50,7 @@ export function AddBotScreen({onBack}: Props): React.JSX.Element {
                 transform: [{scale}],
               },
             ]}>
-            <View style={[styles.iconBox, {backgroundColor: colors.accent}]}>
+            <View style={[styles.icon, {backgroundColor: colors.accent}]}>
               <Link2 size={dm.addbotIconSize} color={colors.white} />
             </View>
             <View style={styles.meta}>
@@ -69,36 +67,31 @@ export function AddBotScreen({onBack}: Props): React.JSX.Element {
         <Text style={[styles.help, {color: colors.textSecondary}]}>
           {texts.associateHelp}
         </Text>
-      </ScrollView>
+      </View>
     </SettingsShell>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
+  body: {
     paddingHorizontal: dm.addbotPadH,
     paddingTop: dm.addbotPadTop,
     paddingBottom: dm.addbotPadBottom,
     gap: dm.addbotGap,
   },
-  intro: {
-    fontSize: dm.addbotIntroSize,
-    lineHeight: dm.addbotIntroSize * 1.45,
-    paddingHorizontal: 4,
-  },
+  intro: {fontSize: dm.addbotIntroSize, lineHeight: 22},
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: dm.addbotCardRadius,
-    padding: dm.addbotCardPad,
     gap: dm.addbotCardGap,
-    elevation: 1,
-    
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    shadowOffset: {width: 0, height: 1},
+    padding: dm.addbotCardPad,
+    borderRadius: dm.addbotCardRadius,
+    elevation: dm.shadowElevation,
+    shadowOpacity: dm.shadowOpacity,
+    shadowRadius: dm.shadowRadius,
+    shadowOffset: {width: 0, height: dm.shadowOffsetY},
   },
-  iconBox: {
+  icon: {
     width: dm.addbotIconBox,
     height: dm.addbotIconBox,
     borderRadius: dm.addbotIconRadius,
@@ -107,12 +100,6 @@ const styles = StyleSheet.create({
   },
   meta: {flex: 1, gap: 4},
   title: {fontSize: dm.addbotTitleSize, fontWeight: '600'},
-  desc: {
-    fontSize: dm.addbotDescSize,
-    lineHeight: dm.addbotDescSize * 1.4,
-  },
-  help: {
-    fontSize: dm.addbotHelpSize,
-    paddingHorizontal: 4,
-  },
+  desc: {fontSize: dm.addbotDescSize, lineHeight: 20},
+  help: {fontSize: dm.addbotHelpSize, lineHeight: 18, paddingHorizontal: 4},
 });
