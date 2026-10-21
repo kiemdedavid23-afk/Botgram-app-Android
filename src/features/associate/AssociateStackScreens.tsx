@@ -1,31 +1,68 @@
 /**
  * Wrappers de navigation du parcours d'association.
- * Emplacement : features/associate/AssociateStackScreens.tsx
- * Importé par app/RootNavigator via ../features/associate/AssociateStackScreens
+ * reset() à la sortie du parcours (beforeRemove hors écrans Associate*).
  */
-import React from 'react';
+import React, {useCallback, useEffect} from 'react';
 import {AssociateIntroScreen} from './screens/AssociateIntroScreen';
 import {AssociateReadyScreen} from './screens/AssociateReadyScreen';
 import {AssociateTokenScreen} from './screens/AssociateTokenScreen';
 import {AssociateVerifyScreen} from './screens/AssociateVerifyScreen';
 import {AssociateConfirmScreen} from './screens/AssociateConfirmScreen';
 import {AssociateDoneScreen} from './screens/AssociateDoneScreen';
-import type {VerifyResult} from './store/associateStore';
+import {
+  useAssociateStore,
+  type VerifyResult,
+} from './store/associateStore';
+
+const ASSOCIATE_ROUTES = new Set([
+  'AssociateIntro',
+  'AssociateReady',
+  'AssociateToken',
+  'AssociateVerify',
+  'AssociateConfirm',
+  'AssociateDone',
+]);
 
 type Nav = {
   goBack: () => void;
   navigate: (name: string, params?: object) => void;
+  replace?: (name: string, params?: object) => void;
   popToTop?: () => void;
+  addListener?: (
+    event: string,
+    cb: (e: {data?: {action?: {type?: string; payload?: {name?: string}}}}) => void,
+  ) => () => void;
 };
+
+/** reset quand on quitte le parcours vers AddBot / Tabs / etc. */
+function useResetOnLeaveFlow(navigation: Nav): void {
+  const reset = useAssociateStore(s => s.reset);
+  useEffect(() => {
+    if (!navigation.addListener) {
+      return;
+    }
+    return navigation.addListener('beforeRemove', e => {
+      const target = e.data?.action?.payload?.name;
+      if (target && ASSOCIATE_ROUTES.has(target)) {
+        return;
+      }
+      reset();
+    });
+  }, [navigation, reset]);
+}
 
 export function AssociateIntroWrapper({
   navigation,
 }: {
   navigation: Nav;
 }): React.JSX.Element {
+  useResetOnLeaveFlow(navigation);
   return (
     <AssociateIntroScreen
-      onBack={() => navigation.goBack()}
+      onBack={() => {
+        useAssociateStore.getState().reset();
+        navigation.goBack();
+      }}
       onNext={() => navigation.navigate('AssociateReady')}
     />
   );
@@ -36,6 +73,7 @@ export function AssociateReadyWrapper({
 }: {
   navigation: Nav;
 }): React.JSX.Element {
+  useResetOnLeaveFlow(navigation);
   return (
     <AssociateReadyScreen
       onBack={() => navigation.goBack()}
@@ -49,6 +87,7 @@ export function AssociateTokenWrapper({
 }: {
   navigation: Nav;
 }): React.JSX.Element {
+  useResetOnLeaveFlow(navigation);
   return (
     <AssociateTokenScreen
       onBack={() => navigation.goBack()}
@@ -66,6 +105,7 @@ export function AssociateVerifyWrapper({
   navigation: Nav;
   route: {params: {result: VerifyResult}};
 }): React.JSX.Element {
+  useResetOnLeaveFlow(navigation);
   return (
     <AssociateVerifyScreen
       result={route.params.result}
@@ -81,10 +121,19 @@ export function AssociateConfirmWrapper({
 }: {
   navigation: Nav;
 }): React.JSX.Element {
+  useResetOnLeaveFlow(navigation);
+  const onNeedToken = useCallback(() => {
+    if (navigation.replace) {
+      navigation.replace('AssociateToken');
+    } else {
+      navigation.navigate('AssociateToken');
+    }
+  }, [navigation]);
   return (
     <AssociateConfirmScreen
       onBack={() => navigation.goBack()}
       onDone={() => navigation.navigate('AssociateDone')}
+      onNeedToken={onNeedToken}
     />
   );
 }
@@ -97,6 +146,7 @@ export function AssociateDoneWrapper({
   return (
     <AssociateDoneScreen
       onHome={() => {
+        useAssociateStore.getState().reset();
         if (navigation.popToTop) {
           navigation.popToTop();
         } else {
