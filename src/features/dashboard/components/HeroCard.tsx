@@ -3,28 +3,28 @@
  * Repli flou pastilles : fond blanc 18 % (pas de backdrop-filter).
  */
 import React, {useEffect, useRef} from 'react';
-import {View, Text, StyleSheet, Animated, AccessibilityInfo} from 'react-native';
+import {View, Text, StyleSheet, Animated} from 'react-native';
 import Svg, {Defs, RadialGradient, Stop, Circle} from 'react-native-svg';
 import {Bot, Zap} from 'lucide-react-native';
 import {GradientView} from '../../../shared/components/GradientView';
 import {useTheme, dashboardMetrics as dm, gradients} from '../../../shared/theme';
 import {texts, greetLine, heroSubZero, heroSubOne, heroSubMany, chipBots, chipRemaining} from '../texts';
 import {greetingWord, firstName, heroSubtitle} from '../logic';
+import {useReducedMotion} from '../../../shared/hooks/useReducedMotion';
 
 type Props = {
   displayName: string | null;
   botCount: number;
   remaining: number | null;
-  reduceMotion: boolean;
 };
 
 export function HeroCard({
   displayName,
   botCount,
   remaining,
-  reduceMotion,
 }: Props): React.JSX.Element {
   const {mode} = useTheme();
+  const reduceMotion = useReducedMotion();
   const hour = new Date().getHours();
   const word = greetingWord(hour);
   const name = firstName(displayName);

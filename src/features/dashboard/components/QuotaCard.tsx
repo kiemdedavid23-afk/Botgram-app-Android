@@ -8,12 +8,12 @@ import Svg, {Circle} from 'react-native-svg';
 import {useTheme, dashboardMetrics as dm} from '../../../shared/theme';
 import {quotaTone, quotaPercent, type QuotaTone} from '../logic';
 import {texts, quotaHint} from '../texts';
+import {useReducedMotion} from '../../../shared/hooks/useReducedMotion';
 
 type Props = {
   used: number | null;
   limit: number | null;
   remaining: number | null;
-  reduceMotion: boolean;
 };
 
 function toneColor(
@@ -29,9 +29,9 @@ export function QuotaCard({
   used,
   limit,
   remaining,
-  reduceMotion,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
+  const reduceMotion = useReducedMotion();
   const tone = quotaTone(used, limit);
   const pct = quotaPercent(used, limit);
   const color = toneColor(tone, colors);

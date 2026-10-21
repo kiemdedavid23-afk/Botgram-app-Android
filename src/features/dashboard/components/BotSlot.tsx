@@ -9,21 +9,21 @@ import {useTheme, dashboardMetrics as dm} from '../../../shared/theme';
 import type {Bot as BotType} from '../../../core/api/endpoints/bots';
 import {isBotConnected} from '../logic';
 import {texts} from '../texts';
+import {useReducedMotion} from '../../../shared/hooks/useReducedMotion';
 
 type BotCardProps = {
   bot: BotType;
   onPress: () => void;
-  reduceMotion: boolean;
   busy?: boolean;
 };
 
 export function BotCard({
   bot,
   onPress,
-  reduceMotion,
   busy,
 }: BotCardProps): React.JSX.Element {
   const {colors} = useTheme();
+  const reduceMotion = useReducedMotion();
   const connected = isBotConnected(bot.status);
   const scale = useRef(new Animated.Value(1)).current;
   const pulse = useRef(new Animated.Value(0)).current;
@@ -121,16 +121,13 @@ export function BotCard({
           <View
             style={[
               styles.status,
-              {
-                backgroundColor: connected
-                  ? 'rgba(10,198,48,0.12)'
-                  : colors.bgTertiary,
-              },
+              connected ? styles.statusOn : styles.statusOff,
+              {backgroundColor: connected ? colors.onlineSoft : colors.bgTertiary},
             ]}>
             <Text
               style={[
                 styles.statusText,
-                {color: connected ? '#0ac630' : colors.textHint},
+                {color: connected ? colors.online : colors.textHint},
               ]}>
               {connected ? texts.botActive : texts.botInactive}
             </Text>
@@ -144,14 +141,11 @@ export function BotCard({
 
 type AddSlotProps = {
   onPress: () => void;
-  reduceMotion: boolean;
 };
 
-export function AddBotSlot({
-  onPress,
-  reduceMotion,
-}: AddSlotProps): React.JSX.Element {
+export function AddBotSlot({onPress}: AddSlotProps): React.JSX.Element {
   const {colors} = useTheme();
+  const reduceMotion = useReducedMotion();
   const breath = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {

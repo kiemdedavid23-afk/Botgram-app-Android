@@ -15,54 +15,7 @@ export function AccountCard({
   botCount,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
-  const since =
-    createdAt !== null ? memberSince(createdAt) : '–';
-
-  const rows: {
-    key: string;
-    icon: React.ReactNode;
-    label: string;
-    value: string;
-    badge?: boolean;
-  }[] = [
-    {
-      key: 'type',
-      icon: (
-        <View
-          style={[
-            styles.iconBox,
-            {backgroundColor: 'rgba(10,198,48,0.12)'},
-          ]}>
-          <ShieldCheck size={dm.accountIconSize} color="#0ac630" />
-        </View>
-      ),
-      label: texts.accountType,
-      value: texts.accountStandard,
-      badge: true,
-    },
-    {
-      key: 'since',
-      icon: (
-        <View
-          style={[styles.iconBox, {backgroundColor: colors.accentSoft}]}>
-          <Calendar size={dm.accountIconSize} color={colors.accent} />
-        </View>
-      ),
-      label: texts.memberSince,
-      value: since,
-    },
-    {
-      key: 'bots',
-      icon: (
-        <View
-          style={[styles.iconBox, {backgroundColor: colors.accentSoft}]}>
-          <Bot size={dm.accountIconSize} color={colors.accent} />
-        </View>
-      ),
-      label: texts.botsLinked,
-      value: String(botCount),
-    },
-  ];
+  const since = createdAt !== null ? memberSince(createdAt) : '–';
 
   return (
     <View
@@ -70,31 +23,50 @@ export function AccountCard({
         styles.card,
         {backgroundColor: colors.bgPrimary, borderColor: colors.border},
       ]}>
-      {rows.map((row, i) => (
-        <React.Fragment key={row.key}>
-          {i > 0 ? (
-            <View
-              style={[styles.sep, {backgroundColor: colors.bgSecondary}]}
-            />
-          ) : null}
-          <View style={styles.row}>
-            {row.icon}
-            <View style={styles.meta}>
-              <Text style={[styles.key, {color: colors.textSecondary}]}>
-                {row.label}
-              </Text>
-              <Text style={[styles.val, {color: colors.textPrimary}]}>
-                {row.value}
-              </Text>
-            </View>
-            {row.badge ? (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{texts.accountActive}</Text>
-              </View>
-            ) : null}
-          </View>
-        </React.Fragment>
-      ))}
+      <View style={styles.row}>
+        <View style={[styles.iconBox, {backgroundColor: colors.onlineSoft}]}>
+          <ShieldCheck size={dm.accountIconSize} color={colors.online} />
+        </View>
+        <View style={styles.meta}>
+          <Text style={[styles.key, {color: colors.textSecondary}]}>
+            {texts.accountType}
+          </Text>
+          <Text style={[styles.val, {color: colors.textPrimary}]}>
+            {texts.accountStandard}
+          </Text>
+        </View>
+        <View style={[styles.badge, {backgroundColor: colors.onlineSoft}]}>
+          <Text style={[styles.badgeText, {color: colors.online}]}>
+            {texts.accountActive}
+          </Text>
+        </View>
+      </View>
+      <View style={[styles.sep, {backgroundColor: colors.bgSecondary}]} />
+      <View style={styles.row}>
+        <View style={[styles.iconBox, {backgroundColor: colors.accentSoft}]}>
+          <Calendar size={dm.accountIconSize} color={colors.accent} />
+        </View>
+        <View style={styles.meta}>
+          <Text style={[styles.key, {color: colors.textSecondary}]}>
+            {texts.memberSince}
+          </Text>
+          <Text style={[styles.val, {color: colors.textPrimary}]}>{since}</Text>
+        </View>
+      </View>
+      <View style={[styles.sep, {backgroundColor: colors.bgSecondary}]} />
+      <View style={styles.row}>
+        <View style={[styles.iconBox, {backgroundColor: colors.accentSoft}]}>
+          <Bot size={dm.accountIconSize} color={colors.accent} />
+        </View>
+        <View style={styles.meta}>
+          <Text style={[styles.key, {color: colors.textSecondary}]}>
+            {texts.botsLinked}
+          </Text>
+          <Text style={[styles.val, {color: colors.textPrimary}]}>
+            {String(botCount)}
+          </Text>
+        </View>
+      </View>
     </View>
   );
 }
@@ -132,10 +104,8 @@ const styles = StyleSheet.create({
     borderRadius: 99,
     paddingVertical: 3,
     paddingHorizontal: 10,
-    backgroundColor: 'rgba(10,198,48,0.12)',
   },
   badgeText: {
-    color: '#0ac630',
     fontSize: 11,
     fontWeight: '700',
   },
