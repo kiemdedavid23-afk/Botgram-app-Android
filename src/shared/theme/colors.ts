@@ -53,14 +53,14 @@ export const lightColors: ColorTokens = {
   bgChat: '#c9d6e0',
   textPrimary: '#000000',
   textSecondary: '#707579',
-  textHint: '#6c6c6c',
+  textHint: '#999999',
   accent: '#2AABEE',
   accentHover: '#229ed9',
-  accentSoft: 'rgba(42,171,238,0.12)',
-  accentSoft24: 'rgba(42,171,238,0.24)', // DashboardPage.css l.213
+  accentSoft: 'rgba(51,144,236,0.12)',
+  accentSoft24: 'rgba(51,144,236,0.24)', // DashboardPage.css l.213 color-mix accent 24%
   border: '#d9d9d9',
   borderSoft: 'rgba(217,217,217,0.55)', // color-mix border 55% — DashboardPage.css l.162
-  bubbleOut: '#effdde',
+  bubbleOut: '#eeffde',
   bubbleOutText: '#000000',
   bubbleIn: '#ffffff',
   bubbleInText: '#000000',
