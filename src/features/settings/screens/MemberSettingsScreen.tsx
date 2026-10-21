@@ -7,11 +7,12 @@ import {View, Text, Pressable, StyleSheet, ScrollView} from 'react-native';
 import {UserRound, LogOut} from 'lucide-react-native';
 import {
   useTheme,
-  settingsMetrics as s,
+  settingsMetrics as sm,
   getShadow,
 } from '../../../shared/theme';
 import {useAuthStore} from '../../auth';
 import {texts} from '../texts';
+import {fireAndForget} from '../../../core/utils/fireAndForget';
 
 type Props = {
   onGoProfile: () => void;
@@ -43,7 +44,7 @@ export function MemberSettingsScreen({
                 styles.icon,
                 {backgroundColor: colors.settingsIconProfile},
               ]}>
-              <UserRound size={s.iconInner} color={colors.white} />
+              <UserRound size={sm.iconInner} color={colors.white} />
             </View>
             <View style={styles.labels}>
               <Text style={[styles.title, {color: colors.textPrimary}]}>
@@ -59,7 +60,7 @@ export function MemberSettingsScreen({
 
           <Pressable
             onPress={() => {
-              void signOut();
+              fireAndForget(signOut());
             }}
             style={({pressed}) => [
               styles.row,
@@ -70,7 +71,7 @@ export function MemberSettingsScreen({
                 styles.icon,
                 {backgroundColor: colors.settingsIconLogout},
               ]}>
-              <LogOut size={s.iconInner} color={colors.white} />
+              <LogOut size={sm.iconInner} color={colors.white} />
             </View>
             <View style={styles.labels}>
               <Text style={[styles.title, {color: colors.textPrimary}]}>
@@ -87,26 +88,26 @@ export function MemberSettingsScreen({
 const styles = StyleSheet.create({
   root: {flex: 1},
   content: {
-    paddingTop: s.cardMarginTop,
+    paddingTop: sm.cardMarginTop,
     paddingBottom: 32,
   },
   card: {
-    marginHorizontal: s.cardMarginH,
-    marginBottom: s.cardMarginBottom,
-    borderRadius: s.cardRadius,
+    marginHorizontal: sm.cardMarginH,
+    marginBottom: sm.cardMarginBottom,
+    borderRadius: sm.cardRadius,
     overflow: 'hidden',
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: s.rowGap,
-    paddingVertical: s.rowPadV,
-    paddingHorizontal: s.rowPadH,
+    gap: sm.rowGap,
+    paddingVertical: sm.rowPadV,
+    paddingHorizontal: sm.rowPadH,
   },
   icon: {
-    width: s.iconSize,
-    height: s.iconSize,
-    borderRadius: s.iconRadius,
+    width: sm.iconSize,
+    height: sm.iconSize,
+    borderRadius: sm.iconRadius,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -115,14 +116,14 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   title: {
-    fontSize: s.titleSize,
-    fontWeight: s.titleWeight,
+    fontSize: sm.titleSize,
+    fontWeight: sm.titleWeight,
   },
   sub: {
-    fontSize: s.subSize,
+    fontSize: sm.subSize,
   },
   sep: {
     height: 1,
-    marginLeft: s.rowPadH + s.iconSize + s.rowGap,
+    marginLeft: sm.rowPadH + sm.iconSize + sm.rowGap,
   },
 });
