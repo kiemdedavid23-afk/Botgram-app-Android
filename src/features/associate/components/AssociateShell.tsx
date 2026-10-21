@@ -1,5 +1,6 @@
 /**
  * En-tête + barre de progression — AssociateFlow.css .assoc / .assoc__head.
+ * Emplacement : features/associate/components/AssociateShell.tsx
  */
 import React from 'react';
 import {
@@ -59,8 +60,7 @@ export function AssociateShell({
           {title}
         </Text>
       </View>
-      <View
-        style={[styles.progress, {backgroundColor: colors.bgPrimary}]}>
+      <View style={[styles.progress, {backgroundColor: colors.bgPrimary}]}>
         {dots.map(d => {
           const active = d === step;
           const done = d < step;
@@ -69,11 +69,12 @@ export function AssociateShell({
               key={d}
               style={[
                 styles.dot,
+                active || done ? styles.dotOn : styles.dotOff,
                 {
                   backgroundColor:
                     active || done ? colors.accent : colors.bgTertiary,
-                  opacity: done && !active ? 0.5 : 1,
                 },
+                done && !active ? styles.dotDone : null,
               ]}
             />
           );
@@ -101,7 +102,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: m.headPadH,
     borderBottomWidth: 1,
   },
-  back: {width: 36, height: 36, alignItems: 'center', justifyContent: 'center'},
+  back: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: {
     flex: 1,
     fontSize: m.headTitleSize,
@@ -119,6 +125,9 @@ const styles = StyleSheet.create({
     height: m.progressH,
     borderRadius: m.progressRadius,
   },
+  dotOn: {},
+  dotOff: {},
+  dotDone: {opacity: m.progressDoneOpacity},
   stepLbl: {
     fontSize: m.stepLabelSize,
     textAlign: 'center',
