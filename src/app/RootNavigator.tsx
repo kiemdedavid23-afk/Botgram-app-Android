@@ -23,6 +23,7 @@ import {DashboardScreen} from '../features/dashboard/screens/DashboardScreen';
 import {AddBotScreen} from '../features/bots/screens/AddBotScreen';
 import {MemberProfileScreen} from '../features/member';
 import {MemberSettingsScreen} from '../features/settings';
+import {GestionScreen} from '../features/gestion';
 import {
   AssociateIntroWrapper,
   AssociateReadyWrapper,
@@ -95,6 +96,7 @@ function AuthFlow(): React.JSX.Element {
 export type MemberStackParamList = {
   Tabs: undefined;
   AddBot: undefined;
+  Gestion: undefined;
   AssociateIntro: undefined;
   AssociateReady: undefined;
   AssociateToken: undefined;
@@ -108,7 +110,7 @@ const MemberStack = createNativeStackNavigator<MemberStackParamList>();
 function MemberTabs({
   navigation,
 }: {
-  navigation: {navigate: (name: 'AddBot') => void};
+  navigation: {navigate: (name: 'AddBot' | 'Gestion') => void};
 }): React.JSX.Element {
   const {colors} = useTheme();
   const [tab, setTab] = useState<MemberTabId>('dashboard');
@@ -127,7 +129,10 @@ function MemberTabs({
       {tab === 'dashboard' ? (
         <DashboardScreen onAddBot={() => navigation.navigate('AddBot')} />
       ) : tab === 'settings' ? (
-        <MemberSettingsScreen onGoProfile={() => setTab('member')} />
+        <MemberSettingsScreen
+          onGoProfile={() => setTab('member')}
+          onGoGestion={() => navigation.navigate('Gestion')}
+        />
       ) : (
         <MemberProfileScreen onGoDashboard={() => setTab('dashboard')} />
       )}
@@ -141,6 +146,7 @@ function MemberShell(): React.JSX.Element {
     <MemberStack.Navigator screenOptions={{headerShown: false}}>
       <MemberStack.Screen name="Tabs" component={MemberTabs} />
       <MemberStack.Screen name="AddBot" component={AddBotScreenWrapper} />
+      <MemberStack.Screen name="Gestion" component={GestionScreen} />
       <MemberStack.Screen
         name="AssociateIntro"
         component={AssociateIntroWrapper}
