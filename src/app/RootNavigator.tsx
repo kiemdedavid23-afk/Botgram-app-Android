@@ -5,6 +5,7 @@
 import React, {useEffect, useState} from 'react';
 import {View, ActivityIndicator, Pressable, Text, StyleSheet} from 'react-native';
 import {NavigationContainer, DefaultTheme, DarkTheme} from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {useTheme, space, fontSize, fontWeight, radii} from '../shared/theme';
 import {useAuthStore} from '../features/auth/store/authStore';
@@ -19,6 +20,8 @@ import {authColors} from '../shared/theme/authColors';
 import {BrandBar} from '../shared/components/BrandBar';
 import {EmptyScreen} from '../shared/components/EmptyScreen';
 import {BottomNav, type MemberTabId} from '../shared/components/BottomNav';
+import {DashboardScreen} from '../features/dashboard/screens/DashboardScreen';
+import {AddBotScreen} from '../features/bots/screens/AddBotScreen';
 
 function Booting(): React.JSX.Element {
   const {colors} = useTheme();
@@ -79,7 +82,18 @@ function AuthFlow(): React.JSX.Element {
   return <ProfileScreen email={email} code={pendingCode ?? ''} onSuccess={() => {}} onBack={() => setStep('code')} />;
 }
 
-function MemberShell(): React.JSX.Element {
+export type MemberStackParamList = {
+  Tabs: undefined;
+  AddBot: undefined;
+};
+
+const MemberStack = createNativeStackNavigator<MemberStackParamList>();
+
+function MemberTabs({
+  navigation,
+}: {
+  navigation: {navigate: (name: 'AddBot') => void};
+}): React.JSX.Element {
   const {colors} = useTheme();
   const [tab, setTab] = useState<MemberTabId>('dashboard');
   const signOut = useAuthStore(s => s.signOut);
@@ -90,20 +104,47 @@ function MemberShell(): React.JSX.Element {
       <BrandBar title="Botgram" />
       {offline ? (
         <View style={[styles.banner, {backgroundColor: colors.bgTertiary}]}>
-          <Text style={[styles.bannerText, {color: colors.textSecondary}]}>Hors ligne</Text>
+          <Text style={[styles.bannerText, {color: colors.textSecondary}]}>
+            Hors ligne
+          </Text>
         </View>
       ) : null}
-      <EmptyScreen title={tab === 'settings' ? 'Paramètres' : 'Tableau de bord'} subtitle="Étape 2 — auth" />
-      {tab === 'settings' ? (
-        <Pressable
-          onPress={() => signOut()}
-          style={[styles.logoutBtn, {backgroundColor: colors.bgTertiary}]}>
-          <Text style={[styles.logoutText, {color: colors.danger}]}>Se déconnecter</Text>
-        </Pressable>
-      ) : null}
+      {tab === 'dashboard' ? (
+        <DashboardScreen onAddBot={() => navigation.navigate('AddBot')} />
+      ) : tab === 'settings' ? (
+        <View style={styles.flex}>
+          <EmptyScreen title="Paramètres" subtitle="" />
+          <Pressable
+            onPress={() => signOut()}
+            style={[styles.logoutBtn, {backgroundColor: colors.bgTertiary}]}>
+            <Text style={[styles.logoutText, {color: colors.danger}]}>
+              Se déconnecter
+            </Text>
+          </Pressable>
+        </View>
+      ) : (
+        <EmptyScreen title="Profil" subtitle="" />
+      )}
       <BottomNav activeTab={tab} onTabPress={setTab} />
     </View>
   );
+}
+
+function MemberShell(): React.JSX.Element {
+  return (
+    <MemberStack.Navigator screenOptions={{headerShown: false}}>
+      <MemberStack.Screen name="Tabs" component={MemberTabs} />
+      <MemberStack.Screen name="AddBot" component={AddBotScreenWrapper} />
+    </MemberStack.Navigator>
+  );
+}
+
+function AddBotScreenWrapper({
+  navigation,
+}: {
+  navigation: {goBack: () => void};
+}): React.JSX.Element {
+  return <AddBotScreen onBack={() => navigation.goBack()} />;
 }
 
 export function RootNavigator(): React.JSX.Element {
