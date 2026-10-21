@@ -65,4 +65,7 @@ export const associateMetrics = {
   weight500: '500' as const,
   weight600: '600' as const,
   weight700: '700' as const,
+  tickFont: 12,
+  btnDisabledOpacity: 0.7,
+  progressDoneOpacity: 0.5,
 } as const;
