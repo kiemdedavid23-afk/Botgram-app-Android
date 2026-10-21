@@ -2,6 +2,7 @@
  * Store profil membre : PATCH /me, suppression en deux temps.
  * authStore.member est la référence ; setMember synchronise ici.
  * Génération anti-fuite après clear().
+ * code_length vient de POST /me/delete/request (jamais 6 en dur).
  */
 import {create} from 'zustand';
 import {
@@ -24,6 +25,8 @@ type MemberStore = {
   saving: boolean;
   deletePhase: DeletePhase;
   deleteError: string | null;
+  /** Longueur du code renvoyée par le Worker (POST /me/delete/request). */
+  deleteCodeLength: number;
   generation: number;
   setMember: (m: Member | null) => void;
   updateProfile: (
@@ -35,6 +38,8 @@ type MemberStore = {
   confirmAccountDelete: (
     code: string,
   ) => Promise<'ok' | 'code_invalid' | 'cleanup_pending' | 'error'>;
+  /** Remet la phase suppression à idle et efface le code côté UI. */
+  resetDelete: () => void;
   clear: () => void;
 };
 
@@ -44,6 +49,7 @@ export const useMemberStore = create<MemberStore>((set, get) => ({
   saving: false,
   deletePhase: 'idle',
   deleteError: null,
+  deleteCodeLength: 6,
   generation: 0,
 
   setMember: m => set({member: m}),
@@ -94,7 +100,11 @@ export const useMemberStore = create<MemberStore>((set, get) => ({
     const res = await requestDelete(uiLanguage);
     if (get().generation !== gen) return 'error';
     if (res.ok) {
-      set({deletePhase: 'code_sent'});
+      const len =
+        typeof res.data.code_length === 'number' && res.data.code_length > 0
+          ? res.data.code_length
+          : 6;
+      set({deletePhase: 'code_sent', deleteCodeLength: len});
       return 'ok';
     }
     set({deleteError: res.error.code, deletePhase: 'idle'});
@@ -109,7 +119,12 @@ export const useMemberStore = create<MemberStore>((set, get) => ({
     if (res.ok) {
       if (res.data.deleted) {
         await applySignedOut();
-        set({member: null, deletePhase: 'done', deleteError: null});
+        set({
+          member: null,
+          deletePhase: 'done',
+          deleteError: null,
+          deleteCodeLength: 6,
+        });
         return 'ok';
       }
       set({deletePhase: 'code_sent', deleteError: null});
@@ -127,6 +142,13 @@ export const useMemberStore = create<MemberStore>((set, get) => ({
     return 'error';
   },
 
+  resetDelete: () =>
+    set({
+      deletePhase: 'idle',
+      deleteError: null,
+      deleteCodeLength: 6,
+    }),
+
   clear: () =>
     set(s => ({
       member: null,
@@ -134,6 +156,7 @@ export const useMemberStore = create<MemberStore>((set, get) => ({
       saving: false,
       deletePhase: 'idle',
       deleteError: null,
+      deleteCodeLength: 6,
       generation: s.generation + 1,
     })),
 }));
