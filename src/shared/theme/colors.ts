@@ -29,6 +29,7 @@ export type ColorTokens = {
   onlineSoft: string;
   divider: string;
   danger: string;
+  dangerSoft: string;
   warn: string;
   success: string;
   successSoft: string;
@@ -71,6 +72,7 @@ export const lightColors: ColorTokens = {
   onlineSoft: 'rgba(10,198,48,0.12)', // DashboardPage.css l.277
   divider: 'rgba(0,0,0,0.06)', // settings-common.css .chat-settings__header
   danger: '#e53935',
+  dangerSoft: '#fff4f4', // AssociateFlow.css .assoc__error l.108
   warn: '#f59e0b', // DashboardPage.css quota arc ≥65%
   success: '#1b7f3a', // AssociateFlow.css .assoc__ok color
   successSoft: '#f0fff4', // AssociateFlow.css .assoc__ok background
