@@ -250,6 +250,8 @@ const styles = StyleSheet.create({
     paddingVertical: dm.statusPadV,
     paddingHorizontal: dm.statusPadH,
   },
+  statusOn: {},
+  statusOff: {},
   statusText: {
     fontSize: dm.statusFont,
     fontWeight: '700',
