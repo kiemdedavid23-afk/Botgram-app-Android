@@ -113,3 +113,22 @@ typecheck 0, lint 0, jest vert (dont dashboard-logic).
 
 ### Fichiers à supprimer
 aucun
+
+## L3a-fix — textHint / tokens 02-DESIGN-TOKENS.md
+
+### Fichiers modifiés
+| Fichier | Avant → Après |
+|---|---|
+| `src/shared/theme/colors.ts` | textHint clair `#999999` ; accentSoft clair `rgba(51,144,236,0.12)` ; bubbleOut clair `#eeffde` |
+
+### Alignement 02-DESIGN-TOKENS.md
+| Token | Clair | Sombre |
+|---|---|---|
+| textHint | `#999999` | `#6c6c6c` |
+| accentSoft | `rgba(51,144,236,0.12)` | `rgba(94,179,246,0.15)` |
+| bubbleOut | `#eeffde` | `#2b5278` |
+
+Tokens ajoutés (source CSS) : borderSoft (DashboardPage.css l.162), accentSoft24 (l.213), onlineSoft (l.277), divider (settings-common), hero*, warn (quota).
+
+### Fichiers à supprimer
+aucun
