@@ -70,13 +70,23 @@ jobs:
             exit 1
           fi
           if ! grep -q "dotenv.gradle" "$APP"; then
-            sed -i '/apply plugin: "com.facebook.react"/a apply from: project(":react-native-config").projectDir.getPath() + "/dotenv.gradle"' "$APP"
+            sed -i '/apply plugin: "com.facebook.react"/a apply from: "../../node_modules/react-native-config/android/dotenv.gradle"' "$APP"
           fi
           if ! grep -q "dotenv.gradle" "$APP"; then
             echo "::error::Impossible de brancher react-native-config dans app/build.gradle. Envoyer les logs."
             exit 1
           fi
           sed -i 's/-Xmx2048m/-Xmx4g/' android/gradle.properties
+
+      - name: Debug autolinking
+        run: |
+          echo "=== settings.gradle ==="
+          cat android/settings.gradle
+          echo "=== app/build.gradle (debut) ==="
+          head -20 android/app/build.gradle
+          echo "=== modules detectes par le CLI RN ==="
+          npx react-native config | grep '"name"' || true
+          test -f node_modules/react-native-config/android/dotenv.gradle
 
       - name: Write .env from secrets
         env:
