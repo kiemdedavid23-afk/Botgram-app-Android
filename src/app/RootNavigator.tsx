@@ -3,7 +3,7 @@
  * ShellSwitcher uniquement sous __DEV__.
  */
 import React, {useEffect, useState} from 'react';
-import {View, ActivityIndicator, Pressable, Text, StyleSheet} from 'react-native';
+import {View, ActivityIndicator, Text, StyleSheet} from 'react-native';
 import {NavigationContainer, DefaultTheme, DarkTheme} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
