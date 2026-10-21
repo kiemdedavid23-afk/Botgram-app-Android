@@ -23,6 +23,7 @@ export type ColorTokens = {
   bubbleInText: string;
   online: string;
   danger: string;
+  warn: string;
   navBg: string;
   linkTranslate: string;
   white: string;
@@ -48,6 +49,7 @@ export const lightColors: ColorTokens = {
   bubbleInText: '#000000',
   online: '#0ac630',
   danger: '#e53935',
+  warn: '#f59e0b', // DashboardPage.css quota arc ≥65%
   navBg: 'rgba(255,255,255,0.92)',
   linkTranslate: '#2AABEE',
   white: '#ffffff',
@@ -73,6 +75,7 @@ export const darkColors: ColorTokens = {
   bubbleInText: '#ffffff',
   online: '#0ac630',
   danger: '#e53935',
+  warn: '#f59e0b', // DashboardPage.css quota arc ≥65%
   navBg: 'rgba(33,33,33,0.92)',
   linkTranslate: '#2AABEE',
   white: '#ffffff',

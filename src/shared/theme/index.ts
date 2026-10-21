@@ -32,3 +32,4 @@ export {gradients, wallpaperGradients} from './gradients';
 export {ThemeProvider, useTheme} from './ThemeProvider';
 
 export {getColors} from './colors';
+export {dashboardMetrics} from './dashboardMetrics';
