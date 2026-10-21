@@ -69,7 +69,8 @@ export const lightColors: ColorTokens = {
   bubbleIn: '#ffffff',
   bubbleInText: '#000000',
   online: '#0ac630',
-  onlineSoft: 'rgba(10,198,48,0.12)', // DashboardPage.css l.277
+  onlineSoft: 'rgba(10,198,48,0.12)',
+  dangerSoft: 'rgba(229,57,53,0.08)', // sombre : la teinte danger + '14' d'avant, sans régression. Le site (AssociateFlow.css l.108) n'a que #fff4f4 en clair. // DashboardPage.css l.277
   divider: 'rgba(0,0,0,0.06)', // settings-common.css .chat-settings__header
   danger: '#e53935',
   dangerSoft: '#fff4f4', // AssociateFlow.css .assoc__error l.108
