@@ -22,6 +22,8 @@ import {useMemberStore} from '../store/memberStore';
 import type {PatchMeFields} from '../../../core/api/endpoints/member';
 import {texts} from '../texts';
 import {ProfileField} from './ProfileField';
+import {CountryPicker} from './CountryPicker';
+import {countryLabel} from '../utils/format';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 
 type Props = {
@@ -55,6 +57,7 @@ export function EditProfileSheet({
     phone: '',
   });
   const [globalError, setGlobalError] = useState<string | null>(null);
+  const [countryOpen, setCountryOpen] = useState(false);
 
   useEffect(() => {
     if (visible && member) {
@@ -144,15 +147,42 @@ export function EditProfileSheet({
               placeholder={texts.placeholderUsage}
               error={fieldErrors.usage}
             />
-            <ProfileField
-              label={texts.labelCountry}
+            <View style={styles.field}>
+              <Text style={[styles.fieldLabel, {color: colors.textSecondary}]}>
+                {texts.labelCountry}
+              </Text>
+              <Pressable
+                onPress={() => setCountryOpen(true)}
+                style={[
+                  styles.input,
+                  {
+                    borderColor: fieldErrors.country ? colors.danger : colors.border,
+                    backgroundColor: colors.bgSecondary,
+                    justifyContent: 'center',
+                  },
+                ]}>
+                <Text
+                  style={{
+                    color: form.country ? colors.textPrimary : colors.textHint,
+                    fontSize: m.fieldInputFont,
+                  }}>
+                  {form.country
+                    ? countryLabel(form.country)
+                    : texts.selectCountry}
+                </Text>
+              </Pressable>
+              {fieldErrors.country ? (
+                <Text style={[styles.err, {color: colors.danger}]}>
+                  {fieldErrors.country}
+                </Text>
+              ) : null}
+            </View>
+            <CountryPicker
+              visible={countryOpen}
               value={form.country}
-              onChange={v => setField('country', v.toUpperCase().slice(0, 2))}
-              placeholder={texts.selectCountry}
-              error={fieldErrors.country}
-              autoCapitalize="characters"
+              onSelect={code => setField('country', code)}
+              onClose={() => setCountryOpen(false)}
             />
-            <Text style={[styles.countryHint, {color: colors.textHint}]}>Codes : BF, CI, ML, SN, NE, TG, BJ, GH, NG, CM, GN, FR, BE, CA, CH, US</Text>
             <ProfileField
               label={texts.labelPhone}
               value={form.phone}
