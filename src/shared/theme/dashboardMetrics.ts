@@ -3,13 +3,15 @@
  * Sources : site DashboardPage.css, AddBotPage.css, settings-common.css.
  */
 export const dashboardMetrics = {
-  /** DashboardPage.css .dash — padding 14 14 32 */
+  /** DashboardPage.css .db-scroll — padding 14 14 32 */
   pagePaddingH: 14,
   pagePaddingTop: 14,
   pagePaddingBottom: 32,
   /** gap 22 entre sections */
   sectionGap: 22,
-  /** .dash-hero radius 28, min-height 250, padding 30 24 24 */
+  /** .db-section gap 10 */
+  sectionInnerGap: 10,
+  /** .db-hero radius 28, min-height 250, padding 30 24 24 */
   heroRadius: 28,
   heroMinHeight: 250,
   heroPaddingTop: 30,
@@ -18,8 +20,20 @@ export const dashboardMetrics = {
   /** orbe A 240, B 180 */
   orbA: 240,
   orbB: 180,
+  orbARight: -60,
+  orbATop: -90,
+  orbBLeft: -50,
+  orbBBottom: -80,
+  /** db-float l.64-66 : translate(-10px, 12px) */
+  orbFloatX: -10,
+  orbFloatY: 12,
+  /** orbe A 7s, B 9s, B delay -3s */
+  orbADurationMs: 7000,
+  orbBDurationMs: 9000,
+  orbBDelayMs: 3000,
   /** salutation 32/800 */
   greetSize: 32,
+  greetWeight: '800' as const,
   /** sous-titre 15.5 */
   heroSubSize: 15.5,
   heroSubMarginTop: 10,
@@ -35,6 +49,7 @@ export const dashboardMetrics = {
   /** section label 12/700 letter-spacing .08em */
   sectionLabelSize: 12,
   sectionLabelPadH: 4,
+  sectionHeadGap: 8,
   /** compteur bots padding 3 10 */
   countPadV: 3,
   countPadH: 10,
@@ -45,6 +60,7 @@ export const dashboardMetrics = {
   botCardPadH: 16,
   botCardGap: 14,
   botCardRadius: 20,
+  botCardBorderW: 1,
   /** icône bot 48 radius 16 */
   botIconBox: 48,
   botIconRadius: 16,
@@ -57,6 +73,7 @@ export const dashboardMetrics = {
   statusFont: 11,
   statusPadV: 3,
   statusPadH: 10,
+  statusRadius: 99,
   chevron: 16,
   /** quota anneau 88, r=36, stroke 8 */
   ringSize: 88,
@@ -69,6 +86,7 @@ export const dashboardMetrics = {
   quotaLimitSize: 15,
   quotaHintSize: 12,
   quotaHintLine: 12.5,
+  quotaHintMarginTop: 8,
   /** compte pastille 38 radius 12, icône 18 */
   accountIconBox: 38,
   accountIconRadius: 12,
@@ -78,12 +96,17 @@ export const dashboardMetrics = {
   accountRowGap: 14,
   accountKeySize: 12,
   accountValSize: 14.5,
+  accountSepMarginH: 16,
+  accountBadgeFont: 11,
+  accountBadgePadV: 3,
+  accountBadgePadH: 10,
   /** SettingsShell / chat-settings__header */
   subHeaderPadTop: 8,
   subHeaderPadRight: 8,
   subHeaderPadBottom: 8,
   subHeaderPadLeft: 4,
   subHeaderTitleSize: 18,
+  subHeaderBackSize: 36,
   /** AddBotPage */
   addbotPadH: 12,
   addbotPadTop: 12,
@@ -99,5 +122,20 @@ export const dashboardMetrics = {
   addbotTitleSize: 16,
   addbotDescSize: 14,
   addbotHelpSize: 13,
+  addbotPlusIcon: 20,
+  addbotLabelSize: 15,
+  /** .db-slot:active scale 0.985, 0.15s — DashboardPage.css l.195 */
   pressScale: 0.985,
+  pressDurationMs: 150,
+  /** empty slot border 2 dashed */
+  emptyBorderW: 2,
+  /** shadowSm approx */
+  shadowElevation: 1,
+  shadowOpacity: 0.06,
+  shadowRadius: 2,
+  shadowOffsetY: 1,
+  /** font weights used in dashboard */
+  weight600: '600' as const,
+  weight700: '700' as const,
+  weight800: '800' as const,
 } as const;
