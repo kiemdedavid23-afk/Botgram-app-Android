@@ -1,5 +1,5 @@
 /**
- * Store quota : lecture, cache MMKV validé, TTL 3 min.
+ * Store quota : lecture, cache MMKV validé, TTL 3 min, génération anti-fuite.
  * Pas de division par zéro si limit = 0.
  */
 import {create} from 'zustand';
@@ -20,8 +20,8 @@ type QuotaStore = {
   lastFetch: number;
   loading: boolean;
   offline: boolean;
+  generation: number;
   load: (force?: boolean) => Promise<void>;
-  /** ratio used/limit, 0 si limit = 0 */
   usageRatio: () => number;
   clear: () => void;
 };
@@ -52,26 +52,24 @@ export const useQuotaStore = create<QuotaStore>((set, get) => ({
   lastFetch: 0,
   loading: false,
   offline: false,
+  generation: 0,
 
   load: async (force = false) => {
-    if (loadInflight) {
-      return loadInflight;
-    }
+    if (loadInflight) return loadInflight;
     loadInflight = (async () => {
+      const gen = get().generation;
       const now = Date.now();
       const {lastFetch, quota} = get();
-      if (!force && quota && now - lastFetch < TTL_MS) {
-        return;
-      }
+      if (!force && quota && now - lastFetch < TTL_MS) return;
       set({loading: true});
       if (!quota) {
         const cached = await cacheGetString(CACHE_KEY);
+        if (get().generation !== gen) return;
         const parsed = parseQuota(cached);
-        if (parsed) {
-          set({quota: parsed});
-        }
+        if (parsed) set({quota: parsed});
       }
       const res = await getQuota();
+      if (get().generation !== gen) return;
       if (res.ok) {
         set({
           quota: res.data,
@@ -93,14 +91,18 @@ export const useQuotaStore = create<QuotaStore>((set, get) => ({
 
   usageRatio: () => {
     const q = get().quota;
-    if (!q || q.limit === 0) {
-      return 0;
-    }
+    if (!q || q.limit === 0) return 0;
     return q.used / q.limit;
   },
 
   clear: () => {
-    set({quota: null, lastFetch: 0, offline: false, loading: false});
+    set(s => ({
+      quota: null,
+      lastFetch: 0,
+      offline: false,
+      loading: false,
+      generation: s.generation + 1,
+    }));
     loadInflight = null;
     fireAndForget(cacheDelete(CACHE_KEY));
   },

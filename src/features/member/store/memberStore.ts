@@ -1,6 +1,7 @@
 /**
  * Store profil membre : PATCH /me, suppression en deux temps.
- * Champs inconnus non envoyés. ACCOUNT_CLEANUP_PENDING → réessayer même code.
+ * authStore.member est la référence ; setMember synchronise ici.
+ * Génération anti-fuite après clear().
  */
 import {create} from 'zustand';
 import {
@@ -11,12 +12,9 @@ import {
 } from '../../../core/api/endpoints/member';
 import type {Member} from '../../../core/api/endpoints/auth';
 import {registerMemberDataCleaner} from '../../../core/utils/memberData';
-import {clearMemberData} from '../../../core/utils/memberData';
-import {clearTokens} from '../../../core/storage';
+import {applySignedOut, useAuthStore} from '../../auth';
 
-export type FieldErrors = Partial<
-  Record<keyof PatchMeFields, string>
->;
+export type FieldErrors = Partial<Record<keyof PatchMeFields, string>>;
 
 export type DeletePhase = 'idle' | 'code_sent' | 'deleting' | 'done';
 
@@ -26,6 +24,7 @@ type MemberStore = {
   saving: boolean;
   deletePhase: DeletePhase;
   deleteError: string | null;
+  generation: number;
   setMember: (m: Member | null) => void;
   updateProfile: (
     fields: PatchMeFields,
@@ -39,21 +38,25 @@ type MemberStore = {
   clear: () => void;
 };
 
-export const useMemberStore = create<MemberStore>(set => ({
+export const useMemberStore = create<MemberStore>((set, get) => ({
   member: null,
   fieldErrors: {},
   saving: false,
   deletePhase: 'idle',
   deleteError: null,
+  generation: 0,
 
   setMember: m => set({member: m}),
 
   updateProfile: async fields => {
+    const gen = get().generation;
     set({saving: true, fieldErrors: {}});
     try {
       const res = await patchMe(fields);
+      if (get().generation !== gen) return 'error';
       if (res.ok) {
         set({member: res.data.member, saving: false});
+        useAuthStore.getState().setMember(res.data.member);
         return 'ok';
       }
       if (res.error.code === 'VALIDATION_ERROR') {
@@ -80,14 +83,16 @@ export const useMemberStore = create<MemberStore>(set => ({
       set({saving: false});
       return 'error';
     } catch {
-      set({saving: false});
+      if (get().generation === gen) set({saving: false});
       return 'error';
     }
   },
 
   requestAccountDelete: async (uiLanguage = 'fr') => {
+    const gen = get().generation;
     set({deleteError: null});
     const res = await requestDelete(uiLanguage);
+    if (get().generation !== gen) return 'error';
     if (res.ok) {
       set({deletePhase: 'code_sent'});
       return 'ok';
@@ -97,17 +102,14 @@ export const useMemberStore = create<MemberStore>(set => ({
   },
 
   confirmAccountDelete: async code => {
+    const gen = get().generation;
     set({deletePhase: 'deleting', deleteError: null});
     const res = await confirmDelete(code);
+    if (get().generation !== gen) return 'error';
     if (res.ok) {
       if (res.data.deleted) {
-        await clearTokens();
-        await clearMemberData();
-        set({
-          member: null,
-          deletePhase: 'done',
-          deleteError: null,
-        });
+        await applySignedOut();
+        set({member: null, deletePhase: 'done', deleteError: null});
         return 'ok';
       }
       set({deletePhase: 'code_sent', deleteError: null});
@@ -118,7 +120,6 @@ export const useMemberStore = create<MemberStore>(set => ({
       return 'code_invalid';
     }
     if (res.error.code === 'ACCOUNT_CLEANUP_PENDING') {
-      // même code reste valable : réessayer
       set({deletePhase: 'code_sent', deleteError: 'ACCOUNT_CLEANUP_PENDING'});
       return 'cleanup_pending';
     }
@@ -127,13 +128,14 @@ export const useMemberStore = create<MemberStore>(set => ({
   },
 
   clear: () =>
-    set({
+    set(s => ({
       member: null,
       fieldErrors: {},
       saving: false,
       deletePhase: 'idle',
       deleteError: null,
-    }),
+      generation: s.generation + 1,
+    })),
 }));
 
 registerMemberDataCleaner(() => {
