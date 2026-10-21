@@ -22,6 +22,15 @@ import {EmptyScreen} from '../shared/components/EmptyScreen';
 import {BottomNav, type MemberTabId} from '../shared/components/BottomNav';
 import {DashboardScreen} from '../features/dashboard/screens/DashboardScreen';
 import {AddBotScreen} from '../features/bots/screens/AddBotScreen';
+import {
+  AssociateIntroWrapper,
+  AssociateReadyWrapper,
+  AssociateTokenWrapper,
+  AssociateVerifyWrapper,
+  AssociateConfirmWrapper,
+  AssociateDoneWrapper,
+} from '../features/associate/AssociateStackScreens';
+import type {VerifyResult} from '../features/associate';
 
 function Booting(): React.JSX.Element {
   const {colors} = useTheme();
@@ -85,6 +94,12 @@ function AuthFlow(): React.JSX.Element {
 export type MemberStackParamList = {
   Tabs: undefined;
   AddBot: undefined;
+  AssociateIntro: undefined;
+  AssociateReady: undefined;
+  AssociateToken: undefined;
+  AssociateVerify: {result: VerifyResult};
+  AssociateConfirm: undefined;
+  AssociateDone: undefined;
 };
 
 const MemberStack = createNativeStackNavigator<MemberStackParamList>();
@@ -135,6 +150,30 @@ function MemberShell(): React.JSX.Element {
     <MemberStack.Navigator screenOptions={{headerShown: false}}>
       <MemberStack.Screen name="Tabs" component={MemberTabs} />
       <MemberStack.Screen name="AddBot" component={AddBotScreenWrapper} />
+      <MemberStack.Screen
+        name="AssociateIntro"
+        component={AssociateIntroWrapper}
+      />
+      <MemberStack.Screen
+        name="AssociateReady"
+        component={AssociateReadyWrapper}
+      />
+      <MemberStack.Screen
+        name="AssociateToken"
+        component={AssociateTokenWrapper}
+      />
+      <MemberStack.Screen
+        name="AssociateVerify"
+        component={AssociateVerifyWrapper}
+      />
+      <MemberStack.Screen
+        name="AssociateConfirm"
+        component={AssociateConfirmWrapper}
+      />
+      <MemberStack.Screen
+        name="AssociateDone"
+        component={AssociateDoneWrapper}
+      />
     </MemberStack.Navigator>
   );
 }
@@ -142,9 +181,17 @@ function MemberShell(): React.JSX.Element {
 function AddBotScreenWrapper({
   navigation,
 }: {
-  navigation: {goBack: () => void};
+  navigation: {
+    goBack: () => void;
+    navigate: (name: 'AssociateIntro') => void;
+  };
 }): React.JSX.Element {
-  return <AddBotScreen onBack={() => navigation.goBack()} />;
+  return (
+    <AddBotScreen
+      onBack={() => navigation.goBack()}
+      onAssociate={() => navigation.navigate('AssociateIntro')}
+    />
+  );
 }
 
 export function RootNavigator(): React.JSX.Element {
