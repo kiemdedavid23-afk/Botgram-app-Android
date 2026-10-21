@@ -1,6 +1,5 @@
 /**
  * En-tête + barre de progression — AssociateFlow.css .assoc / .assoc__head.
- * Emplacement : features/associate/components/AssociateShell.tsx
  */
 import React from 'react';
 import {
@@ -49,7 +48,7 @@ export function AssociateShell({
             accessibilityRole="button"
             accessibilityLabel="Retour"
             style={styles.back}>
-            <ChevronLeft size={24} color={colors.textPrimary} />
+            <ChevronLeft size={m.headIcon} color={colors.textPrimary} />
           </Pressable>
         ) : (
           <View style={styles.back} />
@@ -69,7 +68,6 @@ export function AssociateShell({
               key={d}
               style={[
                 styles.dot,
-                active || done ? styles.dotOn : styles.dotOff,
                 {
                   backgroundColor:
                     active || done ? colors.accent : colors.bgTertiary,
@@ -103,8 +101,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   back: {
-    width: 36,
-    height: 36,
+    width: m.headBackSize,
+    height: m.headBackSize,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -118,21 +116,19 @@ const styles = StyleSheet.create({
     gap: m.progressGap,
     paddingHorizontal: m.progressPadH,
     paddingBottom: m.progressPadBottom,
-    paddingTop: 4,
+    paddingTop: m.progressPadTop,
   },
   dot: {
     flex: 1,
     height: m.progressH,
     borderRadius: m.progressRadius,
   },
-  dotOn: {},
-  dotOff: {},
   dotDone: {opacity: m.progressDoneOpacity},
   stepLbl: {
     fontSize: m.stepLabelSize,
     textAlign: 'center',
-    marginTop: 4,
-    marginBottom: -4,
+    marginTop: m.stepLabelMarginTop,
+    marginBottom: m.stepLabelMarginBottom,
   },
   body: {
     paddingTop: m.bodyPadTop,
