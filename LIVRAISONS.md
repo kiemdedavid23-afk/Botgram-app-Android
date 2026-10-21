@@ -29,3 +29,66 @@
 - `npm run typecheck` → 0 erreur
 - `npm run lint` → 0 erreur, 0 avertissement
 - `npm test` → vert (nouveaux tests C1 inclus)
+
+## L2b — Étape 3 logique (endpoints, stores, nettoyeurs, tests)
+
+### Fichiers modifiés / ajoutés
+
+| Fichier | Avant → Après | Raison |
+|---|---|---|
+| `src/core/utils/memberData.ts` | 0 → 32 | Registre nettoyeurs (register + clearMemberData) |
+| `src/core/api/endpoints/bots.ts` | 65 → 119 | Types API.md (telegram_bot_id string\|number, username null), deleteBot → {deleted}, getBot |
+| `src/core/api/endpoints/member.ts` | 29 → 68 | Uniquement /me (PATCH, delete/request, delete) ; quota retiré |
+| `src/core/api/endpoints/quota.ts` | 1 → 17 | GET /quota dans son propre fichier (plus de ré-export) |
+| `src/features/bots/store/botsStore.ts` | 66 → 276 | Single-flight, cache validé TTL 3 min, actions = remplacement fiche Worker, busy, clear + registre |
+| `src/features/bots/store/associateStore.ts` | 51 → 197 | verify/confirm résultats explicites, jeton mémoire seule, AppState clear, anti double-soumission |
+| `src/features/member/store/quotaStore.ts` | 44 → 110 | Single-flight, cache validé, usageRatio sans /0, registre |
+| `src/features/member/store/memberStore.ts` | 0 → 137 | PATCH champs stricts, validation par champ, delete 2 temps, ACCOUNT_CLEANUP_PENDING |
+| `src/features/auth/store/authStore.ts` | 132 → 181 | clearMemberData à signOut/ended/ACCOUNT_DISABLED ; export safeBoot |
+| `src/features/bots/index.ts` | 1 → 3 | exports stores + types |
+| `src/features/member/index.ts` | 1 → 3 | exports quota + member stores |
+| `__tests__/session-c1.test.ts` | 334 → 353 | safeBoot → toBe(1) ; sérialisation après verify ; même rt sur 3 essais |
+| `__tests__/step3-member-data.test.ts` | 0 → 411 | listBots, associate cas, single-flight/TTL/remplacement, quota, member, effacement, hors ligne |
+
+### Constats
+- Aucun écran, aucun style, aucune dépendance ajoutée.
+- Jeton Telegram : mémoire uniquement (associateStore) ; effacé succès / reset / AppState background.
+- Aucun plafond de bots hardcodé (BOT_LIMIT_REACHED renvoyé par le Worker).
+- core/utils/memberData n'importe aucune feature.
+
+### Non fait
+- Écrans / navigation étape 3 (hors périmètre L2b).
+- Création de bot et demandes (hors périmètre).
+- Exécution locale jest (CI propriétaire).
+
+### Preuve attendue CI
+- `npm run typecheck` → 0 erreur
+- `npm run lint` → 0 erreur, 0 avertissement
+- `npm test` → vert (session-c1 + step3)
+
+## L2c — Correctifs audit L2b (génération, single-flight muted, source membre)
+
+### Fichiers modifiés
+
+| Fichier | Avant → Après | Raison |
+|---|---|---|
+| `src/core/utils/memberData.ts` | 32 → 32 | Apostrophes commentaires sans antislash |
+| `src/features/bots/store/botsStore.ts` | 277 → 196 | runBotAction, génération, muted:{id}:{bool}, <200 L |
+| `src/features/member/store/quotaStore.ts` | 111 → 113 | génération anti-fuite |
+| `src/features/member/store/memberStore.ts` | 141 → ~150 | génération, applySignedOut, sync authStore, imports fusionnés |
+| `src/features/auth/store/authStore.ts` | 181 → ~175 | applySignedOut exporté, setMember |
+| `src/features/bots/store/associateStore.ts` | 197 → ~200 | setToken reset preview, verify → duplicate |
+| `__tests__/step3-member-data.test.ts` | 415 → 584 | génération, muted true/false, sync, applySignedOut |
+
+### Fichiers à supprimer (parasites 1–3 octets)
+- `src/features/auth/data/-`
+- `src/features/bots/screens/&`
+- `src/features/bots/store/-`
+- `src/features/dashboard/screens/++`
+- `src/features/member/store/&`
+
+### Non fait
+- Aucun écran / style ajouté.
+
+### Preuve attendue CI
+typecheck 0, lint 0, jest 100 % vert.
