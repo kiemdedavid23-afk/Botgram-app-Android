@@ -1,8 +1,4 @@
-/**
- * Store bots : single-flight partagé, cache MMKV validé TTL 3 min,
- * actions qui remplacent la fiche par la réponse Worker.
- * Aucun plafond de bots codé en dur.
- */
+/** Store bots : single-flight, cache TTL 3 min, génération anti-fuite. */
 import {create} from 'zustand';
 import {
   listBots,
@@ -26,21 +22,12 @@ import type {HttpResult} from '../../../core/api/session';
 const CACHE_KEY = 'bots.list';
 const TTL_MS = 3 * 60 * 1000;
 
-type ActionKey =
-  | 'load'
-  | `muted:${string}`
-  | `select:${string}`
-  | `retry:${string}`
-  | `resync:${string}`
-  | `disconnect:${string}`
-  | `delete:${string}`;
-
 type BotsStore = {
   bots: Bot[];
   loading: boolean;
   offline: boolean;
   lastFetch: number;
-  /** true tant qu'une action est en cours pour cette ressource */
+  generation: number;
   busy: Record<string, boolean>;
   load: (force?: boolean) => Promise<void>;
   setMuted: (id: string, muted: boolean) => Promise<HttpResult<{bot: Bot}>>;
@@ -55,27 +42,24 @@ type BotsStore = {
   clear: () => void;
 };
 
-const inflight = new Map<ActionKey, Promise<unknown>>();
+const inflight = new Map<string, Promise<unknown>>();
 
 function parseBotsCache(raw: string | undefined): Bot[] | null {
   if (!raw) return null;
   try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return null;
-    return parsed as Bot[];
+    const p: unknown = JSON.parse(raw);
+    return Array.isArray(p) ? (p as Bot[]) : null;
   } catch {
     return null;
   }
 }
 
 async function withSingleFlight<T>(
-  key: ActionKey,
+  key: string,
   run: () => Promise<T>,
 ): Promise<T> {
   const existing = inflight.get(key);
-  if (existing) {
-    return existing as Promise<T>;
-  }
+  if (existing) return existing as Promise<T>;
   const p = run().finally(() => {
     inflight.delete(key);
   });
@@ -83,194 +67,129 @@ async function withSingleFlight<T>(
   return p;
 }
 
-export const useBotsStore = create<BotsStore>((set, get) => ({
-  bots: [],
-  loading: false,
-  offline: false,
-  lastFetch: 0,
-  busy: {},
+async function persistBots(bots: Bot[]): Promise<void> {
+  await cacheSetString(CACHE_KEY, JSON.stringify(bots));
+}
 
-  load: async (force = false) => {
-    await withSingleFlight('load', async () => {
-      const now = Date.now();
-      const {lastFetch, bots} = get();
-      if (!force && bots.length > 0 && now - lastFetch < TTL_MS) {
-        return;
-      }
-      set({loading: true});
-      if (bots.length === 0) {
-        const cached = await cacheGetString(CACHE_KEY);
-        const parsed = parseBotsCache(cached);
-        if (parsed && parsed.length > 0) {
-          set({bots: parsed});
-        }
-      }
-      const res = await listBots();
-      if (res.ok) {
-        set({
-          bots: res.data.bots,
-          lastFetch: Date.now(),
-          offline: false,
-          loading: false,
-        });
-        await cacheSetString(CACHE_KEY, JSON.stringify(res.data.bots));
-      } else if (res.status === 0 || res.status >= 500) {
-        set({offline: true, loading: false});
-      } else {
-        set({loading: false});
-      }
+export const useBotsStore = create<BotsStore>((set, get) => {
+  const current = (gen: number) => get().generation === gen;
+
+  const markBusy = (key: string, on: boolean) => {
+    set(s => {
+      const busy = {...s.busy};
+      if (on) busy[key] = true;
+      else delete busy[key];
+      return {busy};
     });
-  },
+  };
 
-  setMuted: async (id, muted) => {
-    const key: ActionKey = `muted:${id}`;
+  async function runBotAction(
+    key: string,
+    request: () => Promise<HttpResult<{bot: Bot}>>,
+    mapList?: (bots: Bot[], bot: Bot) => Bot[],
+  ): Promise<HttpResult<{bot: Bot}>> {
     return withSingleFlight(key, async () => {
-      set(s => ({busy: {...s.busy, [key]: true}}));
+      const gen = get().generation;
+      markBusy(key, true);
       try {
-        const res = await apiSetMuted(id, muted);
+        const res = await request();
+        if (!current(gen)) return res;
         if (res.ok) {
           const bot = res.data.bot;
-          set(s => ({
-            bots: s.bots.map(b => (b.id === bot.id ? bot : b)),
-          }));
-          await cacheSetString(CACHE_KEY, JSON.stringify(get().bots));
+          const next = mapList
+            ? mapList(get().bots, bot)
+            : get().bots.map(b => (b.id === bot.id ? bot : b));
+          set({bots: next});
+          if (current(gen)) await persistBots(next);
         }
         return res;
       } finally {
-        set(s => {
-          const next = {...s.busy};
-          delete next[key];
-          return {busy: next};
-        });
+        if (current(gen)) markBusy(key, false);
       }
     });
-  },
+  }
 
-  select: async id => {
-    const key: ActionKey = `select:${id}`;
-    return withSingleFlight(key, async () => {
-      set(s => ({busy: {...s.busy, [key]: true}}));
-      try {
-        const res = await apiSelectBot(id);
+  return {
+    bots: [],
+    loading: false,
+    offline: false,
+    lastFetch: 0,
+    generation: 0,
+    busy: {},
+
+    load: async (force = false) => {
+      await withSingleFlight('load', async () => {
+        const gen = get().generation;
+        const now = Date.now();
+        const {lastFetch, bots} = get();
+        if (!force && bots.length > 0 && now - lastFetch < TTL_MS) return;
+        if (!current(gen)) return;
+        set({loading: true});
+        if (bots.length === 0) {
+          const cached = await cacheGetString(CACHE_KEY);
+          if (!current(gen)) return;
+          const parsed = parseBotsCache(cached);
+          if (parsed?.length) set({bots: parsed});
+        }
+        const res = await listBots();
+        if (!current(gen)) return;
         if (res.ok) {
-          const bot = res.data.bot;
-          set(s => ({
-            bots: s.bots.map(b =>
-              b.id === bot.id ? bot : {...b, selected: false},
-            ),
-          }));
-          await cacheSetString(CACHE_KEY, JSON.stringify(get().bots));
-        }
-        return res;
-      } finally {
-        set(s => {
-          const next = {...s.busy};
-          delete next[key];
-          return {busy: next};
-        });
-      }
-    });
-  },
+          set({bots: res.data.bots, lastFetch: Date.now(), offline: false, loading: false});
+          await persistBots(res.data.bots);
+        } else if (res.status === 0 || res.status >= 500) {
+          set({offline: true, loading: false});
+        } else set({loading: false});
+      });
+    },
 
-  retryWebhook: async id => {
-    const key: ActionKey = `retry:${id}`;
-    return withSingleFlight(key, async () => {
-      set(s => ({busy: {...s.busy, [key]: true}}));
-      try {
-        const res = await apiRetryWebhook(id);
-        if (res.ok) {
-          const bot = res.data.bot;
-          set(s => ({
-            bots: s.bots.map(b => (b.id === bot.id ? bot : b)),
-          }));
-          await cacheSetString(CACHE_KEY, JSON.stringify(get().bots));
-        }
-        return res;
-      } finally {
-        set(s => {
-          const next = {...s.busy};
-          delete next[key];
-          return {busy: next};
-        });
-      }
-    });
-  },
+    setMuted: (id, muted) =>
+      runBotAction(`muted:${id}:${muted}`, () => apiSetMuted(id, muted)),
 
-  resyncWebhook: async id => {
-    const key: ActionKey = `resync:${id}`;
-    return withSingleFlight(key, async () => {
-      set(s => ({busy: {...s.busy, [key]: true}}));
-      try {
-        const res = await apiResyncWebhook(id);
-        if (res.ok) {
-          const bot = res.data.bot;
-          set(s => ({
-            bots: s.bots.map(b => (b.id === bot.id ? bot : b)),
-          }));
-          await cacheSetString(CACHE_KEY, JSON.stringify(get().bots));
-        }
-        return res;
-      } finally {
-        set(s => {
-          const next = {...s.busy};
-          delete next[key];
-          return {busy: next};
-        });
-      }
-    });
-  },
+    select: id =>
+      runBotAction(`select:${id}`, () => apiSelectBot(id), (bots, bot) =>
+        bots.map(b => (b.id === bot.id ? bot : {...b, selected: false})),
+      ),
 
-  disconnect: async (id, dropPending = false) => {
-    const key: ActionKey = `disconnect:${id}`;
-    return withSingleFlight(key, async () => {
-      set(s => ({busy: {...s.busy, [key]: true}}));
-      try {
-        const res = await apiDisconnectBot(id, dropPending);
-        if (res.ok) {
-          const bot = res.data.bot;
-          set(s => ({
-            bots: s.bots.map(b => (b.id === bot.id ? bot : b)),
-          }));
-          await cacheSetString(CACHE_KEY, JSON.stringify(get().bots));
-        }
-        return res;
-      } finally {
-        set(s => {
-          const next = {...s.busy};
-          delete next[key];
-          return {busy: next};
-        });
-      }
-    });
-  },
+    retryWebhook: id =>
+      runBotAction(`retry:${id}`, () => apiRetryWebhook(id)),
 
-  deleteBot: async id => {
-    const key: ActionKey = `delete:${id}`;
-    return withSingleFlight(key, async () => {
-      set(s => ({busy: {...s.busy, [key]: true}}));
-      try {
-        const res = await apiDeleteBot(id);
-        if (res.ok && res.data.deleted) {
-          set(s => ({bots: s.bots.filter(b => b.id !== id)}));
-          await cacheSetString(CACHE_KEY, JSON.stringify(get().bots));
-        }
-        return res;
-      } finally {
-        set(s => {
-          const next = {...s.busy};
-          delete next[key];
-          return {busy: next};
-        });
-      }
-    });
-  },
+    resyncWebhook: id =>
+      runBotAction(`resync:${id}`, () => apiResyncWebhook(id)),
 
-  clear: () => {
-    set({bots: [], lastFetch: 0, offline: false, loading: false, busy: {}});
-    inflight.clear();
-    fireAndForget(cacheDelete(CACHE_KEY));
-  },
-}));
+    disconnect: (id, dropPending = false) =>
+      runBotAction(`disconnect:${id}`, () =>
+        apiDisconnectBot(id, dropPending),
+      ),
+
+    deleteBot: id =>
+      withSingleFlight(`delete:${id}`, async () => {
+        const gen = get().generation;
+        const key = `delete:${id}`;
+        markBusy(key, true);
+        try {
+          const res = await apiDeleteBot(id);
+          if (!current(gen)) return res;
+          if (res.ok && res.data.deleted) {
+            const next = get().bots.filter(b => b.id !== id);
+            set({bots: next});
+            if (current(gen)) await persistBots(next);
+          }
+          return res;
+        } finally {
+          if (current(gen)) markBusy(key, false);
+        }
+      }),
+
+    clear: () => {
+      set(s => ({
+        bots: [], lastFetch: 0, offline: false, loading: false, busy: {},
+        generation: s.generation + 1,
+      }));
+      inflight.clear();
+      fireAndForget(cacheDelete(CACHE_KEY));
+    },
+  };
+});
 
 registerMemberDataCleaner(() => {
   useBotsStore.getState().clear();
