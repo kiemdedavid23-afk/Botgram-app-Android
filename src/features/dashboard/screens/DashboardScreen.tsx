@@ -8,7 +8,6 @@ import {
   RefreshControl,
   StyleSheet,
   Animated,
-  AccessibilityInfo,
 } from 'react-native';
 import {useTheme, dashboardMetrics as dm} from '../../../shared/theme';
 import {useAuthStore} from '../../auth/store/authStore';
@@ -21,13 +20,14 @@ import {BotCard, AddBotSlot} from '../components/BotSlot';
 import {QuotaCard} from '../components/QuotaCard';
 import {AccountCard} from '../components/AccountCard';
 import {texts} from '../texts';
+import {useReducedMotion} from '../../../shared/hooks/useReducedMotion';
 
 type Props = {
   onAddBot: () => void;
 };
 
 export function DashboardScreen({onAddBot}: Props): React.JSX.Element {
-  const {colors, appearance} = useTheme();
+  const {colors} = useTheme();
   const member = useAuthStore(s => s.member);
   const bots = useBotsStore(s => s.bots);
   const loadBots = useBotsStore(s => s.load);
@@ -37,24 +37,12 @@ export function DashboardScreen({onAddBot}: Props): React.JSX.Element {
   const loadQuota = useQuotaStore(s => s.load);
 
   const [refreshing, setRefreshing] = useState(false);
-  const [reduceMotion, setReduceMotion] = useState(
-    appearance.limitAnimations,
-  );
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     fireAndForget(loadBots());
     fireAndForget(loadQuota());
   }, [loadBots, loadQuota]);
-
-  useEffect(() => {
-    let mounted = true;
-    AccessibilityInfo.isReduceMotionEnabled().then(v => {
-      if (mounted) setReduceMotion(appearance.limitAnimations || v);
-    });
-    return () => {
-      mounted = false;
-    };
-  }, [appearance.limitAnimations]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -117,7 +105,6 @@ export function DashboardScreen({onAddBot}: Props): React.JSX.Element {
           displayName={member?.display_name ?? null}
           botCount={bots.length}
           remaining={remaining}
-          reduceMotion={reduceMotion}
         />
       </Animated.View>
 
@@ -128,25 +115,19 @@ export function DashboardScreen({onAddBot}: Props): React.JSX.Element {
             <BotCard
               key={bot.id}
               bot={bot}
-              reduceMotion={reduceMotion}
               busy={!!busy[`select:${bot.id}`]}
               onPress={() => {
                 fireAndForget(selectBot(bot.id));
               }}
             />
           ))}
-          <AddBotSlot onPress={onAddBot} reduceMotion={reduceMotion} />
+          <AddBotSlot onPress={onAddBot} />
         </View>
       </Animated.View>
 
       <Animated.View style={[styles.section, sectionStyle(2)]}>
         <SectionHeader title={texts.sectionQuota} />
-        <QuotaCard
-          used={used}
-          limit={limit}
-          remaining={remaining}
-          reduceMotion={reduceMotion}
-        />
+        <QuotaCard used={used} limit={limit} remaining={remaining} />
       </Animated.View>
 
       <Animated.View style={[styles.section, sectionStyle(3)]}>
