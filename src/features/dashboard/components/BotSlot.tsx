@@ -1,10 +1,12 @@
 /**
- * Carte bot + emplacement « Ajouter un bot » — DashboardPage.css.
- * Icône bot : fond accentSoft (approx. dégradé site, documenté LIVRAISONS).
+ * Carte bot + emplacement « Ajouter un bot » — DashboardPage.css .db-slot.
+ * Icône : linear-gradient(145deg, accent-soft, accent 24%) l.213.
+ * Empty : border 2 dashed, no shadow, press scale 0.985 l.195-205.
  */
 import React, {useEffect, useRef} from 'react';
 import {View, Text, Pressable, StyleSheet, Animated} from 'react-native';
 import {Bot, Plus, ChevronRight} from 'lucide-react-native';
+import {GradientView} from '../../../shared/components/GradientView';
 import {useTheme, dashboardMetrics as dm} from '../../../shared/theme';
 import type {Bot as BotType} from '../../../core/api/endpoints/bots';
 import {isBotConnected} from '../logic';
@@ -17,11 +19,7 @@ type BotCardProps = {
   busy?: boolean;
 };
 
-export function BotCard({
-  bot,
-  onPress,
-  busy,
-}: BotCardProps): React.JSX.Element {
+export function BotCard({bot, onPress, busy}: BotCardProps): React.JSX.Element {
   const {colors} = useTheme();
   const reduceMotion = useReducedMotion();
   const connected = isBotConnected(bot.status);
@@ -53,41 +51,38 @@ export function BotCard({
     outputRange: [0.5, 0],
   });
 
+  const animatePress = (to: number) => {
+    if (reduceMotion) return;
+    Animated.timing(scale, {
+      toValue: to,
+      duration: dm.pressDurationMs,
+      useNativeDriver: true,
+    }).start();
+  };
+
   return (
     <Pressable
       disabled={busy}
-      onPressIn={() => {
-        if (!reduceMotion) {
-          Animated.timing(scale, {
-            toValue: dm.pressScale,
-            duration: 150,
-            useNativeDriver: true,
-          }).start();
-        }
-      }}
-      onPressOut={() => {
-        Animated.timing(scale, {
-          toValue: 1,
-          duration: 150,
-          useNativeDriver: true,
-        }).start();
-      }}
-      onPress={onPress}
-      style={({pressed}) => [{opacity: pressed ? 0.95 : 1}]}>
+      onPressIn={() => animatePress(dm.pressScale)}
+      onPressOut={() => animatePress(1)}
+      onPress={onPress}>
       <Animated.View
         style={[
           styles.card,
           {
             backgroundColor: colors.bgPrimary,
-            borderColor: colors.border,
+            borderColor: colors.borderSoft,
+            shadowColor: colors.black,
             transform: [{scale}],
           },
         ]}>
         <View style={styles.iconWrap}>
-          <View
-            style={[styles.iconBox, {backgroundColor: colors.accentSoft}]}>
+          <GradientView
+            colors={[colors.accentSoft, colors.accentSoft24]}
+            angle={145}
+            style={styles.iconBox}>
             <Bot size={dm.botIconSize} color={colors.accent} />
-          </View>
+          </GradientView>
           {connected ? (
             <>
               <Animated.View
@@ -121,8 +116,11 @@ export function BotCard({
           <View
             style={[
               styles.status,
-              connected ? styles.statusOn : styles.statusOff,
-              {backgroundColor: connected ? colors.onlineSoft : colors.bgTertiary},
+              {
+                backgroundColor: connected
+                  ? colors.onlineSoft
+                  : colors.bgTertiary,
+              },
             ]}>
             <Text
               style={[
@@ -139,14 +137,13 @@ export function BotCard({
   );
 }
 
-type AddSlotProps = {
-  onPress: () => void;
-};
+type AddSlotProps = {onPress: () => void};
 
 export function AddBotSlot({onPress}: AddSlotProps): React.JSX.Element {
   const {colors} = useTheme();
   const reduceMotion = useReducedMotion();
   const breath = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     if (reduceMotion) {
@@ -176,24 +173,42 @@ export function AddBotSlot({onPress}: AddSlotProps): React.JSX.Element {
     outputRange: [1, 1.07],
   });
 
+  const animatePress = (to: number) => {
+    if (reduceMotion) return;
+    Animated.timing(scale, {
+      toValue: to,
+      duration: dm.pressDurationMs,
+      useNativeDriver: true,
+    }).start();
+  };
+
   return (
-    <Pressable onPress={onPress}>
-      <View
+    <Pressable
+      onPressIn={() => animatePress(dm.pressScale)}
+      onPressOut={() => animatePress(1)}
+      onPress={onPress}>
+      <Animated.View
         style={[
           styles.addCard,
-          {borderColor: colors.border},
+          {
+            borderColor: colors.border,
+            transform: [{scale}],
+          },
         ]}>
         <Animated.View
           style={[
-            styles.iconBox,
-            {backgroundColor: colors.accentSoft, transform: [{scale: iconScale}]},
+            styles.iconBoxSolid,
+            {
+              backgroundColor: colors.accentSoft,
+              transform: [{scale: iconScale}],
+            },
           ]}>
-          <Plus size={20} color={colors.accent} />
+          <Plus size={dm.addbotPlusIcon} color={colors.accent} />
         </Animated.View>
         <Text style={[styles.addLabel, {color: colors.accent}]}>
           {texts.addBot}
         </Text>
-      </View>
+      </Animated.View>
     </Pressable>
   );
 }
@@ -206,16 +221,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: dm.botCardPadH,
     gap: dm.botCardGap,
     borderRadius: dm.botCardRadius,
-    borderWidth: 1,
-    // border opacity 55 % approx via couleur border pleine + elevation
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    shadowOffset: {width: 0, height: 1},
+    borderWidth: dm.botCardBorderW,
+    elevation: dm.shadowElevation,
+    shadowOpacity: dm.shadowOpacity,
+    shadowRadius: dm.shadowRadius,
+    shadowOffset: {width: 0, height: dm.shadowOffsetY},
   },
   iconWrap: {width: dm.botIconBox, height: dm.botIconBox},
   iconBox: {
+    width: dm.botIconBox,
+    height: dm.botIconBox,
+    borderRadius: dm.botIconRadius,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  iconBoxSolid: {
     width: dm.botIconBox,
     height: dm.botIconBox,
     borderRadius: dm.botIconRadius,
@@ -240,21 +261,16 @@ const styles = StyleSheet.create({
     borderRadius: dm.onlineDot / 2,
   },
   meta: {flex: 1, gap: 4},
-  name: {
-    fontSize: dm.botNameSize,
-    fontWeight: '600',
-  },
+  name: {fontSize: dm.botNameSize, fontWeight: dm.weight600},
   status: {
     alignSelf: 'flex-start',
-    borderRadius: 99,
+    borderRadius: dm.statusRadius,
     paddingVertical: dm.statusPadV,
     paddingHorizontal: dm.statusPadH,
   },
-  statusOn: {},
-  statusOff: {},
   statusText: {
     fontSize: dm.statusFont,
-    fontWeight: '700',
+    fontWeight: dm.weight700,
     letterSpacing: 0.04 * dm.statusFont,
   },
   addCard: {
@@ -264,12 +280,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: dm.botCardPadH,
     gap: dm.botCardGap,
     borderRadius: dm.botCardRadius,
-    borderWidth: 2,
+    borderWidth: dm.emptyBorderW,
     borderStyle: 'dashed',
     backgroundColor: 'transparent',
   },
-  addLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
+  addLabel: {fontSize: dm.addbotLabelSize, fontWeight: dm.weight600},
 });

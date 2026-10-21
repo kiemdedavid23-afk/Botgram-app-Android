@@ -21,7 +21,11 @@ export function AccountCard({
     <View
       style={[
         styles.card,
-        {backgroundColor: colors.bgPrimary, borderColor: colors.border},
+        {
+          backgroundColor: colors.bgPrimary,
+          borderColor: colors.borderSoft,
+          shadowColor: colors.black,
+        },
       ]}>
       <View style={styles.row}>
         <View style={[styles.iconBox, {backgroundColor: colors.onlineSoft}]}>
@@ -77,7 +81,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: 'hidden',
     elevation: 1,
-    shadowColor: '#000',
+    
     shadowOpacity: 0.06,
     shadowRadius: 2,
     shadowOffset: {width: 0, height: 1},
@@ -89,7 +93,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: dm.accountRowPadH,
     gap: dm.accountRowGap,
   },
-  sep: {height: 1, marginHorizontal: 16},
+  sep: {height: 1, marginHorizontal: dm.accountSepMarginH},
   iconBox: {
     width: dm.accountIconBox,
     height: dm.accountIconBox,
@@ -102,11 +106,11 @@ const styles = StyleSheet.create({
   val: {fontSize: dm.accountValSize, fontWeight: '600'},
   badge: {
     borderRadius: 99,
-    paddingVertical: 3,
-    paddingHorizontal: 10,
+    paddingVertical: dm.accountBadgePadV,
+    paddingHorizontal: dm.accountBadgePadH,
   },
   badgeText: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: dm.accountBadgeFont,
+    fontWeight: dm.weight700,
   },
 });

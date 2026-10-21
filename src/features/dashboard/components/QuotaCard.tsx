@@ -84,7 +84,8 @@ export function QuotaCard({
         styles.card,
         {
           backgroundColor: colors.bgPrimary,
-          borderColor: colors.border,
+          borderColor: colors.borderSoft,
+          shadowColor: colors.black,
         },
       ]}>
       <View style={styles.row}>
@@ -141,11 +142,10 @@ const styles = StyleSheet.create({
     borderRadius: dm.botCardRadius,
     borderWidth: 1,
     padding: dm.quotaCardPad,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    shadowOffset: {width: 0, height: 1},
+    elevation: dm.shadowElevation,
+    shadowOpacity: dm.shadowOpacity,
+    shadowRadius: dm.shadowRadius,
+    shadowOffset: {width: 0, height: dm.shadowOffsetY},
   },
   row: {flexDirection: 'row', alignItems: 'center', gap: dm.quotaCardGap},
   ringWrap: {

@@ -26,11 +26,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: dm.sectionLabelPadH,
-    gap: 8,
+    gap: dm.sectionHeadGap,
   },
   label: {
     fontSize: dm.sectionLabelSize,
-    fontWeight: '700',
+    fontWeight: dm.weight700,
     letterSpacing: 0.08 * dm.sectionLabelSize,
     textTransform: 'uppercase',
   },
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: dm.sectionLabelSize,
-    fontWeight: '700',
+    fontWeight: dm.weight700,
     fontVariant: ['tabular-nums'],
   },
 });
