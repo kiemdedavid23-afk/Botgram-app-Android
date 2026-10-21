@@ -48,7 +48,7 @@ export function CountryPicker({
                   styles.row,
                   item === value && {backgroundColor: colors.accentSoft},
                 ]}>
-                <Text style={{color: colors.textPrimary, fontSize: 16}}>
+                <Text style={[styles.rowText, {color: colors.textPrimary}]}>
                   {countryLabel(item)}
                 </Text>
               </Pressable>
@@ -57,7 +57,7 @@ export function CountryPicker({
           <Pressable
             onPress={onClose}
             style={[styles.cancel, {backgroundColor: colors.bgSecondary}]}>
-            <Text style={{color: colors.textPrimary, fontWeight: '600'}}>
+            <Text style={[styles.cancelText, {color: colors.textPrimary}]}>
               {texts.cancel}
             </Text>
           </Pressable>
@@ -89,4 +89,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  rowText: {fontSize: m.fieldInputFont},
+  cancelText: {fontWeight: '600'},
 });

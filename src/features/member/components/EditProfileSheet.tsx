@@ -155,17 +155,19 @@ export function EditProfileSheet({
                 onPress={() => setCountryOpen(true)}
                 style={[
                   styles.input,
+                  styles.inputPressable,
                   {
                     borderColor: fieldErrors.country ? colors.danger : colors.border,
                     backgroundColor: colors.bgSecondary,
-                    justifyContent: 'center',
                   },
                 ]}>
                 <Text
-                  style={{
-                    color: form.country ? colors.textPrimary : colors.textHint,
-                    fontSize: m.fieldInputFont,
-                  }}>
+                  style={[
+                    styles.countryValue,
+                    {
+                      color: form.country ? colors.textPrimary : colors.textHint,
+                    },
+                  ]}>
                   {form.country
                     ? countryLabel(form.country)
                     : texts.selectCountry}
@@ -282,6 +284,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: m.fieldInputPadH,
     borderRadius: m.fieldInputRadius,
     borderWidth: m.fieldInputBorder,
+    fontSize: m.fieldInputFont,
+  },
+  inputPressable: {
+    justifyContent: 'center',
+  },
+  countryValue: {
     fontSize: m.fieldInputFont,
   },
   countryHint: {
