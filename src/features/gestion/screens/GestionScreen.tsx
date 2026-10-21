@@ -163,7 +163,7 @@ export function GestionScreen(): React.JSX.Element {
               <Text style={[styles.emptyTitle, {color: colors.textPrimary}]}>
                 {texts.emptyBotsTitle}
               </Text>
-              <Text style={{color: colors.textSecondary}}>
+              <Text style={[styles.emptySub, {color: colors.textSecondary}]}>
                 {texts.emptyBotsSub}
               </Text>
             </View>
@@ -247,7 +247,7 @@ export function GestionScreen(): React.JSX.Element {
                 onValueChange={setDropPending}
                 trackColor={{true: colors.accent}}
               />
-              <Text style={{color: colors.textPrimary, flex: 1}}>
+              <Text style={[styles.checkLabel, {color: colors.textPrimary}]}>
                 {texts.dropPending}
               </Text>
             </Pressable>
@@ -303,4 +303,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: g.dialogPad,
     paddingTop: 12,
   },
+  emptySub: {fontSize: g.headSubSize},
+  checkLabel: {flex: 1},
 });
