@@ -1,15 +1,19 @@
+/**
+ * Verify — AssociateVerifyPage.tsx.
+ */
 import React from 'react';
-import {View, Text, StyleSheet} from 'react-native';
-import {useTheme, space, fontSize} from '../../../shared/theme';
-import {AuthHeader} from '../../auth/components/AuthHeader';
-import {AuthFab} from '../../../shared/components/AuthFab';
-import {
-  useAssociateStore,
-  type VerifyResult,
-} from '../../bots/store/associateStore';
-import {texts} from '../texts';
+import {View, Text, Pressable, StyleSheet} from 'react-native';
+import {useTheme, associateMetrics as m} from '../../../shared/theme';
+import {AssociateShell} from '../components/AssociateShell';
+import {useAssociateStore, type VerifyResult} from '../store/associateStore';
+import {texts, verifyMessage} from '../texts';
 
-type Props = {onNext: () => void; onBack: () => void};
+type Props = {
+  result: VerifyResult;
+  onConfirm: () => void;
+  onBackToken: () => void;
+  onBack: () => void;
+};
 
 const ADVANCE: ReadonlySet<VerifyResult> = new Set([
   'ok',
@@ -17,44 +21,119 @@ const ADVANCE: ReadonlySet<VerifyResult> = new Set([
 ]);
 
 export function AssociateVerifyScreen({
-  onNext,
+  result,
+  onConfirm,
+  onBackToken,
   onBack,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
   const preview = useAssociateStore(s => s.preview);
-  const verify = useAssociateStore(s => s.verify);
-
-  const run = async () => {
-    const result: VerifyResult = await verify();
-    if (ADVANCE.has(result)) {
-      onNext();
-    }
-  };
+  const canAdvance = ADVANCE.has(result);
+  const isError = !canAdvance;
 
   return (
-    <View style={[styles.root, {backgroundColor: colors.bgSecondary}]}>
-      <AuthHeader title={texts.associate} onBack={onBack} />
-      <View style={styles.body}>
-        <Text style={[styles.title, {color: colors.textPrimary}]}>
-          {texts.verify}
-        </Text>
-        {preview ? (
-          <Text style={{color: colors.textPrimary}}>
-            {preview.name} (@{preview.username})
+    <AssociateShell title={texts.verifyTitle} step={4} onBack={onBack}>
+      <View
+        style={[
+          styles.card,
+          {backgroundColor: colors.bgPrimary, shadowColor: colors.black},
+        ]}>
+        {preview && canAdvance ? (
+          <View style={styles.preview}>
+            <View
+              style={[styles.avatar, {backgroundColor: colors.accentSoft}]}>
+              <Text style={[styles.avatarText, {color: colors.accent}]}>
+                {(preview.name || 'B').charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <View style={styles.meta}>
+              <Text style={[styles.name, {color: colors.textPrimary}]}>
+                {preview.name}
+              </Text>
+              {preview.username ? (
+                <Text style={{color: colors.textSecondary}}>
+                  @{preview.username}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+        ) : null}
+        <View
+          style={[
+            styles.msg,
+            {
+              backgroundColor: isError
+                ? colors.danger + '14'
+                : colors.successSoft,
+            },
+          ]}>
+          <Text
+            style={{
+              color: isError ? colors.danger : colors.successText,
+              fontSize: m.cardTextSize,
+            }}>
+            {verifyMessage(result)}
           </Text>
-        ) : (
-          <Text style={{color: colors.textSecondary}}>
-            Vérification en cours…
-          </Text>
-        )}
-        <AuthFab onPress={run} />
+        </View>
       </View>
-    </View>
+      {canAdvance ? (
+        <Pressable
+          onPress={onConfirm}
+          style={[styles.btn, {backgroundColor: colors.accent}]}>
+          <Text style={[styles.btnText, {color: colors.white}]}>
+            {texts.nextConfirm}
+          </Text>
+        </Pressable>
+      ) : null}
+      <Pressable
+        onPress={onBackToken}
+        style={[styles.ghost, {borderColor: colors.border}]}>
+        <Text style={[styles.ghostText, {color: colors.accent}]}>
+          {texts.backToken}
+        </Text>
+      </Pressable>
+    </AssociateShell>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {flex: 1},
-  body: {flex: 1, padding: space.md},
-  title: {fontSize: fontSize.pageHeader, fontWeight: '600', marginBottom: 12},
+  card: {
+    borderRadius: m.cardRadius,
+    padding: m.cardPad,
+    elevation: 1,
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+    shadowOffset: {width: 0, height: 1},
+    gap: 14,
+  },
+  preview: {flexDirection: 'row', alignItems: 'center', gap: 14},
+  avatar: {
+    width: m.avatar,
+    height: m.avatar,
+    borderRadius: m.avatar / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {fontSize: m.avatarFont, fontWeight: m.weight600},
+  meta: {flex: 1},
+  name: {fontSize: m.botNameSize, fontWeight: m.weight600, marginBottom: 2},
+  msg: {
+    paddingVertical: m.bannerPadV,
+    paddingHorizontal: m.bannerPadH,
+    borderRadius: m.bannerRadius,
+  },
+  btn: {
+    borderRadius: m.btnRadius,
+    paddingVertical: m.btnPadV,
+    paddingHorizontal: m.btnPadH,
+    alignItems: 'center',
+  },
+  btnText: {fontSize: m.btnFont, fontWeight: m.btnWeight},
+  ghost: {
+    borderWidth: 1,
+    borderRadius: m.btnRadius,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  ghostText: {fontSize: 15, fontWeight: m.weight600},
 });

@@ -1,28 +1,77 @@
-import React from 'react';
-import {View, Text, StyleSheet} from 'react-native';
-import {useTheme, space, fontSize} from '../../../shared/theme';
-import {AuthHeader} from '../../auth/components/AuthHeader';
-import {AuthFab} from '../../../shared/components/AuthFab';
+/**
+ * Done — AssociateDonePage.tsx.
+ */
+import React, {useEffect} from 'react';
+import {View, Text, Pressable, StyleSheet} from 'react-native';
+import {CheckCircle2} from 'lucide-react-native';
+import {useTheme, associateMetrics as m} from '../../../shared/theme';
+import {AssociateShell} from '../components/AssociateShell';
+import {useAssociateStore} from '../store/associateStore';
 import {texts} from '../texts';
 
-type Props = {onDone: () => void};
+type Props = {onHome: () => void};
 
-export function AssociateDoneScreen({onDone}: Props): React.JSX.Element {
+export function AssociateDoneScreen({onHome}: Props): React.JSX.Element {
   const {colors} = useTheme();
+  const reset = useAssociateStore(s => s.reset);
+
+  useEffect(() => {
+    return () => {
+      reset();
+    };
+  }, [reset]);
+
   return (
-    <View style={[styles.root, {backgroundColor: colors.bgSecondary}]}>
-      <AuthHeader title={texts.associate} />
-      <View style={styles.body}>
-        <Text style={[styles.title, {color: colors.textPrimary}]}>{texts.done}</Text>
-        <Text style={{color: colors.textSecondary}}>Votre bot est maintenant associé.</Text>
-        <AuthFab onPress={onDone} />
+    <AssociateShell title={texts.doneTitle} step={5}>
+      <View
+        style={[
+          styles.card,
+          {backgroundColor: colors.bgPrimary, shadowColor: colors.black},
+        ]}>
+        <CheckCircle2 size={48} color={colors.success} />
+        <Text style={[styles.title, {color: colors.textPrimary}]}>
+          {texts.doneTitle}
+        </Text>
+        <Text style={[styles.body, {color: colors.textSecondary}]}>
+          {texts.doneBody}
+        </Text>
       </View>
-    </View>
+      <Pressable
+        onPress={() => {
+          reset();
+          onHome();
+        }}
+        style={[styles.btn, {backgroundColor: colors.accent}]}>
+        <Text style={[styles.btnText, {color: colors.white}]}>
+          {texts.doneHome}
+        </Text>
+      </Pressable>
+    </AssociateShell>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {flex: 1},
-  body: {flex: 1, padding: space.md},
-  title: {fontSize: fontSize.pageHeader, fontWeight: '600', marginBottom: 12},
+  card: {
+    borderRadius: m.cardRadius,
+    padding: m.cardPad,
+    elevation: 1,
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+    shadowOffset: {width: 0, height: 1},
+    alignItems: 'center',
+    gap: 12,
+  },
+  title: {fontSize: m.cardTitleSize, fontWeight: m.cardTitleWeight},
+  body: {
+    fontSize: m.cardTextSize,
+    lineHeight: m.cardTextLine,
+    textAlign: 'center',
+  },
+  btn: {
+    borderRadius: m.btnRadius,
+    paddingVertical: m.btnPadV,
+    paddingHorizontal: m.btnPadH,
+    alignItems: 'center',
+  },
+  btnText: {fontSize: m.btnFont, fontWeight: m.btnWeight},
 });

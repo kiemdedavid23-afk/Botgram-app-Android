@@ -1,58 +1,161 @@
+/**
+ * Token — AssociateTokenPage.tsx. Jeton en mémoire uniquement.
+ */
 import React, {useState} from 'react';
-import {View, Text, TextInput, StyleSheet} from 'react-native';
-import {authColors, authMetrics} from '../../../shared/theme/authColors';
-import {AuthHeader} from '../../auth/components/AuthHeader';
-import {AuthFab} from '../../../shared/components/AuthFab';
-import {useAssociateStore} from '../../bots';
+import {View, Text, TextInput, Pressable, StyleSheet} from 'react-native';
+import {KeyRound, Eye, EyeOff} from 'lucide-react-native';
+import {useTheme, associateMetrics as m} from '../../../shared/theme';
+import {AssociateShell} from '../components/AssociateShell';
+import {useAssociateStore} from '../store/associateStore';
 import {texts} from '../texts';
+import {fireAndForget} from '../../../core/utils/fireAndForget';
 
-type Props = {onNext: () => void; onBack: () => void};
+type Props = {
+  onVerified: (result: string) => void;
+  onBack: () => void;
+};
 
 export function AssociateTokenScreen({
-  onNext,
+  onVerified,
   onBack,
 }: Props): React.JSX.Element {
+  const {colors} = useTheme();
+  const token = useAssociateStore(s => s.token) ?? '';
+  const revealed = useAssociateStore(s => s.revealed);
+  const verifying = useAssociateStore(s => s.verifying);
   const setToken = useAssociateStore(s => s.setToken);
-  const [value, setValue] = useState('');
-  const [hidden] = useState(true);
+  const setRevealed = useAssociateStore(s => s.setRevealed);
+  const verify = useAssociateStore(s => s.verify);
+  const [local, setLocal] = useState(token);
+
+  const onChange = (t: string) => {
+    setLocal(t);
+    setToken(t);
+  };
+
+  const onVerify = () => {
+    fireAndForget(
+      (async () => {
+        const r = await verify();
+        onVerified(r);
+      })(),
+    );
+  };
+
+  const canVerify = local.trim().length > 0 && !verifying;
 
   return (
-    <View style={styles.root}>
-      <AuthHeader title={texts.associate} onBack={onBack} />
-      <View style={styles.body}>
-        <Text style={styles.help}>{texts.tokenPlaceholder}</Text>
+    <AssociateShell title={texts.tokenTitle} step={3} onBack={onBack}>
+      <View
+        style={[
+          styles.card,
+          {backgroundColor: colors.bgPrimary, shadowColor: colors.black},
+        ]}>
+        <View style={styles.row}>
+          <KeyRound size={20} color={colors.accent} />
+          <Text style={[styles.cardTitle, {color: colors.textPrimary}]}>
+            {texts.tokenCardTitle}
+          </Text>
+        </View>
+        <Text style={[styles.help, {color: colors.textSecondary}]}>
+          {texts.tokenHelp}
+        </Text>
+        <Text style={[styles.label, {color: colors.textSecondary}]}>
+          {texts.tokenLabel}
+        </Text>
         <TextInput
-          style={styles.field}
-          value={value}
-          onChangeText={t => {
-            setValue(t);
-            setToken(t);
-          }}
+          style={[
+            styles.input,
+            {
+              borderColor: colors.border,
+              backgroundColor: colors.bgPrimary,
+              color: colors.textPrimary,
+            },
+          ]}
+          value={local}
+          onChangeText={onChange}
           placeholder={texts.tokenPlaceholder}
-          placeholderTextColor={authColors.textMuted}
-          secureTextEntry={hidden}
+          placeholderTextColor={colors.textHint}
+          secureTextEntry={!revealed}
           autoCapitalize="none"
           autoCorrect={false}
+          autoComplete="off"
+          textContentType="none"
+          importantForAutofill="no"
         />
-        <AuthFab onPress={onNext} disabled={!value} />
+        <Pressable
+          onPress={() => setRevealed(!revealed)}
+          style={[styles.ghost, {borderColor: colors.border}]}>
+          {revealed ? (
+            <EyeOff size={16} color={colors.accent} />
+          ) : (
+            <Eye size={16} color={colors.accent} />
+          )}
+          <Text style={[styles.ghostText, {color: colors.accent}]}>
+            {revealed ? texts.hideToken : texts.showToken}
+          </Text>
+        </Pressable>
       </View>
-    </View>
+      <Pressable
+        disabled={!canVerify}
+        onPress={onVerify}
+        style={[
+          styles.btn,
+          {
+            backgroundColor: canVerify ? colors.accent : colors.bgTertiary,
+            opacity: canVerify ? 1 : 0.7,
+          },
+        ]}>
+        <Text
+          style={[
+            styles.btnText,
+            {color: canVerify ? colors.white : colors.textSecondary},
+          ]}>
+          {verifying ? texts.verifying : texts.verify}
+        </Text>
+      </Pressable>
+    </AssociateShell>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {flex: 1, backgroundColor: authColors.bg},
-  body: {
-    flex: 1,
-    paddingHorizontal: authMetrics.bodyPaddingH,
-    paddingTop: 16,
+  card: {
+    borderRadius: m.cardRadius,
+    padding: m.cardPad,
+    elevation: 1,
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+    shadowOffset: {width: 0, height: 1},
+    gap: 8,
   },
-  help: {color: authColors.textMuted, marginBottom: 16},
-  field: {
-    borderBottomWidth: 1,
-    borderBottomColor: authColors.border,
-    paddingVertical: authMetrics.fieldPaddingV,
-    fontSize: authMetrics.fieldFontSize,
-    color: authColors.text,
+  row: {flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4},
+  cardTitle: {fontSize: 16, fontWeight: m.weight600},
+  help: {fontSize: 14, lineHeight: 20, marginBottom: 4},
+  label: {fontSize: 14},
+  input: {
+    borderWidth: 1,
+    borderRadius: m.inputRadius,
+    paddingVertical: m.inputPadV,
+    paddingHorizontal: m.inputPadH,
+    fontSize: m.inputFont,
+    marginTop: m.inputMarginTop,
   },
+  ghost: {
+    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: m.btnRadius,
+    paddingVertical: 12,
+  },
+  ghostText: {fontSize: 15, fontWeight: m.weight600},
+  btn: {
+    borderRadius: m.btnRadius,
+    paddingVertical: m.btnPadV,
+    paddingHorizontal: m.btnPadH,
+    alignItems: 'center',
+  },
+  btnText: {fontSize: m.btnFont, fontWeight: m.btnWeight},
 });
