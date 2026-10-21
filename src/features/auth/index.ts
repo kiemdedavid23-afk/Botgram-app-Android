@@ -1,2 +1,2 @@
-/** API publique de la feature auth (étape 2). */
-export {};
+export {useAuthStore, applySignedOut, safeBoot} from './store/authStore';
+export type {AuthState} from './store/authStore';
