@@ -9,7 +9,7 @@ import {useBotsStore} from '../src/features/bots/store/botsStore';
 import {useAssociateStore} from '../src/features/bots/store/associateStore';
 import {useQuotaStore} from '../src/features/member/store/quotaStore';
 import {useMemberStore} from '../src/features/member/store/memberStore';
-import {useAuthStore, applySignedOut} from '../src/features/auth/store/authStore';
+import {useAuthStore} from '../src/features/auth/store/authStore';
 import {clearMemberData} from '../src/core/utils/memberData';
 
 jest.mock('../src/core/storage');
