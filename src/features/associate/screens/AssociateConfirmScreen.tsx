@@ -1,5 +1,6 @@
 /**
  * Confirm — AssociateConfirmPage.tsx.
+ * Imports : ../components, ../store, ../texts, ../../bots/store, ../../member/store
  */
 import React, {useState} from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
@@ -67,7 +68,7 @@ export function AssociateConfirmScreen({
               {preview?.name ?? 'Bot'}
             </Text>
             {preview?.username ? (
-              <Text style={{color: colors.textSecondary}}>
+              <Text style={[styles.user, {color: colors.textSecondary}]}>
                 @{preview.username}
               </Text>
             ) : null}
@@ -89,7 +90,7 @@ export function AssociateConfirmScreen({
                 },
               ]}>
               {replaceOk ? (
-                <Text style={{color: colors.white, fontSize: 12}}>✓</Text>
+                <Text style={[styles.tick, {color: colors.white}]}>✓</Text>
               ) : null}
             </View>
             <AlertTriangle size={16} color={colors.warn} />
@@ -101,9 +102,7 @@ export function AssociateConfirmScreen({
       </View>
       {err ? (
         <View style={[styles.err, {backgroundColor: colors.danger + '14'}]}>
-          <Text style={{color: colors.danger, fontSize: m.cardTextSize}}>
-            {err}
-          </Text>
+          <Text style={[styles.errText, {color: colors.danger}]}>{err}</Text>
         </View>
       ) : null}
       <Pressable
@@ -111,9 +110,9 @@ export function AssociateConfirmScreen({
         onPress={onConfirm}
         style={[
           styles.btn,
+          canSubmit ? styles.btnEnabled : styles.btnDisabled,
           {
             backgroundColor: canSubmit ? colors.accent : colors.bgTertiary,
-            opacity: canSubmit ? 1 : 0.7,
           },
         ]}>
         <Text
@@ -149,6 +148,7 @@ const styles = StyleSheet.create({
   avatarText: {fontSize: m.avatarFont, fontWeight: m.weight600},
   meta: {flex: 1},
   name: {fontSize: m.botNameSize, fontWeight: m.weight600},
+  user: {fontSize: m.botUserSize},
   body: {fontSize: m.cardTextSize, lineHeight: m.cardTextLine},
   check: {
     flexDirection: 'row',
@@ -165,17 +165,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  tick: {fontSize: m.tickFont, fontWeight: m.weight700},
   checkText: {flex: 1, fontSize: m.checkFont, lineHeight: 22},
   err: {
     paddingVertical: m.bannerPadV,
     paddingHorizontal: m.bannerPadH,
     borderRadius: m.bannerRadius,
   },
+  errText: {fontSize: m.cardTextSize},
   btn: {
     borderRadius: m.btnRadius,
     paddingVertical: m.btnPadV,
     paddingHorizontal: m.btnPadH,
     alignItems: 'center',
   },
+  btnEnabled: {},
+  btnDisabled: {opacity: m.btnDisabledOpacity},
   btnText: {fontSize: m.btnFont, fontWeight: m.btnWeight},
 });

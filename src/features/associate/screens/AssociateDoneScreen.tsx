@@ -1,5 +1,6 @@
 /**
  * Done — AssociateDonePage.tsx.
+ * Imports : ../components, ../store, ../texts, ../../../shared/theme
  */
 import React, {useEffect} from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';

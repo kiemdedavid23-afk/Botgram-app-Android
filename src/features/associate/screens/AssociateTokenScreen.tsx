@@ -1,5 +1,6 @@
 /**
  * Token — AssociateTokenPage.tsx. Jeton en mémoire uniquement.
+ * Imports : ../components, ../store, ../texts, ../../../shared/theme, ../../../core/utils
  */
 import React, {useState} from 'react';
 import {View, Text, TextInput, Pressable, StyleSheet} from 'react-native';
@@ -101,9 +102,9 @@ export function AssociateTokenScreen({
         onPress={onVerify}
         style={[
           styles.btn,
+          canVerify ? styles.btnEnabled : styles.btnDisabled,
           {
             backgroundColor: canVerify ? colors.accent : colors.bgTertiary,
-            opacity: canVerify ? 1 : 0.7,
           },
         ]}>
         <Text
@@ -157,5 +158,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: m.btnPadH,
     alignItems: 'center',
   },
+  btnEnabled: {},
+  btnDisabled: {opacity: m.btnDisabledOpacity},
   btnText: {fontSize: m.btnFont, fontWeight: m.btnWeight},
 });

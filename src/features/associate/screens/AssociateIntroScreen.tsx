@@ -1,5 +1,6 @@
 /**
  * Intro — AssociateIntroPage.tsx + AssociateFlow.css.
+ * Imports : ../components, ../store, ../texts, ../../../shared/theme
  */
 import React from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
@@ -11,10 +12,7 @@ import {texts} from '../texts';
 
 type Props = {onNext: () => void; onBack: () => void};
 
-const POINTS: ReadonlyArray<{
-  Icon: typeof Key;
-  text: string;
-}> = [
+const POINTS: ReadonlyArray<{Icon: typeof Key; text: string}> = [
   {Icon: Key, text: texts.point1},
   {Icon: Shield, text: texts.point2},
   {Icon: Link2, text: texts.point3},
@@ -96,9 +94,9 @@ export function AssociateIntroScreen({
         onPress={onNext}
         style={[
           styles.btn,
+          acknowledged ? styles.btnEnabled : styles.btnDisabled,
           {
             backgroundColor: acknowledged ? colors.accent : colors.bgTertiary,
-            opacity: acknowledged ? 1 : 0.7,
           },
         ]}>
         <Text
@@ -166,7 +164,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 2,
   },
-  tick: {fontSize: 12, fontWeight: m.weight700, lineHeight: 14},
+  tick: {fontSize: m.tickFont, fontWeight: m.weight700, lineHeight: 14},
   checkText: {flex: 1, fontSize: m.checkFont, lineHeight: 22},
   ok: {
     paddingVertical: m.bannerPadV,
@@ -180,5 +178,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: m.btnPadH,
     alignItems: 'center',
   },
+  btnEnabled: {},
+  btnDisabled: {opacity: m.btnDisabledOpacity},
   btnText: {fontSize: m.btnFont, fontWeight: m.btnWeight},
 });

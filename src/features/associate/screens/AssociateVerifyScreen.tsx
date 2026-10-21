@@ -1,5 +1,6 @@
 /**
  * Verify — AssociateVerifyPage.tsx.
+ * Imports : ../components, ../store, ../texts, ../../../shared/theme
  */
 import React from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
@@ -51,7 +52,7 @@ export function AssociateVerifyScreen({
                 {preview.name}
               </Text>
               {preview.username ? (
-                <Text style={{color: colors.textSecondary}}>
+                <Text style={[styles.user, {color: colors.textSecondary}]}>
                   @{preview.username}
                 </Text>
               ) : null}
@@ -68,10 +69,10 @@ export function AssociateVerifyScreen({
             },
           ]}>
           <Text
-            style={{
-              color: isError ? colors.danger : colors.successText,
-              fontSize: m.cardTextSize,
-            }}>
+            style={[
+              styles.msgText,
+              {color: isError ? colors.danger : colors.successText},
+            ]}>
             {verifyMessage(result)}
           </Text>
         </View>
@@ -117,11 +118,13 @@ const styles = StyleSheet.create({
   avatarText: {fontSize: m.avatarFont, fontWeight: m.weight600},
   meta: {flex: 1},
   name: {fontSize: m.botNameSize, fontWeight: m.weight600, marginBottom: 2},
+  user: {fontSize: m.botUserSize},
   msg: {
     paddingVertical: m.bannerPadV,
     paddingHorizontal: m.bannerPadH,
     borderRadius: m.bannerRadius,
   },
+  msgText: {fontSize: m.cardTextSize},
   btn: {
     borderRadius: m.btnRadius,
     paddingVertical: m.btnPadV,

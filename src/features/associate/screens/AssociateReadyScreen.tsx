@@ -1,5 +1,6 @@
 /**
  * Ready — AssociateReadyPage.tsx.
+ * Imports : ../components, ../texts, ../../../shared/theme
  */
 import React from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
