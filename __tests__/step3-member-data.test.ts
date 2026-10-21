@@ -9,7 +9,7 @@ import {useBotsStore} from '../src/features/bots/store/botsStore';
 import {useAssociateStore} from '../src/features/bots/store/associateStore';
 import {useQuotaStore} from '../src/features/member/store/quotaStore';
 import {useMemberStore} from '../src/features/member/store/memberStore';
-import {useAuthStore} from '../src/features/auth/store/authStore';
+import {useAuthStore, applySignedOut} from '../src/features/auth/store/authStore';
 import {clearMemberData} from '../src/core/utils/memberData';
 
 jest.mock('../src/core/storage');
@@ -413,3 +413,172 @@ describe('effacement membre', () => {
     expect(useBotsStore.getState().bots).toEqual([]);
   });
 });
+
+
+describe('génération anti-fuite', () => {
+  it('load bots après clear ignore la réponse et n\'écrit pas le cache', async () => {
+    let resolveHttp!: (v: Awaited<ReturnType<typeof http>>) => void;
+    const deferred = new Promise<Awaited<ReturnType<typeof http>>>(resolve => {
+      resolveHttp = resolve;
+    });
+    mockHttp.mockImplementation(() => deferred);
+    const loadP = useBotsStore.getState().load(true);
+    await Promise.resolve();
+    useBotsStore.getState().clear();
+    expect(useBotsStore.getState().bots).toEqual([]);
+    resolveHttp(
+      ok({
+        bots: [
+          {
+            id: 'late',
+            telegram_bot_id: 1,
+            username: 'late',
+            name: 'Late',
+            status: 'connected',
+            selected: false,
+            muted: false,
+            created_at: 1,
+            connected_at: 2,
+            disconnected_at: null,
+          },
+        ],
+      }),
+    );
+    await loadP;
+    expect(useBotsStore.getState().bots).toEqual([]);
+    // aucun cacheSet après clear (les appels antérieurs éventuels exclus)
+    const setsAfter = mockCacheSet.mock.calls.length;
+    // clear may have triggered delete only; load must not set
+    expect(
+      mockCacheSet.mock.calls.every(
+        c => !(typeof c[1] === 'string' && c[1].includes('"late"')),
+      ),
+    ).toBe(true);
+    expect(setsAfter === mockCacheSet.mock.calls.length).toBe(true);
+  });
+
+  it('load quota après clear ignore la réponse', async () => {
+    let resolveHttp!: (v: Awaited<ReturnType<typeof http>>) => void;
+    const deferred = new Promise<Awaited<ReturnType<typeof http>>>(resolve => {
+      resolveHttp = resolve;
+    });
+    mockHttp.mockImplementation(() => deferred);
+    const loadP = useQuotaStore.getState().load(true);
+    await Promise.resolve();
+    useQuotaStore.getState().clear();
+    resolveHttp(
+      ok({day: 'd', limit: 165, used: 1, remaining: 164, resets_at: 0}),
+    );
+    await loadP;
+    expect(useQuotaStore.getState().quota).toBeNull();
+  });
+});
+
+describe('setMuted single-flight par valeur', () => {
+  it('true puis false : deux requêtes, état final false', async () => {
+    useBotsStore.setState({
+      bots: [
+        {
+          id: 'b1',
+          telegram_bot_id: 1,
+          username: 'x',
+          name: 'X',
+          status: 'connected',
+          selected: true,
+          muted: false,
+          created_at: 1,
+          connected_at: 2,
+          disconnected_at: null,
+        },
+      ],
+      lastFetch: Date.now(),
+    });
+    const calls: boolean[] = [];
+    mockHttp.mockImplementation(async opts => {
+      const muted = (opts.body as {muted?: boolean})?.muted;
+      if (typeof muted === 'boolean') calls.push(muted);
+      await new Promise<void>(r => setTimeout(r, 15));
+      return ok({
+        bot: {
+          id: 'b1',
+          telegram_bot_id: 1,
+          username: 'x',
+          name: 'X',
+          status: 'connected',
+          selected: true,
+          muted: !!muted,
+          created_at: 1,
+          connected_at: 2,
+          disconnected_at: null,
+        },
+      });
+    });
+    const pTrue = useBotsStore.getState().setMuted('b1', true);
+    const pFalse = useBotsStore.getState().setMuted('b1', false);
+    await Promise.all([pTrue, pFalse]);
+    expect(calls).toEqual([true, false]);
+    expect(useBotsStore.getState().bots[0]?.muted).toBe(false);
+  });
+});
+
+describe('source unique du membre + applySignedOut', () => {
+  it('updateProfile synchronise authStore.member', async () => {
+    const member = {
+      id: '1',
+      email: 'a@b.c',
+      email_verified: true,
+      display_name: 'Old',
+      role: 'member',
+      status: 'active',
+      country: null,
+      usage: null,
+      phone: null,
+      organization: null,
+      selected_bot_id: null,
+      created_at: 0,
+    };
+    useAuthStore.setState({state: 'signedIn', member});
+    useMemberStore.getState().setMember(member);
+    mockHttp.mockResolvedValueOnce(
+      ok({
+        member: {...member, display_name: 'New'},
+      }),
+    );
+    await useMemberStore.getState().updateProfile({display_name: 'New'});
+    expect(useMemberStore.getState().member?.display_name).toBe('New');
+    expect(useAuthStore.getState().member?.display_name).toBe('New');
+  });
+
+  it('confirmAccountDelete succès → signedOut via applySignedOut', async () => {
+    useAuthStore.setState({state: 'signedIn', member: null});
+    useBotsStore.setState({
+      bots: [
+        {
+          id: 'b1',
+          telegram_bot_id: 1,
+          username: 'x',
+          name: 'X',
+          status: 'connected',
+          selected: true,
+          muted: false,
+          created_at: 1,
+          connected_at: 2,
+          disconnected_at: null,
+        },
+      ],
+      lastFetch: 1,
+    });
+    mockHttp
+      .mockResolvedValueOnce(
+        ok({requested: true, expires_in: 600, code_length: 6}, 202),
+      )
+      .mockResolvedValueOnce(ok({deleted: true}));
+    await useMemberStore.getState().requestAccountDelete();
+    const r = await useMemberStore.getState().confirmAccountDelete('123456');
+    expect(r).toBe('ok');
+    expect(useAuthStore.getState().state).toBe('signedOut');
+    expect(useBotsStore.getState().bots).toEqual([]);
+    expect(mockClearTokens).toHaveBeenCalled();
+  });
+});
+
