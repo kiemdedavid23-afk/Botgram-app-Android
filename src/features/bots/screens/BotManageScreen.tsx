@@ -3,7 +3,7 @@ import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {useTheme, space, fontSize} from '../../../shared/theme';
 import {AuthHeader} from '../../auth/components/AuthHeader';
 import {useBotsStore} from '../store/botsStore';
-import {texts} from '../../dashboard/texts';
+import {texts} from '../texts';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 
 type Props = {botId: string; onBack: () => void};
