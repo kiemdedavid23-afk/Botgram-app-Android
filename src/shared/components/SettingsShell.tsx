@@ -22,7 +22,7 @@ export function SettingsShell({title, onBack, children}: Props): React.JSX.Eleme
           styles.header,
           {
             backgroundColor: colors.bgPrimary,
-            borderBottomColor: 'rgba(0,0,0,0.06)',
+            borderBottomColor: colors.divider,
           },
         ]}>
         <Pressable
