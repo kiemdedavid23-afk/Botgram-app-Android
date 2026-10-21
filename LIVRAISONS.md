@@ -53,3 +53,63 @@
 
 ### Preuve CI attendue
 typecheck 0, lint 0, jest vert (dont dashboard-logic).
+
+## L3a — correctif typecheck (AssociateToken + BotSlot)
+
+### Fichiers modifiés / ajoutés
+| Fichier | Avant → Après |
+|---|---|
+| `src/features/associate/screens/AssociateTokenScreen.tsx` | nouveau (import `../../bots`, texts associate) |
+| `src/features/bots/index.ts` | ré-export useAssociateStore |
+| `src/features/dashboard/components/BotSlot.tsx` | +styles.statusOn / statusOff |
+
+### Fichiers à supprimer
+- `src/features/bots/screens/AssociateTokenScreen.tsx` (déplacé vers `features/associate/screens/AssociateTokenScreen.tsx`)
+
+## L3a — correctif R10 tokens / bordures / orbes
+
+### Fichiers modifiés
+| Fichier | Changement |
+|---|---|
+| `src/shared/theme/colors.ts` | +borderSoft, accentSoft24, hero* |
+| `src/shared/theme/dashboardMetrics.ts` | orbes float, gaps, weights, press |
+| `HeroCard.tsx` | tokens + db-float exact |
+| `BotSlot.tsx` | borderSoft, gradient icon, press AddBotSlot, no statusOn/Off |
+| `QuotaCard.tsx` / `AccountCard.tsx` | borderSoft, tokens |
+| `AddBotScreen.tsx` | colors.white |
+| `DashboardScreen.tsx` | sectionInnerGap |
+| `SectionHeader.tsx` | metrics |
+
+### Tableau propriété | site | app
+
+**HeroCard**
+| propriété | site (DashboardPage.css) | app |
+|---|---|---|
+| radius / minH / pad | l.27-29 28 / 250 / 30 24 24 | heroRadius, heroMinHeight, heroPadding* |
+| orbe A float | l.52-53, l.64-66 7s translate(-10,12) | orbADurationMs, orbFloatX/Y |
+| orbe B | l.55-61 9s reverse -3s | orbBDurationMs, reverse phase |
+| chips bg/border | l.115-116 rgba white 0.18/0.24 | heroChipBg, heroChipBorder |
+| text | l.33 #fff, l.97 0.9 | heroText, heroTextMuted |
+
+**BotSlot**
+| propriété | site | app |
+|---|---|---|
+| border | l.179 color-mix border 55% | borderSoft |
+| icon gradient | l.213 145deg accent-soft → 24% | accentSoft + accentSoft24 GradientView |
+| empty border | l.199-200 2 dashed border, no shadow | emptyBorderW, borderStyle dashed |
+| press | l.195 scale 0.985 0.15s | pressScale, pressDurationMs |
+
+**QuotaCard / AccountCard**
+| propriété | site | app |
+|---|---|---|
+| border | l.162 color-mix 55% | borderSoft |
+| Actif soft | l.277 rgba(10,198,48,.12) | onlineSoft |
+
+**AddBotScreen**
+| propriété | site (AddBotPage.css) | app |
+|---|---|---|
+| icon white | l.73 color white | colors.white |
+| press scale | l.38 0.985 | pressScale |
+
+### Fichiers à supprimer
+aucun
