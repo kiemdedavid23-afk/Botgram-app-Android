@@ -33,3 +33,4 @@ export {ThemeProvider, useTheme} from './ThemeProvider';
 
 export {getColors} from './colors';
 export {dashboardMetrics} from './dashboardMetrics';
+export {associateMetrics} from './associateMetrics';

@@ -30,6 +30,9 @@ export type ColorTokens = {
   divider: string;
   danger: string;
   warn: string;
+  success: string;
+  successSoft: string;
+  successText: string;
   navBg: string;
   linkTranslate: string;
   white: string;
@@ -69,6 +72,9 @@ export const lightColors: ColorTokens = {
   divider: 'rgba(0,0,0,0.06)', // settings-common.css .chat-settings__header
   danger: '#e53935',
   warn: '#f59e0b', // DashboardPage.css quota arc ≥65%
+  success: '#1b7f3a', // AssociateFlow.css .assoc__ok color
+  successSoft: '#f0fff4', // AssociateFlow.css .assoc__ok background
+  successText: '#1b7f3a', // AssociateFlow.css .assoc__ok
   navBg: 'rgba(255,255,255,0.92)',
   linkTranslate: '#2AABEE',
   white: '#ffffff',
@@ -105,6 +111,9 @@ export const darkColors: ColorTokens = {
   divider: 'rgba(0,0,0,0.06)',
   danger: '#e53935',
   warn: '#f59e0b',
+  success: '#1b7f3a',
+  successSoft: 'rgba(27,127,58,0.15)',
+  successText: '#3dd68c',
   navBg: 'rgba(33,33,33,0.92)',
   linkTranslate: '#2AABEE',
   white: '#ffffff',
