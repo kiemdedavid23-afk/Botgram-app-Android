@@ -18,6 +18,9 @@ jest.mock('../src/core/storage');
 jest.mock('../src/core/api/http');
 
 const mockHttp = http as jest.MockedFunction<typeof http>;
+const mockCacheGet = storage.cacheGetString as jest.Mock;
+const mockCacheSet = storage.cacheSetString as jest.Mock;
+const mockCacheDelete = storage.cacheDelete as jest.Mock;
 
 function ok<T>(data: T, status = 200): Awaited<ReturnType<typeof http>> {
   return {
@@ -55,12 +58,12 @@ const bot = (over: Partial<Bot> = {}): Bot => ({
 
 beforeEach(() => {
   jest.resetAllMocks();
+  mockCacheGet.mockResolvedValue(undefined);
+  mockCacheSet.mockResolvedValue(undefined);
+  mockCacheDelete.mockResolvedValue(undefined);
   mockHttp.mockReset();
   useGestionStore.getState().clear();
   useBotsStore.getState().clear();
-  (storage.cacheGetString as jest.Mock).mockResolvedValue(undefined);
-  (storage.cacheSetString as jest.Mock).mockResolvedValue(undefined);
-  (storage.cacheDelete as jest.Mock).mockResolvedValue(undefined);
 });
 
 describe('webhookOf / actions', () => {
