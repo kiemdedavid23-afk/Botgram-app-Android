@@ -6,7 +6,7 @@ import {http} from '../src/core/api/http';
 import * as storage from '../src/core/storage';
 import type {Bot} from '../src/core/api/endpoints/bots';
 import {useBotsStore} from '../src/features/bots/store/botsStore';
-import {useAssociateStore} from '../src/features/bots/store/associateStore';
+import {useAssociateStore} from '../src/features/associate/store/associateStore';
 import {useQuotaStore} from '../src/features/member/store/quotaStore';
 import {useMemberStore} from '../src/features/member/store/memberStore';
 import {useAuthStore} from '../src/features/auth/store/authStore';
