@@ -1,3 +1,4 @@
+/** Textes du tableau de bord et de l'écran Ajouter un bot. */
 export const texts = {
   offline: 'Hors ligne',
   sectionBots: 'Mes bots',
