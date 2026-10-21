@@ -18,10 +18,11 @@ import {AccountDisabledScreen} from '../features/auth/screens/AccountDisabledScr
 import {UpgradeScreen} from '../features/auth/screens/UpgradeScreen';
 import {authColors} from '../shared/theme/authColors';
 import {BrandBar} from '../shared/components/BrandBar';
-import {EmptyScreen} from '../shared/components/EmptyScreen';
 import {BottomNav, type MemberTabId} from '../shared/components/BottomNav';
 import {DashboardScreen} from '../features/dashboard/screens/DashboardScreen';
 import {AddBotScreen} from '../features/bots/screens/AddBotScreen';
+import {MemberProfileScreen} from '../features/member';
+import {MemberSettingsScreen} from '../features/settings';
 import {
   AssociateIntroWrapper,
   AssociateReadyWrapper,
@@ -111,7 +112,6 @@ function MemberTabs({
 }): React.JSX.Element {
   const {colors} = useTheme();
   const [tab, setTab] = useState<MemberTabId>('dashboard');
-  const signOut = useAuthStore(s => s.signOut);
   const offline = useAuthStore(s => s.offline);
 
   return (
@@ -127,18 +127,9 @@ function MemberTabs({
       {tab === 'dashboard' ? (
         <DashboardScreen onAddBot={() => navigation.navigate('AddBot')} />
       ) : tab === 'settings' ? (
-        <View style={styles.flex}>
-          <EmptyScreen title="Paramètres" subtitle="" />
-          <Pressable
-            onPress={() => signOut()}
-            style={[styles.logoutBtn, {backgroundColor: colors.bgTertiary}]}>
-            <Text style={[styles.logoutText, {color: colors.danger}]}>
-              Se déconnecter
-            </Text>
-          </Pressable>
-        </View>
+        <MemberSettingsScreen onGoProfile={() => setTab('member')} />
       ) : (
-        <EmptyScreen title="Profil" subtitle="" />
+        <MemberProfileScreen onGoDashboard={() => setTab('dashboard')} />
       )}
       <BottomNav activeTab={tab} onTabPress={setTab} />
     </View>
