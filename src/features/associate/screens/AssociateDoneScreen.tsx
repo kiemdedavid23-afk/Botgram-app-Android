@@ -3,7 +3,7 @@ import {View, Text, StyleSheet} from 'react-native';
 import {useTheme, space, fontSize} from '../../../shared/theme';
 import {AuthHeader} from '../../auth/components/AuthHeader';
 import {AuthFab} from '../../../shared/components/AuthFab';
-import {texts} from '../../dashboard/texts';
+import {texts} from '../texts';
 
 type Props = {onDone: () => void};
 

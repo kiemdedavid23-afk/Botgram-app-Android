@@ -4,7 +4,7 @@ import {useTheme, space, fontSize} from '../../../shared/theme';
 import {AuthHeader} from '../../auth/components/AuthHeader';
 import {AuthFab} from '../../../shared/components/AuthFab';
 import {useAssociateStore} from '../../bots/store/associateStore';
-import {texts} from '../../dashboard/texts';
+import {texts} from '../texts';
 
 type Props = {onNext: () => void; onBack: () => void};
 

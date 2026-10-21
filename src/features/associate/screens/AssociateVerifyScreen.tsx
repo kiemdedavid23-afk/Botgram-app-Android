@@ -7,7 +7,7 @@ import {
   useAssociateStore,
   type VerifyResult,
 } from '../../bots/store/associateStore';
-import {texts} from '../../dashboard/texts';
+import {texts} from '../texts';
 
 type Props = {onNext: () => void; onBack: () => void};
 
