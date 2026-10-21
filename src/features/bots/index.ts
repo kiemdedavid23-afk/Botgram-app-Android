@@ -1,7 +1,7 @@
 export {useBotsStore} from './store/botsStore';
-export {useAssociateStore} from './store/associateStore';
-export type {
-  VerifyResult,
-  ConfirmResult,
-  AssociateStep,
-} from './store/associateStore';
+export {
+  useAssociateStore,
+  type VerifyResult,
+  type ConfirmResult,
+  type AssociateStep,
+} from '../associate';
