@@ -7,6 +7,8 @@ export const memberProfileMetrics = {
   scrollPadH: 14,
   scrollPadTop: 14,
   scrollPadBottom: 32,
+  /** padding état vide (écran sans member) */
+  emptyPad: 24,
   sectionGap: 22,
   /** .mp-hero radius 32, min-height 430, padding 44 24 38 — l.24-30 */
   heroRadius: 32,

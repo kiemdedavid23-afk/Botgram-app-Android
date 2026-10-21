@@ -48,6 +48,10 @@ export type ColorTokens = {
   heroShadow: string;
   /** Ombre héros sombre — DashboardPage.css l.39 */
   heroShadowDark: string;
+  /** Fond disque initiale héros — soft white sur dégradé (MemberProfilePage.css .mp-hero__avatar contexte l.71-76) */
+  heroAvatarInner: string;
+  /** Anneau avatar héros — MemberProfilePage.css .mp-hero__avatar l.75 */
+  heroAvatarRing: string;
   /** Pastille statut good — MemberProfilePage.css .mp-chip__dot--good */
   statusGood: string;
   /** Pastille statut warn — .mp-chip__dot--warn */
@@ -109,6 +113,8 @@ export const lightColors: ColorTokens = {
   heroChipBorder: 'rgba(255,255,255,0.24)', // DashboardPage.css l.116
   heroShadow: '#2aabee', // DashboardPage.css l.35
   heroShadowDark: '#000000', // DashboardPage.css l.39
+  heroAvatarInner: 'rgba(255,255,255,0.25)', // soft fill initiale sous anneau .mp-hero__avatar (MemberProfilePage.css l.71-76)
+  heroAvatarRing: 'rgba(255,255,255,0.4)', // MemberProfilePage.css .mp-hero__avatar l.75
   statusGood: '#3ddc6b', // MemberProfilePage.css .mp-chip__dot--good
   statusWarn: '#ffc24d', // .mp-chip__dot--warn
   statusBad: '#ff6b6b', // .mp-chip__dot--bad
@@ -161,6 +167,8 @@ export const darkColors: ColorTokens = {
   heroChipBorder: 'rgba(255,255,255,0.24)',
   heroShadow: '#2aabee',
   heroShadowDark: '#000000',
+  heroAvatarInner: 'rgba(255,255,255,0.25)', // soft fill initiale (MemberProfilePage.css l.71-76)
+  heroAvatarRing: 'rgba(255,255,255,0.4)', // MemberProfilePage.css .mp-hero__avatar l.75
   statusGood: '#3ddc6b', // MemberProfilePage.css .mp-chip__dot--good
   statusWarn: '#ffc24d',
   statusBad: '#ff6b6b',
