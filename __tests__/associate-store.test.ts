@@ -1,8 +1,6 @@
 /**
- * Tests store association : succès, erreurs, nettoyage jeton.
+ * Tests store association : succès, erreurs, nettoyage jeton, AppState.
  */
-import {AppState} from 'react-native';
-
 const mockPreview = jest.fn();
 const mockCreate = jest.fn();
 
@@ -13,7 +11,7 @@ jest.mock('../src/core/api/endpoints/bots', () => ({
 
 jest.mock('../src/core/utils/memberData', () => ({
   registerMemberDataCleaner: (fn: () => void) => {
-    (global as {__cleaner?: () => void}).__cleaner = fn;
+    (globalThis as {__cleaner?: () => void}).__cleaner = fn;
     return () => undefined;
   },
 }));
@@ -52,8 +50,7 @@ describe('associateStore', () => {
       status: 400,
     });
     useAssociateStore.getState().setToken('bad');
-    const r = await useAssociateStore.getState().verify();
-    expect(r).toBe('invalid');
+    expect(await useAssociateStore.getState().verify()).toBe('invalid');
   });
 
   it('verify already linked', async () => {
@@ -122,7 +119,9 @@ describe('associateStore', () => {
     useAssociateStore.getState().setToken('123:ABC');
     const res = await useAssociateStore.getState().confirm();
     expect(res.ok).toBe(false);
-    if (!res.ok) expect(res.reason).toBe('limit');
+    if (!res.ok) {
+      expect(res.reason).toBe('limit');
+    }
   });
 
   it('duplicate verify returns duplicate', async () => {
@@ -157,5 +156,12 @@ describe('associateStore', () => {
     useAssociateStore.getState().reset();
     expect(useAssociateStore.getState().token).toBeNull();
     expect(useAssociateStore.getState().acknowledged).toBe(false);
+  });
+
+  it('clearToken removes token from memory', () => {
+    useAssociateStore.getState().setToken('secret-token');
+    useAssociateStore.getState().clearToken();
+    expect(useAssociateStore.getState().token).toBeNull();
+    expect(useAssociateStore.getState().revealed).toBe(false);
   });
 });
