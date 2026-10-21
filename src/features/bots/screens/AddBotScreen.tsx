@@ -48,11 +48,12 @@ export function AddBotScreen({onBack}: Props): React.JSX.Element {
               styles.card,
               {
                 backgroundColor: colors.bgPrimary,
+                shadowColor: colors.black,
                 transform: [{scale}],
               },
             ]}>
             <View style={[styles.iconBox, {backgroundColor: colors.accent}]}>
-              <Link2 size={dm.addbotIconSize} color="#ffffff" />
+              <Link2 size={dm.addbotIconSize} color={colors.white} />
             </View>
             <View style={styles.meta}>
               <Text style={[styles.title, {color: colors.textPrimary}]}>
@@ -92,7 +93,7 @@ const styles = StyleSheet.create({
     padding: dm.addbotCardPad,
     gap: dm.addbotCardGap,
     elevation: 1,
-    shadowColor: '#000',
+    
     shadowOpacity: 0.06,
     shadowRadius: 2,
     shadowOffset: {width: 0, height: 1},
