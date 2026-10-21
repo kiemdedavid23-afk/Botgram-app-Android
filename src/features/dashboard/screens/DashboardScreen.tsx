@@ -149,6 +149,6 @@ const styles = StyleSheet.create({
     paddingBottom: dm.pagePaddingBottom,
     gap: dm.sectionGap,
   },
-  section: {gap: 10},
+  section: {gap: dm.sectionInnerGap},
   botList: {gap: dm.botListGap},
 });
