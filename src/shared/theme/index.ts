@@ -34,3 +34,6 @@ export {ThemeProvider, useTheme} from './ThemeProvider';
 export {getColors} from './colors';
 export {dashboardMetrics} from './dashboardMetrics';
 export {associateMetrics} from './associateMetrics';
+
+export {memberProfileMetrics} from './memberProfileMetrics';
+export {settingsMetrics} from './settingsMetrics';

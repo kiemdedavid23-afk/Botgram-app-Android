@@ -48,6 +48,27 @@ export type ColorTokens = {
   heroShadow: string;
   /** Ombre héros sombre — DashboardPage.css l.39 */
   heroShadowDark: string;
+  /** Pastille statut good — MemberProfilePage.css .mp-chip__dot--good */
+  statusGood: string;
+  /** Pastille statut warn — .mp-chip__dot--warn */
+  statusWarn: string;
+  /** Pastille statut bad — .mp-chip__dot--bad */
+  statusBad: string;
+  /** Badge good soft — .mp-badge--good */
+  badgeGoodBg: string;
+  badgeGoodText: string;
+  /** Badge warn soft — .mp-badge--warn */
+  badgeWarnBg: string;
+  badgeWarnText: string;
+  /** Badge bad soft — .mp-badge--bad */
+  badgeBadBg: string;
+  /** Icon row good soft — .mp-row__icon--good */
+  rowIconGoodBg: string;
+  /** Icon row danger soft — .mp-row__icon--danger */
+  rowIconDangerBg: string;
+  /** Settings icon backgrounds — MemberSettingsPage inline */
+  settingsIconProfile: string;
+  settingsIconLogout: string;
 };
 
 export const lightColors: ColorTokens = {
@@ -88,6 +109,18 @@ export const lightColors: ColorTokens = {
   heroChipBorder: 'rgba(255,255,255,0.24)', // DashboardPage.css l.116
   heroShadow: '#2aabee', // DashboardPage.css l.35
   heroShadowDark: '#000000', // DashboardPage.css l.39
+  statusGood: '#3ddc6b', // MemberProfilePage.css .mp-chip__dot--good
+  statusWarn: '#ffc24d', // .mp-chip__dot--warn
+  statusBad: '#ff6b6b', // .mp-chip__dot--bad
+  badgeGoodBg: 'rgba(10,198,48,0.12)', // .mp-badge--good
+  badgeGoodText: '#0ac630',
+  badgeWarnBg: 'rgba(245,158,11,0.12)', // .mp-badge--warn
+  badgeWarnText: '#f59e0b',
+  badgeBadBg: 'rgba(229,57,53,0.12)', // .mp-badge--bad
+  rowIconGoodBg: 'rgba(10,198,48,0.12)', // .mp-row__icon--good
+  rowIconDangerBg: 'rgba(229,57,53,0.12)', // .mp-row__icon--danger
+  settingsIconProfile: '#2AABEE', // MemberSettingsPage.tsx inline
+  settingsIconLogout: '#e53935', // MemberSettingsPage.tsx inline
 };
 
 export const darkColors: ColorTokens = {
@@ -128,6 +161,18 @@ export const darkColors: ColorTokens = {
   heroChipBorder: 'rgba(255,255,255,0.24)',
   heroShadow: '#2aabee',
   heroShadowDark: '#000000',
+  statusGood: '#3ddc6b', // MemberProfilePage.css .mp-chip__dot--good
+  statusWarn: '#ffc24d',
+  statusBad: '#ff6b6b',
+  badgeGoodBg: 'rgba(10,198,48,0.18)', // .mp-badge--good dark
+  badgeGoodText: '#0ac630',
+  badgeWarnBg: 'rgba(245,158,11,0.18)', // .mp-badge--warn dark
+  badgeWarnText: '#f59e0b',
+  badgeBadBg: 'rgba(229,57,53,0.18)',
+  rowIconGoodBg: 'rgba(10,198,48,0.18)',
+  rowIconDangerBg: 'rgba(229,57,53,0.18)',
+  settingsIconProfile: '#2AABEE',
+  settingsIconLogout: '#e53935',
 };
 
 export function getColors(mode: ThemeMode): ColorTokens {
