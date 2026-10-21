@@ -1,6 +1,5 @@
 /**
  * Ready — AssociateReadyPage.tsx.
- * Imports : ../components, ../texts, ../../../shared/theme
  */
 import React from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
@@ -25,7 +24,7 @@ export function AssociateReadyScreen({
           {backgroundColor: colors.bgPrimary, shadowColor: colors.black},
         ]}>
         <View style={styles.row}>
-          <CheckCircle2 size={22} color={colors.accent} />
+          <CheckCircle2 size={m.readyIcon} color={colors.accent} />
           <Text style={[styles.cardTitle, {color: colors.textPrimary}]}>
             {texts.readyCardTitle}
           </Text>
@@ -33,7 +32,6 @@ export function AssociateReadyScreen({
         <Text style={[styles.body, {color: colors.textSecondary}]}>
           {texts.readyBody}
         </Text>
-        {/* Guide hors périmètre — inerte */}
         <Text style={[styles.link, {color: colors.accent}]}>
           {texts.readyGuide}
         </Text>
@@ -53,13 +51,17 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: m.cardRadius,
     padding: m.cardPad,
-    elevation: 1,
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    shadowOffset: {width: 0, height: 1},
-    gap: 12,
+    elevation: m.shadowElevation,
+    shadowOpacity: m.shadowOpacity,
+    shadowRadius: m.shadowRadius,
+    shadowOffset: {width: 0, height: m.shadowOffsetY},
+    gap: m.pointGap + 2,
   },
-  row: {flexDirection: 'row', alignItems: 'center', gap: 10},
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: m.readyRowGap,
+  },
   cardTitle: {fontSize: m.cardTitleSize, fontWeight: m.cardTitleWeight},
   body: {fontSize: m.cardTextSize, lineHeight: m.cardTextLine},
   link: {fontSize: m.linkFont, fontWeight: m.weight500},

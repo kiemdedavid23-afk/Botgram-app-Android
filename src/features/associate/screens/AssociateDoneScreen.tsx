@@ -1,6 +1,5 @@
 /**
  * Done — AssociateDonePage.tsx.
- * Imports : ../components, ../store, ../texts, ../../../shared/theme
  */
 import React, {useEffect} from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
@@ -29,7 +28,7 @@ export function AssociateDoneScreen({onHome}: Props): React.JSX.Element {
           styles.card,
           {backgroundColor: colors.bgPrimary, shadowColor: colors.black},
         ]}>
-        <CheckCircle2 size={48} color={colors.success} />
+        <CheckCircle2 size={m.doneIcon} color={colors.success} />
         <Text style={[styles.title, {color: colors.textPrimary}]}>
           {texts.doneTitle}
         </Text>
@@ -55,12 +54,12 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: m.cardRadius,
     padding: m.cardPad,
-    elevation: 1,
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    shadowOffset: {width: 0, height: 1},
+    elevation: m.shadowElevation,
+    shadowOpacity: m.shadowOpacity,
+    shadowRadius: m.shadowRadius,
+    shadowOffset: {width: 0, height: m.shadowOffsetY},
     alignItems: 'center',
-    gap: 12,
+    gap: m.pointGap + 2,
   },
   title: {fontSize: m.cardTitleSize, fontWeight: m.cardTitleWeight},
   body: {

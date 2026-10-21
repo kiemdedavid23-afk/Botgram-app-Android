@@ -1,6 +1,5 @@
 /**
  * Intro — AssociateIntroPage.tsx + AssociateFlow.css.
- * Imports : ../components, ../store, ../texts, ../../../shared/theme
  */
 import React from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
@@ -55,7 +54,6 @@ export function AssociateIntroScreen({
             </Text>
           </View>
         ))}
-        {/* Guide complet hors périmètre app — inerte */}
         <Text style={[styles.link, {color: colors.accent}]}>
           {texts.guideLink}
         </Text>
@@ -94,7 +92,7 @@ export function AssociateIntroScreen({
         onPress={onNext}
         style={[
           styles.btn,
-          acknowledged ? styles.btnEnabled : styles.btnDisabled,
+          !acknowledged ? styles.btnDisabled : null,
           {
             backgroundColor: acknowledged ? colors.accent : colors.bgTertiary,
           },
@@ -122,16 +120,16 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: m.cardRadius,
     padding: m.cardPad,
-    elevation: 1,
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    shadowOffset: {width: 0, height: 1},
+    elevation: m.shadowElevation,
+    shadowOpacity: m.shadowOpacity,
+    shadowRadius: m.shadowRadius,
+    shadowOffset: {width: 0, height: m.shadowOffsetY},
     gap: m.pointGap,
   },
   cardTitle: {
     fontSize: m.cardTitleSize,
     fontWeight: m.cardTitleWeight,
-    marginBottom: 4,
+    marginBottom: m.cardTitleMarginBottom,
   },
   point: {
     flexDirection: 'row',
@@ -144,7 +142,7 @@ const styles = StyleSheet.create({
     lineHeight: m.cardTextLine,
   },
   link: {
-    marginTop: 8,
+    marginTop: m.linkMarginTop,
     fontSize: m.linkFont,
     fontWeight: m.weight500,
   },
@@ -158,14 +156,14 @@ const styles = StyleSheet.create({
   box: {
     width: m.checkBox,
     height: m.checkBox,
-    borderRadius: 4,
-    borderWidth: 2,
+    borderRadius: m.checkBoxRadius,
+    borderWidth: m.checkBoxBorder,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
+    marginTop: m.checkBoxMarginTop,
   },
-  tick: {fontSize: m.tickFont, fontWeight: m.weight700, lineHeight: 14},
-  checkText: {flex: 1, fontSize: m.checkFont, lineHeight: 22},
+  tick: {fontSize: m.tickFont, fontWeight: m.weight700},
+  checkText: {flex: 1, fontSize: m.checkFont, lineHeight: m.checkLine},
   ok: {
     paddingVertical: m.bannerPadV,
     paddingHorizontal: m.bannerPadH,
@@ -178,7 +176,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: m.btnPadH,
     alignItems: 'center',
   },
-  btnEnabled: {},
   btnDisabled: {opacity: m.btnDisabledOpacity},
   btnText: {fontSize: m.btnFont, fontWeight: m.btnWeight},
 });

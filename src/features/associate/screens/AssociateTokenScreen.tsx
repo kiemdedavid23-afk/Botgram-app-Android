@@ -1,18 +1,20 @@
 /**
- * Token — AssociateTokenPage.tsx. Jeton en mémoire uniquement.
- * Imports : ../components, ../store, ../texts, ../../../shared/theme, ../../../core/utils
+ * Token — AssociateTokenPage.tsx. Jeton en mémoire uniquement (store).
  */
-import React, {useState} from 'react';
+import React from 'react';
 import {View, Text, TextInput, Pressable, StyleSheet} from 'react-native';
 import {KeyRound, Eye, EyeOff} from 'lucide-react-native';
 import {useTheme, associateMetrics as m} from '../../../shared/theme';
 import {AssociateShell} from '../components/AssociateShell';
-import {useAssociateStore} from '../store/associateStore';
+import {
+  useAssociateStore,
+  type VerifyResult,
+} from '../store/associateStore';
 import {texts} from '../texts';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 
 type Props = {
-  onVerified: (result: string) => void;
+  onVerified: (result: VerifyResult) => void;
   onBack: () => void;
 };
 
@@ -27,12 +29,6 @@ export function AssociateTokenScreen({
   const setToken = useAssociateStore(s => s.setToken);
   const setRevealed = useAssociateStore(s => s.setRevealed);
   const verify = useAssociateStore(s => s.verify);
-  const [local, setLocal] = useState(token);
-
-  const onChange = (t: string) => {
-    setLocal(t);
-    setToken(t);
-  };
 
   const onVerify = () => {
     fireAndForget(
@@ -43,7 +39,7 @@ export function AssociateTokenScreen({
     );
   };
 
-  const canVerify = local.trim().length > 0 && !verifying;
+  const canVerify = token.trim().length > 0 && !verifying;
 
   return (
     <AssociateShell title={texts.tokenTitle} step={3} onBack={onBack}>
@@ -53,7 +49,7 @@ export function AssociateTokenScreen({
           {backgroundColor: colors.bgPrimary, shadowColor: colors.black},
         ]}>
         <View style={styles.row}>
-          <KeyRound size={20} color={colors.accent} />
+          <KeyRound size={m.tokenIcon} color={colors.accent} />
           <Text style={[styles.cardTitle, {color: colors.textPrimary}]}>
             {texts.tokenCardTitle}
           </Text>
@@ -73,8 +69,8 @@ export function AssociateTokenScreen({
               color: colors.textPrimary,
             },
           ]}
-          value={local}
-          onChangeText={onChange}
+          value={token}
+          onChangeText={setToken}
           placeholder={texts.tokenPlaceholder}
           placeholderTextColor={colors.textHint}
           secureTextEntry={!revealed}
@@ -88,9 +84,9 @@ export function AssociateTokenScreen({
           onPress={() => setRevealed(!revealed)}
           style={[styles.ghost, {borderColor: colors.border}]}>
           {revealed ? (
-            <EyeOff size={16} color={colors.accent} />
+            <EyeOff size={m.ghostIcon} color={colors.accent} />
           ) : (
-            <Eye size={16} color={colors.accent} />
+            <Eye size={m.ghostIcon} color={colors.accent} />
           )}
           <Text style={[styles.ghostText, {color: colors.accent}]}>
             {revealed ? texts.hideToken : texts.showToken}
@@ -102,7 +98,7 @@ export function AssociateTokenScreen({
         onPress={onVerify}
         style={[
           styles.btn,
-          canVerify ? styles.btnEnabled : styles.btnDisabled,
+          !canVerify ? styles.btnDisabled : null,
           {
             backgroundColor: canVerify ? colors.accent : colors.bgTertiary,
           },
@@ -123,16 +119,25 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: m.cardRadius,
     padding: m.cardPad,
-    elevation: 1,
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    shadowOffset: {width: 0, height: 1},
-    gap: 8,
+    elevation: m.shadowElevation,
+    shadowOpacity: m.shadowOpacity,
+    shadowRadius: m.shadowRadius,
+    shadowOffset: {width: 0, height: m.shadowOffsetY},
+    gap: m.ghostGap,
   },
-  row: {flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4},
-  cardTitle: {fontSize: 16, fontWeight: m.weight600},
-  help: {fontSize: 14, lineHeight: 20, marginBottom: 4},
-  label: {fontSize: 14},
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: m.tokenTitleRowGap,
+    marginBottom: 4,
+  },
+  cardTitle: {fontSize: m.tokenTitleSize, fontWeight: m.weight600},
+  help: {
+    fontSize: m.tokenHelpSize,
+    lineHeight: m.tokenHelpLine,
+    marginBottom: 4,
+  },
+  label: {fontSize: m.tokenLabelSize},
   input: {
     borderWidth: 1,
     borderRadius: m.inputRadius,
@@ -142,23 +147,22 @@ const styles = StyleSheet.create({
     marginTop: m.inputMarginTop,
   },
   ghost: {
-    marginTop: 8,
+    marginTop: m.ghostGap,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: m.ghostGap,
     borderWidth: 1,
     borderRadius: m.btnRadius,
-    paddingVertical: 12,
+    paddingVertical: m.ghostPadV,
   },
-  ghostText: {fontSize: 15, fontWeight: m.weight600},
+  ghostText: {fontSize: m.ghostFont, fontWeight: m.weight600},
   btn: {
     borderRadius: m.btnRadius,
     paddingVertical: m.btnPadV,
     paddingHorizontal: m.btnPadH,
     alignItems: 'center',
   },
-  btnEnabled: {},
   btnDisabled: {opacity: m.btnDisabledOpacity},
   btnText: {fontSize: m.btnFont, fontWeight: m.btnWeight},
 });

@@ -1,6 +1,5 @@
 /**
  * Verify — AssociateVerifyPage.tsx.
- * Imports : ../components, ../store, ../texts, ../../../shared/theme
  */
 import React from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
@@ -64,7 +63,7 @@ export function AssociateVerifyScreen({
             styles.msg,
             {
               backgroundColor: isError
-                ? colors.danger + '14'
+                ? colors.dangerSoft
                 : colors.successSoft,
             },
           ]}>
@@ -101,13 +100,17 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: m.cardRadius,
     padding: m.cardPad,
-    elevation: 1,
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    shadowOffset: {width: 0, height: 1},
-    gap: 14,
+    elevation: m.shadowElevation,
+    shadowOpacity: m.shadowOpacity,
+    shadowRadius: m.shadowRadius,
+    shadowOffset: {width: 0, height: m.shadowOffsetY},
+    gap: m.previewGap,
   },
-  preview: {flexDirection: 'row', alignItems: 'center', gap: 14},
+  preview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: m.previewGap,
+  },
   avatar: {
     width: m.avatar,
     height: m.avatar,
@@ -117,7 +120,11 @@ const styles = StyleSheet.create({
   },
   avatarText: {fontSize: m.avatarFont, fontWeight: m.weight600},
   meta: {flex: 1},
-  name: {fontSize: m.botNameSize, fontWeight: m.weight600, marginBottom: 2},
+  name: {
+    fontSize: m.botNameSize,
+    fontWeight: m.weight600,
+    marginBottom: 2,
+  },
   user: {fontSize: m.botUserSize},
   msg: {
     paddingVertical: m.bannerPadV,
@@ -135,8 +142,8 @@ const styles = StyleSheet.create({
   ghost: {
     borderWidth: 1,
     borderRadius: m.btnRadius,
-    paddingVertical: 12,
+    paddingVertical: m.ghostPadV,
     alignItems: 'center',
   },
-  ghostText: {fontSize: 15, fontWeight: m.weight600},
+  ghostText: {fontSize: m.ghostFont, fontWeight: m.weight600},
 });
