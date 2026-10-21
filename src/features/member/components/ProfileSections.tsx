@@ -12,7 +12,7 @@ import {
   Mail,
   Calendar,
   ShieldCheck,
-  Bot,
+  Bot as BotIcon,
   Pencil,
   LogOut,
   Trash2,
@@ -190,7 +190,7 @@ export function ProfileSections({
           />
           <Divider />
           <ProfileRow
-            icon={<Bot />}
+            icon={<BotIcon />}
             label={texts.labelDefaultBot}
             value={defaultBot ? `@${defaultBot.username}` : texts.noDefaultBot}
             onPress={onGoDashboard}

@@ -129,26 +129,49 @@ export function ProfileHero({
         </Svg>
       </Animated.View>
 
-      <View style={styles.avatarRing}>
+      <View
+        style={[styles.avatarRing, {backgroundColor: colors.heroAvatarRing}]}>
         <View
           style={[
             styles.avatar,
-            {backgroundColor: 'rgba(255,255,255,0.25)'},
+            {backgroundColor: colors.heroAvatarInner},
           ]}>
-          <Text style={styles.avatarText}>{initial}</Text>
+          <Text style={[styles.avatarText, {color: colors.heroText}]}>
+            {initial}
+          </Text>
         </View>
       </View>
 
-      <Text style={styles.name}>{displayName || '—'}</Text>
+      <Text style={[styles.name, {color: colors.heroText}]}>
+        {displayName || '—'}
+      </Text>
 
       <View style={styles.chips}>
-        <View style={styles.chip}>
+        <View
+          style={[
+            styles.chip,
+            {
+              backgroundColor: colors.heroChipBg,
+              borderColor: colors.heroChipBorder,
+            },
+          ]}>
           <View style={[styles.chipDot, {backgroundColor: dotColor}]} />
-          <Text style={styles.chipText}>{statusLabel(status)}</Text>
+          <Text style={[styles.chipText, {color: colors.heroText}]}>
+            {statusLabel(status)}
+          </Text>
         </View>
         {emailVerified ? (
-          <View style={styles.chip}>
-            <Text style={styles.chipText}>{texts.verifiedChip}</Text>
+          <View
+            style={[
+              styles.chip,
+              {
+                backgroundColor: colors.heroChipBg,
+                borderColor: colors.heroChipBorder,
+              },
+            ]}>
+            <Text style={[styles.chipText, {color: colors.heroText}]}>
+              {texts.verifiedChip}
+            </Text>
           </View>
         ) : null}
       </View>
@@ -180,7 +203,6 @@ const styles = StyleSheet.create({
   avatarRing: {
     borderRadius: 9999,
     padding: m.avatarPad,
-    backgroundColor: 'rgba(255,255,255,0.4)',
   },
   avatar: {
     width: m.avatarSize,
@@ -192,13 +214,11 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: m.avatarFont,
     fontWeight: '700',
-    color: '#fff',
   },
   name: {
     marginTop: m.nameMarginTop,
     fontSize: m.nameSize,
     fontWeight: m.nameWeight,
-    color: '#fff',
     letterSpacing: -0.5,
     textAlign: 'center',
   },
@@ -216,9 +236,7 @@ const styles = StyleSheet.create({
     paddingVertical: m.chipPadV,
     paddingHorizontal: m.chipPadH,
     borderRadius: 99,
-    backgroundColor: 'rgba(255,255,255,0.18)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.24)',
   },
   chipDot: {
     width: m.chipDot,
@@ -228,6 +246,5 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: m.chipFont,
     fontWeight: '600',
-    color: '#fff',
   },
 });

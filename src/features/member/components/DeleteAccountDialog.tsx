@@ -20,6 +20,7 @@ import {
 } from '../../../shared/theme';
 import {useMemberStore} from '../store/memberStore';
 import {texts} from '../texts';
+import {fireAndForget} from '../../../core/utils/fireAndForget';
 
 type Step = 'confirm' | 'code';
 
@@ -197,7 +198,7 @@ export function DeleteAccountDialog({
             {step === 'confirm' ? (
               <Pressable
                 onPress={() => {
-                  void onSendCode();
+                  fireAndForget(onSendCode());
                 }}
                 disabled={isDeleting}
                 style={[styles.btn, {backgroundColor: colors.danger}]}>
@@ -212,7 +213,7 @@ export function DeleteAccountDialog({
             ) : (
               <Pressable
                 onPress={() => {
-                  void onConfirm();
+                  fireAndForget(onConfirm());
                 }}
                 disabled={isDeleting}
                 style={[styles.btn, {backgroundColor: colors.danger}]}>

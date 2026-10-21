@@ -6,7 +6,6 @@ import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
-  TextInput,
   Pressable,
   Modal,
   ScrollView,
@@ -23,6 +22,7 @@ import {useMemberStore} from '../store/memberStore';
 import type {PatchMeFields} from '../../../core/api/endpoints/member';
 import {texts} from '../texts';
 import {ProfileField} from './ProfileField';
+import {fireAndForget} from '../../../core/utils/fireAndForget';
 
 type Props = {
   visible: boolean;
@@ -178,7 +178,7 @@ export function EditProfileSheet({
             </Pressable>
             <Pressable
               onPress={() => {
-                void onSave();
+                fireAndForget(onSave());
               }}
               disabled={saving}
               style={[styles.btn, {backgroundColor: colors.accent}]}>
