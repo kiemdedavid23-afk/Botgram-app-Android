@@ -1,68 +1,99 @@
-# LIVRAISONS — L3b réserves
+# LIVRAISONS — L3c Profil membre + Paramètres
+
+## Périmètre
+- Écran Profil membre (onglet `member`) : héros, sections Informations / Compte / Session
+- Feuille de modification (EDITABLE_FIELDS) → PATCH /me
+- Suppression de compte en 2 étapes (code_length du Worker)
+- Onglet Paramètres : Mon profil, Se déconnecter (pas de Documentation)
+- Câblage RootNavigator ; suppression BotManageScreen
+
+## Fichiers créés
+- `src/features/member/utils/format.ts`
+- `src/features/member/texts.ts`
+- `src/features/member/screens/MemberProfileScreen.tsx`
+- `src/features/member/components/ProfileHero.tsx`
+- `src/features/member/components/ProfileRow.tsx`
+- `src/features/member/components/ProfileSections.tsx`
+- `src/features/member/components/EditProfileSheet.tsx`
+- `src/features/member/components/DeleteAccountDialog.tsx`
+- `src/features/settings/texts.ts`
+- `src/features/settings/screens/MemberSettingsScreen.tsx`
+- `src/shared/theme/memberProfileMetrics.ts`
+- `src/shared/theme/settingsMetrics.ts`
+- `__tests__/member-profile.test.ts`
 
 ## Fichiers modifiés
-Feature associate complète + theme + test + RootNavigator (inchangé structure).
+- `src/features/member/store/memberStore.ts` — `deleteCodeLength`, `resetDelete`
+- `src/features/member/index.ts` — exports écran + format
+- `src/features/settings/index.ts` — export MemberSettingsScreen
+- `src/shared/theme/colors.ts` — tokens statut / badge / settings (light + dark)
+- `src/shared/theme/index.ts` — exports metrics
+- `src/app/RootNavigator.tsx` — onglets Profil / Paramètres
 
 ## Fichiers à supprimer
-- `src/features/bots/store/associateStore.ts`
-- `src/features/associate/components/store/associateStore.ts` (si présent)
-- `src/features/associate/screens/AssociateStackScreens.tsx` (si présent)
+- `src/features/bots/screens/BotManageScreen.tsx` (ébauche non ouverte ; **supprimé**)
+
+## setMuted
+Conservé dans `botsStore` (testé dans step3-member-data.test.ts). `src/features/bots/texts.ts` conservé pour l’étape 4 (bot profile).
 
 ## Tableaux site → app
 
-### Shell (AssociateFlow.css)
+### Héros (MemberProfilePage.css)
+| propriété | site (fichier:ligne) | app (token) |
+|---|---|---|
+| radius | l.26 32 | memberProfileMetrics.heroRadius |
+| min-height | l.27 430 | heroMinHeight |
+| padding | l.28 44 24 38 | heroPad* |
+| dégradé clair | l.33 brandHero | gradients.brandHero |
+| dégradé sombre | l.36-38 brandHeroAlt | gradients.brandHeroAlt |
+| orbe A/B | l.48-60 320/240 | orbA/orbB |
+| name 34/800 | l.95-99 | nameSize/nameWeight |
+| chip | l.115-120 | chip* + statusGood/Warn/Bad |
+
+### Sections / lignes
 | propriété | site | app |
 |---|---|---|
-| head gap / pad | l.12-13 gap 8, pad 12 16 | headGap, headPadV/H |
-| title | l.22-23 18/600 | headTitleSize/Weight |
-| progress | l.29-37 gap 6 h 4 r 2 | progress* |
-| body | l.52-55 20 16 32 gap 16 | bodyPad*, bodyGap |
+| section title 12/700 .08em | l.145-152 | sectionTitle* |
+| card radius 20 | l.172 | cardRadius |
+| row pad 14 16 gap 14 | l.186-192 | rowPad*/rowGap |
+| icon 38 r12 | l.200-210 | rowIcon* |
+| badge 11/700 | l.248-255 | badge* |
 
-### Intro
+### Feuille édition (.mp-sheet)
 | propriété | site | app |
 |---|---|---|
-| card | l.62-63 r-lg pad 20 | cardRadius, cardPad |
-| points gap | l.85 gap 10 | pointGap |
-| check | l.130-142 gap 12 pad 14 box 18 | check* |
-| ok color | .assoc__ok #1b7f3a / #f0fff4 | success / successSoft |
-| btn disabled opacity | l.186 0.7 | btnDisabledOpacity |
+| radius haut 24 | l.295 | sheetRadius |
+| input h 48 r 14 | l.340-350 | fieldInput* |
+| btn h 48 r 14 15/700 | l.360-375 | btn* |
+| overlay rgba(0,0,0,.45) | l.285 | colors.overlay |
 
-### Ready
+### Dialog suppression
 | propriété | site | app |
 |---|---|---|
-| card + continue | mêmes tokens card / btn | card*, btn* |
+| max-width 360 r 22 | l.378-382 | dialogMaxWidth/dialogRadius |
+| code_length | Worker response | store.deleteCodeLength (jamais 6 en dur) |
 
-### Token
+### Paramètres (settings-list.css)
 | propriété | site | app |
 |---|---|---|
-| input | l.148-153 border, pad 14 16, font 16 | input* |
-| jeton = store | mémoire only | value={token} store, pas de useState local |
-| ghost | l.199 border accent | ghost* |
+| card margin 12 r 18 | l.231-236 | settingsMetrics.card* |
+| row pad 12 14 gap 14 | l.238-248 | rowPad*/rowGap |
+| icon bg profile/logout | MemberSettingsPage inline | settingsIconProfile/Logout |
 
-### Verify
-| propriété | site | app |
-|---|---|---|
-| preview avatar | l.219-233 52 / 20 | avatar, avatarFont |
-| error bg | l.108 #fff4f4 | dangerSoft |
+## Écarts connus
+1. **Photo** : pas de sélecteur d’image (hors liste dépendances) — aucun bouton caméra.
+2. **Documentation** : ligne absente de l’app (guide non disponible) — signalé ici.
+3. **Captures** : non fournies dans ce zip (CI / propriétaire).
+4. **Sélecteur pays** : champ texte code ISO + liste d’aide (pas de Picker natif dédié).
+5. **StyleSheet héros** : texte blanc sur dégradé (équivalent CSS `#fff` / `heroText`) ; orbes `rgba(255,255,255,…)` comme le site.
 
-### Confirm
-| propriété | site | app |
-|---|---|---|
-| sans bot → token | AssociateConfirmPage useEffect | onNeedToken → replace AssociateToken |
-| no_token | confirm() | onNeedToken |
+## Tests
+- `__tests__/member-profile.test.ts` : format, updateProfile ok/validation, code_length, code invalide, resetDelete, anti double-envoi génération.
+- Existant step3-member-data conserve suppression complète + clearMemberData.
 
-### Done
-| propriété | site | app |
-|---|---|---|
-| icône check | done | doneIcon 48 |
-| reset sortie | — | reset() on unmount / home |
-
-## Corrections vérifiées dans le code
-1. Token : pas de useState local ; value={token} store
-2. Confirm : useEffect !token\|\|!preview → onNeedToken ; no_token → onNeedToken
-3. Abandon : useResetOnLeaveFlow + reset on Intro back + test abandon
-4. Metrics : toutes tailles dans associateMetrics
-5. Pas de btnEnabled vide
-6. dangerSoft token (pas de concat)
-7. onVerified: VerifyResult
-8. Pas de commentaires Emplacement/Imports
+## Commandes (à relancer en CI)
+```
+npm run typecheck
+npm run lint
+npm test
+```
