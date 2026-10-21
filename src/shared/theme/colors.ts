@@ -69,8 +69,7 @@ export const lightColors: ColorTokens = {
   bubbleIn: '#ffffff',
   bubbleInText: '#000000',
   online: '#0ac630',
-  onlineSoft: 'rgba(10,198,48,0.12)',
-  dangerSoft: 'rgba(229,57,53,0.08)', // sombre : la teinte danger + '14' d'avant, sans régression. Le site (AssociateFlow.css l.108) n'a que #fff4f4 en clair. // DashboardPage.css l.277
+  onlineSoft: 'rgba(10,198,48,0.12)'. // DashboardPage.css l.277
   divider: 'rgba(0,0,0,0.06)', // settings-common.css .chat-settings__header
   danger: '#e53935',
   dangerSoft: '#fff4f4', // AssociateFlow.css .assoc__error l.108
@@ -104,7 +103,8 @@ export const darkColors: ColorTokens = {
   accentSoft: 'rgba(94,179,246,0.15)',
   accentSoft24: 'rgba(94,179,246,0.24)', // DashboardPage.css l.213 (dark)
   border: '#2b2b2b',
-  borderSoft: 'rgba(43,43,43,0.55)', // color-mix border 55% — DashboardPage.css l.162
+  borderSoft: 'rgba(43,43,43,0.55)',
+dangerSoft: 'rgba(229,57,53,0.08)', // sombre : la teinte danger + '14' d'avant, sans régression. Le site (AssociateFlow.css l.108) n'a que #fff4f4 en clair. // color-mix border 55% — DashboardPage.css l.162
   bubbleOut: '#2b5278',
   bubbleOutText: '#ffffff',
   bubbleIn: '#182533',
