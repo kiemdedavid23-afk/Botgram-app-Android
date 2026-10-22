@@ -520,3 +520,17 @@ describe('L4c-6. hasPhoto initial false (plus de readHasPhoto)', () => {
     expect(res.data.hasPhoto).toBe(false);
   });
 });
+
+describe('L4c-7. saisie commande sans filtrage a la frappe', () => {
+  it('validate signale format sans forcer toLowerCase sur la saisie', () => {
+    const p = profile({
+      commands: {
+        'default|default': [{command: 'Bad-Cmd', description: 'ok desc'}],
+      },
+    });
+    const e = validate(p);
+    expect(e['cmd:default|default:0:command']).toMatch(/1 à 32|minuscules|chiffres|_/i);
+    // la valeur brouillon reste telle quelle (pas de normalisation a la frappe)
+    expect(p.commands['default|default']![0]!.command).toBe('Bad-Cmd');
+  });
+});
