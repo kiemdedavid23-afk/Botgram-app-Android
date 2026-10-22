@@ -1,5 +1,5 @@
 /**
- * Tests L4b - un test par correction de contenu (1-10).
+ * Tests L4b + L4c patch 1 (logique commandes/menu/droits).
  * Logique pure + store uniquement (pas de composant UI / lucide).
  */
 import {validate} from '../src/features/botprofile/utils/validate';
@@ -85,6 +85,7 @@ function profile(over: Partial<BotProfile> = {}): BotProfile {
 
 /** Reponses pour getBotProfile apres la lecture textes defaut. */
 function mockParallelAfterTexts() {
+  // commands, menu, rights groups, rights channels (plus de photo JSON)
   mockHttp.mockResolvedValueOnce(
     ok({
       commands: [{command: 'start', description: 'Start'}],
@@ -97,7 +98,6 @@ function mockParallelAfterTexts() {
     ok({rights: {can_manage_chat: true}}),
   );
   mockHttp.mockResolvedValueOnce(ok({rights: {}}));
-  mockHttp.mockResolvedValueOnce(fail(404, 'NOT_FOUND')); // photo
   // probes: same as default -> ignore
   mockHttp.mockResolvedValue(
     ok({name: 'Demo', description: '', short_description: ''}),
@@ -350,5 +350,177 @@ describe('photo source', () => {
       uri: 'https://api.test/v1/bots/b1/photo',
       headers: {Authorization: 'Bearer tok'},
     });
+  });
+});
+
+
+// ─── L4c patch 1 — logique commandes / menu / droits / erreurs lecture ───
+
+describe('L4c-1. validate commandes', () => {
+  it('format invalide, doublon, description, max 100', () => {
+    const draft = profile({
+      commands: {
+        'default|default': [
+          {command: 'OK', description: 'x'}, // majuscule invalide
+          {command: 'start', description: 'a'},
+          {command: 'start', description: 'b'}, // doublon
+          {command: 'help', description: ''}, // desc vide
+        ],
+      },
+    });
+    const errors = validate(draft);
+    expect(errors['cmd:default|default:0:command']).toBeTruthy();
+    expect(errors['cmd:default|default:2:command']).toBeTruthy();
+    expect(errors['cmd:default|default:3:description']).toBeTruthy();
+  });
+
+  it('max 100 commandes', () => {
+    const list = Array.from({length: 101}, (_, i) => ({
+      command: `c${i}`,
+      description: 'd',
+    }));
+    const errors = validate(
+      profile({commands: {'default|default': list}}),
+    );
+    expect(errors['cmd:default|default:list']).toBeTruthy();
+  });
+});
+
+describe('L4c-2. validate menu web_app', () => {
+  it('texte manquant et url non https', () => {
+    const errors = validate(
+      profile({
+        menu_button: {type: 'web_app', text: '', url: 'http://x.com'},
+      }),
+    );
+    expect(errors['menu:text']).toBeTruthy();
+    expect(errors['menu:url']).toBeTruthy();
+  });
+
+  it('https valide + texte ok', () => {
+    const errors = validate(
+      profile({
+        menu_button: {
+          type: 'web_app',
+          text: 'Ouvrir',
+          url: 'https://example.com',
+        },
+      }),
+    );
+    expect(errors['menu:text']).toBeUndefined();
+    expect(errors['menu:url']).toBeUndefined();
+  });
+});
+
+describe('L4c-3. diff commit commandes', () => {
+  it('liste vide -> suppression (deleteMyCommands path)', () => {
+    const saved = profile({
+      commands: {
+        'default|default': [{command: 'start', description: 'S'}],
+      },
+    });
+    const draft = profile({commands: {}});
+    const changes = buildChanges(saved, draft);
+    const cmd = changes.find(c => c.id.startsWith('cmd:'));
+    expect(cmd).toBeTruthy();
+    const next = cmd!.commit(saved, draft);
+    expect(next.commands['default|default']).toBeUndefined();
+  });
+
+  it('ajout commande -> commit garde la liste', () => {
+    const saved = profile({commands: {}});
+    const draft = profile({
+      commands: {
+        'default|default': [{command: 'help', description: 'Aide'}],
+      },
+    });
+    const changes = buildChanges(saved, draft);
+    expect(changes.some(c => c.id === 'cmd:default|default')).toBe(true);
+    const next = changes
+      .filter(c => c.id.startsWith('cmd:'))
+      .reduce((s, c) => c.commit(s, draft), saved);
+    expect(next.commands['default|default']).toEqual([
+      {command: 'help', description: 'Aide'},
+    ]);
+  });
+});
+
+describe('L4c-4. diff menu et droits', () => {
+  it('changement menu', () => {
+    const saved = profile({menu_button: {type: 'default'}});
+    const draft = profile({menu_button: {type: 'commands'}});
+    const changes = buildChanges(saved, draft);
+    expect(changes.some(c => c.id === 'menu')).toBe(true);
+    const next = changes.find(c => c.id === 'menu')!.commit(saved, draft);
+    expect(next.menu_button.type).toBe('commands');
+  });
+
+  it('changement droits groupes seulement', () => {
+    const groups = emptyRights();
+    groups.can_manage_chat = true;
+    const saved = profile();
+    const draft = profile({
+      admin_rights: {groups, channels: emptyRights()},
+    });
+    const changes = buildChanges(saved, draft);
+    expect(changes.some(c => c.id === 'rights:groups')).toBe(true);
+    expect(changes.some(c => c.id === 'rights:channels')).toBe(false);
+  });
+});
+
+describe('L4c-5. lecture en erreur remonte loadError', () => {
+  it('erreur sur commands -> loadError, pas de profil', async () => {
+    mockHttp.mockResolvedValueOnce(
+      ok({name: 'Demo', description: '', short_description: ''}),
+    );
+    mockHttp.mockResolvedValueOnce(fail(500, 'INTERNAL')); // commands
+    const r = await useBotProfileStore
+      .getState()
+      .load('b1', {name: 'X'}, true);
+    expect(r).toBe('error');
+    expect(useBotProfileStore.getState().loadError).toBeTruthy();
+    expect(useBotProfileStore.getState().draft).toBeNull();
+  });
+
+  it('erreur sur menu -> loadError', async () => {
+    mockHttp.mockResolvedValueOnce(
+      ok({name: 'Demo', description: '', short_description: ''}),
+    );
+    mockHttp.mockResolvedValueOnce(
+      ok({commands: []}),
+    );
+    mockHttp.mockResolvedValueOnce(fail(502, 'TELEGRAM_ERROR')); // menu
+    const r = await useBotProfileStore
+      .getState()
+      .load('b1', {name: 'X'}, true);
+    expect(r).toBe('error');
+    expect(useBotProfileStore.getState().draft).toBeNull();
+  });
+
+  it('erreur sur rights groups -> loadError', async () => {
+    mockHttp.mockResolvedValueOnce(
+      ok({name: 'Demo', description: '', short_description: ''}),
+    );
+    mockHttp.mockResolvedValueOnce(ok({commands: []}));
+    mockHttp.mockResolvedValueOnce(ok({menu_button: {type: 'default'}}));
+    mockHttp.mockResolvedValueOnce(fail(429, 'RATE_LIMITED')); // rights groups
+    const r = await useBotProfileStore
+      .getState()
+      .load('b1', {name: 'X'}, true);
+    expect(r).toBe('error');
+    expect(useBotProfileStore.getState().draft).toBeNull();
+  });
+});
+
+describe('L4c-6. hasPhoto initial false (plus de readHasPhoto)', () => {
+  it('getBotProfile hasPhoto false même si lectures ok', async () => {
+    mockHttp.mockResolvedValueOnce(
+      ok({name: 'Demo', description: '', short_description: ''}),
+    );
+    mockParallelAfterTexts();
+    const res = await getBotProfile('b1', {name: 'Demo'});
+    expect(res.ok).toBe(true);
+    if (!res.ok) throw new Error('ok');
+    expect(res.data.hasPhoto).toBe(false);
   });
 });
