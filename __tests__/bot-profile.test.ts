@@ -1,10 +1,15 @@
 /**
- * Tests L4b — diff, validate, completeness, edit langues, store.
+ * Tests L4b - diff, validate, completeness, edit, store save, photo source.
  */
-import {validateField, validateTexts} from '../src/features/botprofile/utils/validate';
+import React from 'react';
+import {validateField} from '../src/features/botprofile/utils/validate';
 import {completeness} from '../src/features/botprofile/utils/completeness';
 import {buildChanges, hasChanges} from '../src/features/botprofile/utils/diff';
-import {addLanguage, removeLanguage, setTextField} from '../src/features/botprofile/utils/edit';
+import {
+  addLanguage,
+  removeLanguage,
+  setTextField,
+} from '../src/features/botprofile/utils/edit';
 import {
   DEFAULT_LANG,
   emptyRights,
@@ -14,6 +19,7 @@ import {buildBotPhotoSource} from '../src/core/api/endpoints/botProfile';
 import * as storage from '../src/core/storage';
 import {useBotProfileStore} from '../src/features/botprofile/store/botProfileStore';
 import {http} from '../src/core/api/http';
+import {ProfileSessionSection} from '../src/features/member/components/ProfileSessionSection';
 
 jest.mock('../src/core/storage');
 jest.mock('../src/core/api/http');
@@ -30,6 +36,29 @@ jest.mock('../src/core/config/env', () => ({
 const mockHttp = http as jest.MockedFunction<typeof http>;
 const mockGetToken = storage.getAccessToken as jest.Mock;
 const mockCacheDelete = storage.cacheDelete as jest.Mock;
+
+function ok<T>(data: T, status = 200): Awaited<ReturnType<typeof http>> {
+  return {
+    ok: true,
+    data,
+    status,
+    headers: new Headers(),
+    requestId: null,
+  };
+}
+
+function fail(
+  status: number,
+  code: string,
+): Awaited<ReturnType<typeof http>> {
+  return {
+    ok: false,
+    error: {code, message: '', details: undefined},
+    status,
+    headers: new Headers(),
+    requestId: null,
+  };
+}
 
 function profile(over: Partial<BotProfile> = {}): BotProfile {
   return {
@@ -55,6 +84,7 @@ beforeEach(() => {
   jest.resetAllMocks();
   mockCacheDelete.mockResolvedValue(undefined);
   mockGetToken.mockResolvedValue('tok');
+  mockHttp.mockReset();
   useBotProfileStore.getState().clear();
 });
 
@@ -105,22 +135,54 @@ describe('edit / diff', () => {
   });
 });
 
-describe('photo source', () => {
-  it('construit uri + headers sans exposer hors core', async () => {
-    const src = await buildBotPhotoSource('b1');
-    expect(src).toEqual({
-      uri: 'https://api.test/v1/bots/b1/photo',
-      headers: {Authorization: 'Bearer tok'},
+describe('store save via Worker', () => {
+  it('enregistrement reussi', async () => {
+    const saved = profile();
+    const draft = setTextField(saved, DEFAULT_LANG, 'name', 'Nouveau');
+    useBotProfileStore.setState({
+      botId: 'b1',
+      saved,
+      draft,
+      generation: 0,
     });
+    mockHttp.mockResolvedValueOnce(ok({updated: true}));
+    await useBotProfileStore.getState().save();
+    expect(mockHttp).toHaveBeenCalled();
+    const report = useBotProfileStore.getState().report;
+    expect(report).toHaveLength(1);
+    expect(report?.[0].ok).toBe(true);
+    expect(useBotProfileStore.getState().saved?.texts.default.name).toBe(
+      'Nouveau',
+    );
   });
 
-  it('sans jeton → null', async () => {
-    mockGetToken.mockResolvedValueOnce(null);
-    expect(await buildBotPhotoSource('b1')).toBeNull();
+  it('echec partiel 429', async () => {
+    const saved = profile({
+      texts: {
+        default: {
+          name: 'A',
+          description: 'old',
+          short_description: '',
+        },
+      },
+    });
+    const draft = setTextField(
+      setTextField(saved, DEFAULT_LANG, 'name', 'B'),
+      DEFAULT_LANG,
+      'description',
+      'new',
+    );
+    useBotProfileStore.setState({botId: 'b1', saved, draft, generation: 0});
+    mockHttp
+      .mockResolvedValueOnce(ok({updated: true}))
+      .mockResolvedValueOnce(fail(429, 'RATE_LIMITED'));
+    await useBotProfileStore.getState().save();
+    const report = useBotProfileStore.getState().report;
+    expect(report).toHaveLength(2);
+    expect(report?.some(r => r.ok)).toBe(true);
+    expect(report?.some(r => !r.ok)).toBe(true);
   });
-});
 
-describe('store clear', () => {
   it('clear vide le brouillon', () => {
     useBotProfileStore.setState({
       botId: 'b1',
@@ -130,5 +192,32 @@ describe('store clear', () => {
     useBotProfileStore.getState().clear();
     expect(useBotProfileStore.getState().draft).toBeNull();
     expect(useBotProfileStore.getState().botId).toBeNull();
+  });
+});
+
+describe('photo source', () => {
+  it('construit uri + headers', async () => {
+    const src = await buildBotPhotoSource('b1');
+    expect(src).toEqual({
+      uri: 'https://api.test/v1/bots/b1/photo',
+      headers: {Authorization: 'Bearer tok'},
+    });
+  });
+
+  it('sans jeton -> null', async () => {
+    mockGetToken.mockResolvedValueOnce(null);
+    expect(await buildBotPhotoSource('b1')).toBeNull();
+  });
+});
+
+describe('ProfileSessionSection', () => {
+  it('exporte un composant fonction valide', () => {
+    expect(typeof ProfileSessionSection).toBe('function');
+    // Smoke : le module parse (typecheck) et le symbole est utilisable
+    const el = React.createElement(ProfileSessionSection, {
+      onLogout: () => undefined,
+      onDelete: () => undefined,
+    });
+    expect(el.type).toBe(ProfileSessionSection);
   });
 });
