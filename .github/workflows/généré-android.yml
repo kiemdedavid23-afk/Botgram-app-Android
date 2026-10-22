@@ -1,0 +1,82 @@
+name: Generate Android project
+
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Regenerer android/ meme s'il existe deja"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: generate-android
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Generate android/ project
+        run: |
+          if [ -d android ] && [ "${{ inputs.force }}" != "true" ]; then
+            echo "android/ existe deja : rien a generer (relancer avec force pour regenerer)."
+            exit 0
+          fi
+          rm -rf android
+          cd "$RUNNER_TEMP"
+          npx --yes @react-native-community/cli@latest init Botgram \
+            --version 0.88.0 \
+            --package-name com.botgram \
+            --title Botgram \
+            --skip-install \
+            --skip-git-init \
+            --directory tpl
+          cd "$GITHUB_WORKSPACE"
+          cp -a "$RUNNER_TEMP/tpl/android" android
+          ls android
+
+      - name: Wire react-native-config and tune Gradle
+        run: |
+          APP=android/app/build.gradle
+          if [ ! -f "$APP" ]; then
+            echo "::error::android/app/build.gradle introuvable."
+            exit 1
+          fi
+          if ! grep -q "dotenv.gradle" "$APP"; then
+            sed -i '/apply plugin: "com.facebook.react"/a apply from: "../../node_modules/react-native-config/android/dotenv.gradle"' "$APP"
+          fi
+          grep -q "dotenv.gradle" "$APP" || { echo "::error::Cablage dotenv impossible."; exit 1; }
+          if ! grep -q "org.gradle.caching" android/gradle.properties; then
+            sed -i 's/-Xmx2048m/-Xmx4g/' android/gradle.properties
+            {
+              echo "org.gradle.parallel=true"
+              echo "org.gradle.caching=true"
+            } >> android/gradle.properties
+          fi
+
+      - name: Commit android/ to the repo
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -f android
+          if git diff --cached --quiet; then
+            echo "Aucun changement a commiter."
+          else
+            git commit -m "chore: add generated android/ project"
+            git push
+          fi
