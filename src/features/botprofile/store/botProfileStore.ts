@@ -1,16 +1,17 @@
 /**
- * Store profil bot — draft / saved (site botProfileStore).
+ * Store profil bot - draft / saved (site botProfileStore).
+ * load : vide draft/saved/report quand botId change AVANT le fetch.
+ * save : ne met a jour que saved (commit) ; draft conserve les echecs.
  */
 import {create} from 'zustand';
-import {
-  getBotProfile,
-} from '../../../core/api/endpoints/botProfile';
+import {getBotProfile} from '../../../core/api/endpoints/botProfile';
 import type {
   BotProfile,
   ProfileSeed,
 } from '../../../core/api/endpoints/botProfile.types';
 import {registerMemberDataCleaner} from '../../../core/utils/memberData';
 import {buildChanges} from '../utils/diff';
+import {mapProfileError} from '../utils/errors';
 import {texts as T} from '../texts';
 
 export type ReportItem = {
@@ -29,20 +30,18 @@ type BotProfileStore = {
   loadError: string | null;
   report: ReportItem[] | null;
   generation: number;
-  load: (botId: string, seed: ProfileSeed, force?: boolean) => Promise<'ok' | 'error'>;
+  load: (
+    botId: string,
+    seed: ProfileSeed,
+    force?: boolean,
+  ) => Promise<'ok' | 'error'>;
   edit: (recipe: (draft: BotProfile) => BotProfile) => void;
+  setPhotoPresent: (present: boolean) => void;
   discard: () => void;
   save: () => Promise<void>;
   dismissReport: () => void;
   clear: () => void;
 };
-
-function mapErr(code: string | undefined): string {
-  if (code === 'RATE_LIMITED' || code === 'TOO_MANY_REQUESTS') {
-    return T.error429;
-  }
-  return T.errorGeneric;
-}
 
 export const useBotProfileStore = create<BotProfileStore>((set, get) => ({
   botId: null,
@@ -57,31 +56,68 @@ export const useBotProfileStore = create<BotProfileStore>((set, get) => ({
   load: async (botId, seed, force = false) => {
     const state = get();
     if (!force && state.botId === botId && state.saved) return 'ok';
+
+    const botChanged = state.botId !== botId;
     const gen = state.generation;
-    set({botId, loading: true, loadError: null, report: null});
+
+    // Vider AVANT le chargement si changement de bot (anti-fuite)
+    if (botChanged) {
+      set({
+        botId,
+        saved: null,
+        draft: null,
+        report: null,
+        loadError: null,
+        loading: true,
+      });
+    } else {
+      set({botId, loading: true, loadError: null, report: null});
+    }
+
     const res = await getBotProfile(botId, seed);
     if (get().generation !== gen || get().botId !== botId) return 'error';
+
     if (!res.ok) {
-      set({loading: false, loadError: mapErr(res.error.code)});
+      set({
+        loading: false,
+        loadError: mapProfileError(res.error.code),
+        saved: null,
+        draft: null,
+      });
       return 'error';
     }
-    set({saved: res.data, draft: res.data, loading: false});
+
+    set({saved: res.data, draft: res.data, loading: false, loadError: null});
     return 'ok';
   },
 
   edit: recipe => {
+    if (get().saving) return;
     const draft = get().draft;
     if (draft) set({draft: recipe(draft)});
   },
 
+  setPhotoPresent: present => {
+    const {draft, saved} = get();
+    set({
+      draft: draft ? {...draft, hasPhoto: present} : draft,
+      saved: saved ? {...saved, hasPhoto: present} : saved,
+    });
+  },
+
   discard: () => {
     const saved = get().saved;
-    if (saved) set({draft: JSON.parse(JSON.stringify(saved)), report: null});
+    if (saved) {
+      set({
+        draft: JSON.parse(JSON.stringify(saved)) as BotProfile,
+        report: null,
+      });
+    }
   },
 
   save: async () => {
     const {botId, saved, draft} = get();
-    if (!botId || !saved || !draft) return;
+    if (!botId || !saved || !draft || get().saving) return;
     const changes = buildChanges(saved, draft);
     if (changes.length === 0) return;
 
@@ -104,19 +140,13 @@ export const useBotProfileStore = create<BotProfileStore>((set, get) => ({
           id: change.id,
           label: change.label,
           ok: false,
-          message: mapErr(res.error.code),
+          message: mapProfileError(res.error.code),
         });
       }
     }
 
-    set({
-      saved: current,
-      draft: {...current, texts: {...current.texts, ...draft.texts}},
-      saving: false,
-      report,
-    });
-    // Align draft fields that succeeded with saved
-    set({draft: current, saved: current});
+    // Site : uniquement saved = current ; le draft garde les echecs
+    set({saved: current, saving: false, report});
   },
 
   dismissReport: () => set({report: null}),
