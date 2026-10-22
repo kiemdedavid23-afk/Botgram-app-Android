@@ -58,17 +58,21 @@ export function BotProfileScreen({onAddBot}: Props): React.JSX.Element {
     fireAndForget(loadBots());
   }, [loadBots]);
 
+  const botName = bot?.name ?? '';
+  const botUsername = bot?.username ?? undefined;
+  const botTelegramId = bot ? String(bot.telegram_bot_id) : '';
+
   useEffect(() => {
-    if (!botId || !bot) return;
+    if (!botId || !botName) return;
+    setLang(DEFAULT_LANG);
     fireAndForget(
       load(botId, {
-        name: bot.name,
-        username: bot.username ?? undefined,
-        telegram_id: String(bot.telegram_bot_id),
+        name: botName,
+        username: botUsername,
+        telegram_id: botTelegramId,
       }),
     );
-    setLang(DEFAULT_LANG);
-  }, [botId, bot?.id, load, bot]);
+  }, [botId, botName, botUsername, botTelegramId, load]);
 
   const dirty = hasChanges(saved, draft);
 
