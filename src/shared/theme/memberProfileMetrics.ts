@@ -45,6 +45,8 @@ export const memberProfileMetrics = {
   chipFont: 12.5,
   chipDot: 9,
   /** section title 12/700 letter-spacing .08em — l.145-152 */
+  sectionTitleGap: 8,
+  sectionTitlePadH: 4,
   sectionTitleSize: 12,
   sectionTitleLetter: 0.08,
   sectionInnerGap: 10,
