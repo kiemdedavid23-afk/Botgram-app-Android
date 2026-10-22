@@ -1,11 +1,10 @@
 /**
  * Dimensions profil bot — BotProfile.css + composants L4b/L4c.
- * Fusion : clés L4b conservées + nouvelles clés L4c.
- * Aucune clé retirée par rapport à L4b.
+ * Fusion : clés L4b conservées + L4c. Aucune clé retirée.
  */
 import type {TextStyle} from 'react-native';
 
-/** Clés L4b (utilisées par BotHero, Identity, Info, LangChips, Languages, SaveBar, Screen) */
+/** Clés L4b (BotHero, Identity, Info, LangChips, Languages, SaveBar, Screen) */
 const l4b = {
   /** .bp-scroll padding 0 14px */
   scrollPadH: 14,
@@ -19,7 +18,6 @@ const l4b = {
   heroAvatar: 104,
   heroNameSize: 22,
   heroNameWeight: '700' as const,
-  /** onglets L4b */
   tabPadV: 10,
   tabPadH: 14,
   tabFont: 14,
@@ -33,7 +31,7 @@ const l4b = {
   chipRadius: 99,
 } as const;
 
-/** Tabs L4c — .bp-tab / .bp-tabs (BotProfile.css) */
+/** Tabs — .bp-tab / .bp-tabs (BotProfile.css) */
 export const botProfileTabs = {
   gap: 6,
   paddingV: 6,
@@ -46,6 +44,16 @@ export const botProfileTabs = {
   tabPaddingV: 6,
   tabPaddingH: 10,
   tabGap: 3,
+  /** row layout tab (écran) */
+  tabRowMinHeight: 42,
+  tabIconSize: 16,
+  tabLabelSize: 14,
+  headTitleSize: 18,
+  headTitleWeight: '800' as TextStyle['fontWeight'],
+  headHintSize: 13,
+  headHintLineHeight: 18,
+  reportPad: 14,
+  reportLineSize: 13,
 };
 
 /** Commandes — .bp-cmds / .bp-cmd */
@@ -63,6 +71,29 @@ export const botProfileCmds = {
   actionsGap: 8,
   actionsPaddingH: 16,
   actionsPaddingV: 10,
+  /** labels section */
+  sectionLabelSize: 11,
+  sectionLabelWeight: '700' as TextStyle['fontWeight'],
+  sectionLabelSpacing: 0.07,
+  chipFontSize: 13,
+  chipFontWeight: '600' as TextStyle['fontWeight'],
+  btnPadV: 8,
+  btnPadH: 12,
+  btnRadius: 12,
+  btnGap: 6,
+  errFontSize: 12,
+  emptyPad: 16,
+  listErrPad: 12,
+  toolIconSize: 18,
+  toolPadTop: 4,
+  inputFontSize: 15,
+  inputPadH: 12,
+  fieldGapInner: 8,
+  lineGap: 6,
+  scopeRowGap: 8,
+  scopeRowMarginBottom: 8,
+  labelMarginBottom: 6,
+  labelMarginTop: 8,
 };
 
 /** Menu */
@@ -72,6 +103,21 @@ export const botProfileMenu = {
   optionPaddingH: 16,
   optionRadius: 14,
   fieldMarginTop: 12,
+  cardRadius: 16,
+  cardMarginH: 14,
+  noteSize: 13,
+  noteLineHeight: 18,
+  noteMarginBottom: 12,
+  radioDotSize: 20,
+  radioDotBorder: 2,
+  rowGap: 12,
+  valSize: 15,
+  valWeight: '600' as TextStyle['fontWeight'],
+  keySize: 12,
+  keyLineHeight: 16,
+  fieldsPad: 14,
+  fieldsGap: 12,
+  titlePadBottom: 8,
 };
 
 /** Droits — .bp-switch */
@@ -84,6 +130,22 @@ export const botProfileRights = {
   rowPaddingV: 12,
   rowPaddingH: 16,
   sectionGap: 16,
+  tabPadV: 8,
+  tabPadH: 14,
+  tabRadius: 99,
+  tabsGap: 8,
+  tabsMarginBottom: 12,
+  actionsGap: 8,
+  actionsMarginBottom: 12,
+  btnPadV: 8,
+  btnPadH: 14,
+  btnRadius: 12,
+  cardRadius: 16,
+  cardMarginH: 14,
+  labelSize: 15,
+  labelWeight: '500' as TextStyle['fontWeight'],
+  tabFontSize: 13,
+  tabFontWeight: '600' as TextStyle['fontWeight'],
 };
 
 /** Aperçu — .bp-preview / .bp-phone */
@@ -94,6 +156,7 @@ export const botProfilePreview = {
   gridGap: 10,
   phoneRadius: 20,
   phonePadding: 12,
+  phoneMinHeight: 160,
   emptyChatRadius: 16,
   emptyChatPaddingV: 12,
   emptyChatPaddingH: 14,
@@ -102,13 +165,35 @@ export const botProfilePreview = {
   menuPillRadius: 99,
   inputPillPaddingV: 7,
   inputPillPaddingH: 12,
+  avatarSize: 64,
+  avatarTextSize: 24,
+  avatarTextWeight: '700' as TextStyle['fontWeight'],
+  nameSize: 16,
+  nameWeight: '600' as TextStyle['fontWeight'],
+  tagSize: 10.5,
+  tagWeight: '700' as TextStyle['fontWeight'],
+  tagLetterSpacing: 0.06,
+  tagPadV: 2,
+  tagPadH: 8,
+  shortSize: 13,
+  shortLineHeight: 18,
+  userSize: 12,
+  emptyTitleSize: 13.5,
+  emptyTitleWeight: '700' as TextStyle['fontWeight'],
+  emptyBodySize: 12.5,
+  emptyBodyLineHeight: 18,
+  emptyBodyMarginTop: 6,
+  barGap: 8,
+  menuFontSize: 12.5,
+  menuFontWeight: '700' as TextStyle['fontWeight'],
+  inputFontSize: 12.5,
+  profileGap: 6,
+  chatMinHeight: 160,
+  chatGap: 12,
+  rootMarginTop: 8,
+  labelPadH: 4,
 };
 
-/**
- * Agrégat unique exporté par theme/index.
- * Toutes les clés L4b + clés L4c (tabs/cmds/menu/rights/preview).
- * Aucune clé L4b retirée.
- */
 export const botProfileMetrics = {
   ...l4b,
   ...botProfileTabs,
