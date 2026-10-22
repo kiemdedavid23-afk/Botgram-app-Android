@@ -28,7 +28,7 @@ type Confirm =
   | {kind: 'logoutAll'};
 
 export function GestionScreen(): React.JSX.Element {
-  const {colors, mode} = useTheme();
+  const {colors} = useTheme();
   const bots = useBotsStore(s => s.bots);
   const loadBots = useBotsStore(s => s.load);
   const retryWebhook = useBotsStore(s => s.retryWebhook);
