@@ -1,19 +1,27 @@
 /**
- * Diff brouillon / enregistre - site diff.ts.
- * Types commandes/menu/droits inclus ; L4b n'envoie que les textes.
+ * Diff brouillon / enregistre — site utils/diff.ts
+ * Textes + commandes + menu + droits.
  */
 import type {
+  AdminRights,
+  BotCommandItem,
   BotProfile,
   TextField,
 } from '../../../core/api/endpoints/botProfile.types';
+import {ADMIN_RIGHT_KEYS} from '../../../core/api/endpoints/botProfile.types';
 import {
-  setMyName,
+  deleteMyCommands,
+  setChatMenuButton,
+  setMyCommands,
+  setMyDefaultAdministratorRights,
   setMyDescription,
+  setMyName,
   setMyShortDescription,
 } from '../../../core/api/endpoints/botProfile';
 import type {HttpResult} from '../../../core/api/session';
 import {langLabel} from './languages';
-import {TEXT_LABELS} from './labels';
+import {SCOPE_LABELS, TEXT_LABELS} from './labels';
+import {parseCmdKey} from './edit';
 
 const FIELDS: TextField[] = ['name', 'description', 'short_description'];
 const EMPTY = {name: '', description: '', short_description: ''};
@@ -24,6 +32,17 @@ export type Change = {
   run: (botId: string) => Promise<HttpResult<unknown>>;
   commit: (saved: BotProfile, draft: BotProfile) => BotProfile;
 };
+
+function sameRights(a: AdminRights, b: AdminRights): boolean {
+  return ADMIN_RIGHT_KEYS.every(k => a[k] === b[k]);
+}
+
+function sameCommands(
+  a: BotCommandItem[] | undefined,
+  b: BotCommandItem[] | undefined,
+): boolean {
+  return JSON.stringify(a ?? []) === JSON.stringify(b ?? []);
+}
 
 export function buildChanges(saved: BotProfile, draft: BotProfile): Change[] {
   const changes: Change[] = [];
@@ -50,13 +69,74 @@ export function buildChanges(saved: BotProfile, draft: BotProfile): Change[] {
         commit: s => {
           const entry = {...EMPTY, ...s.texts[lang], [field]: after};
           const texts = {...s.texts, [lang]: entry};
-          const gone =
-            !draft.texts[lang] && FIELDS.every(f => !entry[f]);
+          const gone = !draft.texts[lang] && FIELDS.every(f => !entry[f]);
           if (gone) {
             delete texts[lang];
           }
           return {...s, texts};
         },
+      });
+    }
+  }
+
+  const cmdKeys = new Set([
+    ...Object.keys(saved.commands),
+    ...Object.keys(draft.commands),
+  ]);
+  for (const key of cmdKeys) {
+    const before = saved.commands[key];
+    const after = draft.commands[key] ?? [];
+    if (sameCommands(before, after)) continue;
+    const parsed = parseCmdKey(key);
+    if (!parsed) continue;
+    const {scope, lang} = parsed;
+    changes.push({
+      id: `cmd:${key}`,
+      label: `Commandes · ${SCOPE_LABELS[scope]} · ${langLabel(lang)}`,
+      run: botId =>
+        after.length === 0
+          ? deleteMyCommands(botId, scope, lang)
+          : setMyCommands(botId, after, scope, lang),
+      commit: s => {
+        const commands = {...s.commands};
+        if (after.length === 0) delete commands[key];
+        else commands[key] = after;
+        return {...s, commands};
+      },
+    });
+  }
+
+  if (
+    JSON.stringify(saved.menu_button) !== JSON.stringify(draft.menu_button)
+  ) {
+    changes.push({
+      id: 'menu',
+      label: 'Bouton de menu',
+      run: botId => setChatMenuButton(botId, draft.menu_button),
+      commit: (s, d) => ({...s, menu_button: d.menu_button}),
+    });
+  }
+
+  for (const target of ['groups', 'channels'] as const) {
+    if (!sameRights(saved.admin_rights[target], draft.admin_rights[target])) {
+      changes.push({
+        id: `rights:${target}`,
+        label: `Droits d'administrateur · ${
+          target === 'groups' ? 'groupes' : 'canaux'
+        }`,
+        run: botId =>
+          setMyDefaultAdministratorRights(
+            botId,
+            draft.admin_rights[target],
+            target === 'channels',
+          ),
+        commit: (s, d) => ({
+          ...s,
+          admin_rights: {
+            ...s.admin_rights,
+            [target]: d.admin_rights[target],
+          },
+        }),
       });
     }
   }
