@@ -3,7 +3,6 @@
  * Types commandes/menu/droits inclus ; L4b n'envoie que les textes.
  */
 import type {BotProfile, TextField} from '../../../core/api/endpoints/botProfile.types';
-import {DEFAULT_LANG} from '../../../core/api/endpoints/botProfile.types';
 import {
   setMyName,
   setMyDescription,
@@ -61,8 +60,7 @@ export function buildChanges(saved: BotProfile, draft: BotProfile): Change[] {
       });
     }
   }
-  // L4c : commandes, menu, droits, photo — non envoyés ici
-  void DEFAULT_LANG;
+  // L4c : commandes, menu, droits, photo - non envoyes ici
   return changes;
 }
 
