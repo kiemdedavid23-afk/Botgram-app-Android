@@ -1,0 +1,72 @@
+name: Wire Firebase
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check google-services secret
+        env:
+          GS_PLAIN: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          GS_B64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+        run: |
+          if [ -n "$GS_PLAIN" ]; then
+            printf '%s' "$GS_PLAIN" > /tmp/gs.json
+          elif [ -n "$GS_B64" ]; then
+            echo "$GS_B64" | base64 -d > /tmp/gs.json
+          else
+            echo "::error::Aucun secret GOOGLE_SERVICES_JSON ni GOOGLE_SERVICES_JSON_BASE64."
+            exit 1
+          fi
+          jq -e '[.client[].client_info.android_client_info.package_name] | index("com.botgram.dsi")' /tmp/gs.json > /dev/null \
+            || { echo "::error::Le JSON ne contient pas l'app com.botgram.dsi."; exit 1; }
+          rm -f /tmp/gs.json
+          echo "Secret OK."
+
+      - name: Add google-services plugin
+        run: |
+          ROOT=android/build.gradle
+          APP=android/app/build.gradle
+          [ -f "$ROOT" ] && [ -f "$APP" ] || { echo "::error::android/ introuvable."; exit 1; }
+
+          if ! grep -q "com.google.gms:google-services" "$ROOT"; then
+            sed -i '/classpath("com.facebook.react:react-native-gradle-plugin")/a \        classpath("com.google.gms:google-services:4.5.0")' "$ROOT"
+          fi
+          if ! grep -q "com.google.gms:google-services" "$ROOT"; then
+            echo "::error::Ligne classpath React Native introuvable dans android/build.gradle :"
+            cat "$ROOT"
+            exit 1
+          fi
+
+          if ! grep -q "com.google.gms.google-services" "$APP"; then
+            sed -i '/apply plugin: "com.facebook.react"/a apply plugin: "com.google.gms.google-services"' "$APP"
+          fi
+          grep -q "com.google.gms.google-services" "$APP" || { echo "::error::Plugin non ajoute a app/build.gradle"; exit 1; }
+
+          echo "=== build.gradle (racine) ==="; head -30 "$ROOT"
+
+      - name: Never commit google-services.json
+        run: |
+          grep -qx "android/app/google-services.json" .gitignore 2>/dev/null \
+            || echo "android/app/google-services.json" >> .gitignore
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -f android
+          git add .gitignore
+          if git diff --cached --quiet; then
+            echo "Rien a commiter."
+          else
+            git commit -m "chore: wire Firebase google-services plugin"
+            git push
+          fi
