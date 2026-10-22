@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import {View, Text, Pressable, StyleSheet, ScrollView} from 'react-native';
-import {UserRound, LogOut, SlidersHorizontal} from 'lucide-react-native';
+import {UserRound, LogOut,SlidersHorizontal, Bot} from 'lucide-react-native';
 import {
   useTheme,
   settingsMetrics as sm,
@@ -17,11 +17,13 @@ import {fireAndForget} from '../../../core/utils/fireAndForget';
 type Props = {
   onGoProfile: () => void;
   onGoGestion?: () => void;
+  onGoBotProfile?: () => void;
 };
 
 export function MemberSettingsScreen({
   onGoProfile,
   onGoGestion,
+  onGoBotProfile,
 }: Props): React.JSX.Element {
   const {colors, mode} = useTheme();
   const signOut = useAuthStore(s => s.signOut);
@@ -75,6 +77,28 @@ export function MemberSettingsScreen({
               </Text>
               <Text style={[styles.sub, {color: colors.textSecondary}]}>
                 {texts.gestionSub}
+              </Text>
+            </View>
+          </Pressable>
+
+
+          <View style={[styles.sep, {backgroundColor: colors.bgSecondary}]} />
+
+          <Pressable
+            onPress={onGoBotProfile}
+            style={({pressed}) => [
+              styles.row,
+              pressed && {backgroundColor: colors.bgSecondary},
+            ]}>
+            <View style={[styles.icon, {backgroundColor: colors.accent}]}>
+              <Bot size={sm.iconInner} color={colors.white} />
+            </View>
+            <View style={styles.labels}>
+              <Text style={[styles.title, {color: colors.textPrimary}]}>
+                {texts.botProfile}
+              </Text>
+              <Text style={[styles.sub, {color: colors.textSecondary}]}>
+                {texts.botProfileSub}
               </Text>
             </View>
           </Pressable>
