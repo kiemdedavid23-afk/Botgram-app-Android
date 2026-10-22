@@ -15,7 +15,6 @@ import {
 import {X} from 'lucide-react-native';
 import {
   useTheme,
-  memberProfileMetrics as m,
   getShadow,
 } from '../../../shared/theme';
 import {useMemberStore} from '../store/memberStore';

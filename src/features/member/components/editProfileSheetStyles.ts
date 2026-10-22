@@ -1,7 +1,7 @@
 import {StyleSheet} from 'react-native';
 import {memberProfileMetrics as m} from '../../../shared/theme';
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',

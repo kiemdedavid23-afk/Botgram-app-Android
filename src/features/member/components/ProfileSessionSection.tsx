@@ -1,18 +1,25 @@
 /**
- * Section Session profil — Se déconnecter / Supprimer.
+ * Section Session profil - Se deconnecter / Supprimer.
  */
-import React from \'react\';
-import {View, Text, Pressable, StyleSheet} from \'react-native\';
-import {LogOut, Trash2} from \'lucide-react-native\';
-import {useTheme, memberProfileMetrics as m, getShadow} from \'../../../shared/theme\';
-import {texts} from \'../texts\';
+import React from 'react';
+import {View, Text, Pressable, StyleSheet} from 'react-native';
+import {LogOut, Trash2} from 'lucide-react-native';
+import {
+  useTheme,
+  memberProfileMetrics as m,
+  getShadow,
+} from '../../../shared/theme';
+import {texts} from '../texts';
 
 type Props = {
   onLogout: () => void;
   onDelete: () => void;
 };
 
-export function ProfileSessionSection({onLogout, onDelete}: Props): React.JSX.Element {
+export function ProfileSessionSection({
+  onLogout,
+  onDelete,
+}: Props): React.JSX.Element {
   const {colors, mode} = useTheme();
   return (
     <View style={styles.section}>
@@ -23,7 +30,7 @@ export function ProfileSessionSection({onLogout, onDelete}: Props): React.JSX.El
         style={[
           styles.card,
           {backgroundColor: colors.bgPrimary},
-          getShadow(\'sm\', mode),
+          getShadow('sm', mode),
         ]}>
         <Pressable
           onPress={onLogout}
@@ -57,19 +64,19 @@ const styles = StyleSheet.create({
   section: {gap: m.sectionTitleGap},
   sectionTitle: {
     fontSize: m.sectionTitleSize,
-    fontWeight: \'700\',
+    fontWeight: '700',
     letterSpacing: m.sectionTitleLetter * m.sectionTitleSize,
-    textTransform: \'uppercase\',
+    textTransform: 'uppercase',
     paddingHorizontal: m.sectionTitlePadH,
   },
-  card: {borderRadius: m.cardRadius, overflow: \'hidden\'},
+  card: {borderRadius: m.cardRadius, overflow: 'hidden'},
   action: {
-    flexDirection: \'row\',
-    alignItems: \'center\',
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
     paddingVertical: m.rowPadV,
     paddingHorizontal: m.rowPadH,
   },
-  actionText: {fontSize: 15, fontWeight: \'600\'},
+  actionText: {fontSize: 15, fontWeight: '600'},
   sep: {height: 1, marginLeft: m.rowPadH},
 });
