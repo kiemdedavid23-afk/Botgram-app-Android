@@ -1,26 +1,15 @@
-/** Menu — site MenuSection.tsx + BotProfile.css */
-import React from 'react';
+/** Menu — site MenuSection + BotProfile.css */
+import React, {useMemo} from 'react';
 import {View, Text, TextInput, Pressable, StyleSheet} from 'react-native';
 import {useTheme, botProfileMetrics as m} from '../../../shared/theme';
+import type {ColorTokens} from '../../../shared/theme';
 import type {BotProfile, MenuButton} from '../../../core/api/endpoints/botProfile.types';
 import {texts} from '../texts';
 
 const OPTIONS: {type: MenuButton['type']; label: string; hint: string}[] = [
-  {
-    type: 'default',
-    label: texts.menuDefault,
-    hint: 'Telegram affiche le menu des commandes si le bot en a.',
-  },
-  {
-    type: 'commands',
-    label: texts.menuCommands,
-    hint: 'Le bouton ouvre la liste des commandes du bot.',
-  },
-  {
-    type: 'web_app',
-    label: texts.menuWebApp,
-    hint: 'Le bouton ouvre une application web (lien https).',
-  },
+  {type: 'default', label: texts.menuDefault, hint: 'Telegram affiche le menu des commandes si le bot en a.'},
+  {type: 'commands', label: texts.menuCommands, hint: 'Le bouton ouvre la liste des commandes du bot.'},
+  {type: 'web_app', label: texts.menuWebApp, hint: 'Le bouton ouvre une application web (lien https).'},
 ];
 
 type Props = {
@@ -29,8 +18,58 @@ type Props = {
   onChange: (button: MenuButton) => void;
 };
 
+function makeStyles(c: ColorTokens) {
+  return StyleSheet.create({
+    root: {paddingBottom: 6},
+    title: {
+      fontSize: m.titleFontSize, fontWeight: m.titleFontWeight,
+      paddingHorizontal: m.headPaddingH, paddingTop: m.headPaddingTop,
+      paddingBottom: m.titlePadBottom, color: c.textPrimary,
+    },
+    note: {
+      fontSize: m.noteSize, paddingHorizontal: m.headPaddingH,
+      marginBottom: m.noteMarginBottom, lineHeight: m.noteLineHeight,
+      color: c.textSecondary,
+    },
+    card: {
+      marginHorizontal: m.cardMarginH, borderRadius: m.cardRadius,
+      borderWidth: 1, borderColor: c.border, backgroundColor: c.bgPrimary, overflow: 'hidden',
+    },
+    fields: {
+      marginHorizontal: m.cardMarginH, borderRadius: m.cardRadius, borderWidth: 1,
+      borderColor: c.border, backgroundColor: c.bgPrimary, marginTop: m.fieldMarginTop,
+      gap: m.fieldsGap, padding: m.fieldsPad,
+    },
+    div: {height: StyleSheet.hairlineWidth, marginLeft: 48, backgroundColor: c.border},
+    row: {
+      flexDirection: 'row', alignItems: 'center', gap: m.rowGap,
+      paddingVertical: m.optionPaddingV, paddingHorizontal: m.optionPaddingH,
+    },
+    dot: {
+      width: m.radioDotSize, height: m.radioDotSize, borderRadius: m.radioDotSize / 2,
+      borderWidth: m.radioDotBorder, borderColor: c.border, backgroundColor: 'transparent',
+    },
+    dotOn: {borderColor: c.accent, backgroundColor: c.accent},
+    info: {flex: 1, gap: 2},
+    val: {fontSize: m.valSize, fontWeight: m.valWeight, color: c.textPrimary},
+    key: {fontSize: m.keySize, lineHeight: m.keyLineHeight, color: c.textHint},
+    fieldLabel: {
+      fontSize: m.sectionLabelSize, fontWeight: m.sectionLabelWeight,
+      letterSpacing: m.sectionLabelSpacing, textTransform: 'uppercase', color: c.textHint,
+    },
+    input: {
+      minHeight: m.inputHeight, borderWidth: 1, borderRadius: m.inputRadius,
+      paddingHorizontal: m.inputPadH, fontSize: m.inputFontSize,
+      color: c.textPrimary, backgroundColor: c.bgSecondary, borderColor: c.border,
+    },
+    inputErr: {borderColor: c.danger},
+    err: {fontSize: m.errFontSize, color: c.danger},
+  });
+}
+
 export function MenuSection({draft, errors, onChange}: Props): React.JSX.Element {
   const {colors} = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const menu = draft.menu_button;
 
   const choose = (type: MenuButton['type']) => {
@@ -41,41 +80,19 @@ export function MenuSection({draft, errors, onChange}: Props): React.JSX.Element
 
   return (
     <View style={styles.root}>
-      <Text style={[styles.title, {color: colors.textPrimary}]}>
-        {texts.menuTitle}
-      </Text>
-      <Text style={[styles.note, {color: colors.textSecondary}]}>
-        Ce réglage s'applique à tous les chats privés du bot.
-      </Text>
-      <View
-        style={[
-          styles.card,
-          {backgroundColor: colors.bgPrimary, borderColor: colors.border},
-        ]}>
+      <Text style={styles.title}>{texts.menuTitle}</Text>
+      <Text style={styles.note}>Ce réglage s'applique à tous les chats privés du bot.</Text>
+      <View style={styles.card}>
         {OPTIONS.map((option, i) => {
           const on = menu.type === option.type;
           return (
             <View key={option.type}>
-              {i > 0 ? (
-                <View style={[styles.div, {backgroundColor: colors.border}]} />
-              ) : null}
+              {i > 0 ? <View style={styles.div} /> : null}
               <Pressable onPress={() => choose(option.type)} style={styles.row}>
-                <View
-                  style={[
-                    styles.dot,
-                    {
-                      borderColor: on ? colors.accent : colors.border,
-                      backgroundColor: on ? colors.accent : 'transparent',
-                    },
-                  ]}
-                />
+                <View style={[styles.dot, on ? styles.dotOn : null]} />
                 <View style={styles.info}>
-                  <Text style={[styles.val, {color: colors.textPrimary}]}>
-                    {option.label}
-                  </Text>
-                  <Text style={[styles.key, {color: colors.textHint}]}>
-                    {option.hint}
-                  </Text>
+                  <Text style={styles.val}>{option.label}</Text>
+                  <Text style={styles.key}>{option.hint}</Text>
                 </View>
               </Pressable>
             </View>
@@ -83,41 +100,16 @@ export function MenuSection({draft, errors, onChange}: Props): React.JSX.Element
         })}
       </View>
       {menu.type === 'web_app' ? (
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: colors.bgPrimary,
-              borderColor: colors.border,
-              marginTop: m.fieldMarginTop,
-              gap: 12,
-              padding: 14,
-            },
-          ]}>
-          <Text style={[styles.fieldLabel, {color: colors.textHint}]}>
-            {texts.menuText}
-          </Text>
+        <View style={styles.fields}>
+          <Text style={styles.fieldLabel}>{texts.menuText}</Text>
           <TextInput
             value={menu.text}
             onChangeText={t => onChange({...menu, text: t})}
             placeholderTextColor={colors.textHint}
-            style={[
-              styles.input,
-              {
-                color: colors.textPrimary,
-                borderColor: errors['menu:text'] ? colors.danger : colors.border,
-                backgroundColor: colors.bgSecondary,
-              },
-            ]}
+            style={[styles.input, errors['menu:text'] ? styles.inputErr : null]}
           />
-          {errors['menu:text'] ? (
-            <Text style={{color: colors.danger, fontSize: 12}}>
-              {errors['menu:text']}
-            </Text>
-          ) : null}
-          <Text style={[styles.fieldLabel, {color: colors.textHint}]}>
-            {texts.menuUrl}
-          </Text>
+          {errors['menu:text'] ? <Text style={styles.err}>{errors['menu:text']}</Text> : null}
+          <Text style={styles.fieldLabel}>{texts.menuUrl}</Text>
           <TextInput
             value={menu.url}
             onChangeText={t => onChange({...menu, url: t})}
@@ -125,60 +117,11 @@ export function MenuSection({draft, errors, onChange}: Props): React.JSX.Element
             keyboardType="url"
             placeholder="https://"
             placeholderTextColor={colors.textHint}
-            style={[
-              styles.input,
-              {
-                color: colors.textPrimary,
-                borderColor: errors['menu:url'] ? colors.danger : colors.border,
-                backgroundColor: colors.bgSecondary,
-              },
-            ]}
+            style={[styles.input, errors['menu:url'] ? styles.inputErr : null]}
           />
-          {errors['menu:url'] ? (
-            <Text style={{color: colors.danger, fontSize: 12}}>
-              {errors['menu:url']}
-            </Text>
-          ) : null}
+          {errors['menu:url'] ? <Text style={styles.err}>{errors['menu:url']}</Text> : null}
         </View>
       ) : null}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {paddingBottom: 6},
-  title: {
-    fontSize: m.titleFontSize,
-    fontWeight: m.titleFontWeight,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  note: {fontSize: 13, paddingHorizontal: 16, marginBottom: 12, lineHeight: 18},
-  card: {marginHorizontal: 14, borderRadius: 16, borderWidth: 1, overflow: 'hidden'},
-  div: {height: StyleSheet.hairlineWidth, marginLeft: 48},
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: m.optionPaddingV,
-    paddingHorizontal: m.optionPaddingH,
-  },
-  dot: {width: 20, height: 20, borderRadius: 10, borderWidth: 2},
-  info: {flex: 1, gap: 2},
-  val: {fontSize: 15, fontWeight: '600'},
-  key: {fontSize: 12, lineHeight: 16},
-  fieldLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.07,
-    textTransform: 'uppercase',
-  },
-  input: {
-    minHeight: m.inputHeight,
-    borderWidth: 1,
-    borderRadius: m.inputRadius,
-    paddingHorizontal: 12,
-    fontSize: 15,
-  },
-});
