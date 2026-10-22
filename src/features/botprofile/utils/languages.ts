@@ -24,3 +24,10 @@ export const LANGUAGE_OPTIONS: {code: string; label: string}[] = [
 export function langLabel(code: string): string {
   return LANGUAGE_OPTIONS.find(l => l.code === code)?.label ?? code;
 }
+
+/** Langues présentes dans le profil (textes). */
+export function languagesOf(texts: Record<string, unknown>): string[] {
+  const codes = Object.keys(texts);
+  if (!codes.includes('default')) return ['default', ...codes];
+  return ['default', ...codes.filter(c => c !== 'default')];
+}

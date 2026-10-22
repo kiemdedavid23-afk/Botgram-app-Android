@@ -123,4 +123,17 @@ export function setRights(
   };
 }
 
+export function resolveText(
+  profile: BotProfile,
+  lang: string,
+  field: TextField,
+): string {
+  return (
+    profile.texts[lang]?.[field] ||
+    profile.texts[DEFAULT_LANG]?.[field] ||
+    ''
+  );
+}
+
 export type {TextField};
+
