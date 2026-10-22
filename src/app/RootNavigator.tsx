@@ -24,6 +24,7 @@ import {AddBotScreen} from '../features/bots/screens/AddBotScreen';
 import {MemberProfileScreen} from '../features/member';
 import {MemberSettingsScreen} from '../features/settings';
 import {GestionScreen} from '../features/gestion';
+import {BotProfileScreen} from '../features/botprofile';
 import {
   AssociateIntroWrapper,
   AssociateReadyWrapper,
@@ -97,6 +98,7 @@ export type MemberStackParamList = {
   Tabs: undefined;
   AddBot: undefined;
   Gestion: undefined;
+  BotProfile: undefined;
   AssociateIntro: undefined;
   AssociateReady: undefined;
   AssociateToken: undefined;
@@ -110,7 +112,7 @@ const MemberStack = createNativeStackNavigator<MemberStackParamList>();
 function MemberTabs({
   navigation,
 }: {
-  navigation: {navigate: (name: 'AddBot' | 'Gestion') => void};
+  navigation: {navigate: (name: 'AddBot' | 'Gestion' | 'BotProfile') => void};
 }): React.JSX.Element {
   const {colors} = useTheme();
   const [tab, setTab] = useState<MemberTabId>('dashboard');
@@ -132,6 +134,7 @@ function MemberTabs({
         <MemberSettingsScreen
           onGoProfile={() => setTab('member')}
           onGoGestion={() => navigation.navigate('Gestion')}
+          onGoBotProfile={() => navigation.navigate('BotProfile')}
         />
       ) : (
         <MemberProfileScreen onGoDashboard={() => setTab('dashboard')} />
@@ -147,6 +150,7 @@ function MemberShell(): React.JSX.Element {
       <MemberStack.Screen name="Tabs" component={MemberTabs} />
       <MemberStack.Screen name="AddBot" component={AddBotScreenWrapper} />
       <MemberStack.Screen name="Gestion" component={GestionScreen} />
+<MemberStack.Screen name="BotProfile" component={BotProfileScreenWrapper} />
       <MemberStack.Screen
         name="AssociateIntro"
         component={AssociateIntroWrapper}
@@ -172,6 +176,16 @@ function MemberShell(): React.JSX.Element {
         component={AssociateDoneWrapper}
       />
     </MemberStack.Navigator>
+  );
+}
+
+function BotProfileScreenWrapper({
+  navigation,
+}: {
+  navigation: {navigate: (name: 'AddBot') => void};
+}): React.JSX.Element {
+  return (
+    <BotProfileScreen onAddBot={() => navigation.navigate('AddBot')} />
   );
 }
 
