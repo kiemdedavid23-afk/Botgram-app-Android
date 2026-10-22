@@ -39,19 +39,14 @@ function base(botId: string): string {
   return `/bots/${botId}/profile`;
 }
 
-function langQuery(lang: string): Record<string, string> | undefined {
-  if (!lang || lang === DEFAULT_LANG) return undefined;
-  return {language_code: lang};
-}
-
 async function readTexts(
   botId: string,
   lang: string,
 ): Promise<LocalizedTexts> {
-  const q = langQuery(lang);
-  const path = q
-    ? `${base(botId)}?language_code=${encodeURIComponent(q.language_code)}`
-    : base(botId);
+  let path = base(botId);
+  if (lang && lang !== DEFAULT_LANG) {
+    path = `${path}?language_code=${encodeURIComponent(lang)}`;
+  }
   const res = await authedHttp<{
     name?: string;
     description?: string;
