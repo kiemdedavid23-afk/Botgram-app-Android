@@ -1,9 +1,10 @@
 /**
- * Héros profil bot — BotProfile.css .bp-hero + BotHero.tsx
+ * Heros profil bot - BotProfile.css .bp-hero + BotHero.tsx
+ * Degrade via GradientView (shared), pas react-native-linear-gradient.
  */
 import React, {useEffect, useState} from 'react';
 import {View, Text, Image, StyleSheet} from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
+import {GradientView} from '../../../shared/components/GradientView';
 import {useTheme, botProfileMetrics as m, gradients} from '../../../shared/theme';
 import {buildBotPhotoSource} from '../../../core/api/endpoints/botProfile';
 import {completeness} from '../utils/completeness';
@@ -27,7 +28,7 @@ export function BotHero({profile}: Props): React.JSX.Element {
     'Bot';
   const initial = name.trim().charAt(0).toUpperCase() || '?';
   const pct = completeness(profile);
-  const g =
+  const grad =
     mode === 'dark' ? gradients.brandHeroAlt : gradients.brandHero;
 
   useEffect(() => {
@@ -49,10 +50,9 @@ export function BotHero({profile}: Props): React.JSX.Element {
   }, [profile.bot_id, profile.hasPhoto]);
 
   return (
-    <LinearGradient
-      colors={[...g.colors]}
-      start={{x: 0, y: 0}}
-      end={{x: 1, y: 1}}
+    <GradientView
+      colors={[...grad.colors]}
+      angle={grad.angle}
       style={styles.hero}>
       <View style={[styles.avatar, {borderColor: colors.heroChipBorder}]}>
         {photo ? (
@@ -82,7 +82,7 @@ export function BotHero({profile}: Props): React.JSX.Element {
           {texts.completeness} {reduce ? pct : pct}%
         </Text>
       </View>
-    </LinearGradient>
+    </GradientView>
   );
 }
 
@@ -93,6 +93,7 @@ const styles = StyleSheet.create({
     padding: m.heroPad,
     alignItems: 'center',
     gap: 10,
+    overflow: 'hidden',
   },
   avatar: {
     width: m.heroAvatar,
