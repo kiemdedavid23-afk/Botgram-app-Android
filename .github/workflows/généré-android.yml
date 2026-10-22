@@ -41,7 +41,7 @@ jobs:
           cd "$RUNNER_TEMP"
           npx --yes @react-native-community/cli@latest init Botgram \
             --version 0.88.0 \
-            --package-name com.botgram \
+            --package-name com.botgram.dsi \
             --title Botgram \
             --skip-install \
             --skip-git-init \
@@ -69,6 +69,14 @@ jobs:
             } >> android/gradle.properties
           fi
 
+      - name: Check package name
+        run: |
+          grep -rn "com.botgram.dsi" android/app/build.gradle || {
+            echo "::error::applicationId/namespace differe de com.botgram.dsi"
+            grep -n "namespace\|applicationId" android/app/build.gradle
+            exit 1
+          }
+
       - name: Commit android/ to the repo
         run: |
           git config user.name "github-actions"
@@ -77,6 +85,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Aucun changement a commiter."
           else
-            git commit -m "chore: add generated android/ project"
+            git commit -m "chore: add generated android/ project (com.botgram.dsi)"
             git push
           fi
