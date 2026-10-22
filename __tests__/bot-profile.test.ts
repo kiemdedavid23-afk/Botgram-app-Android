@@ -1,5 +1,6 @@
 /**
- * Tests L4b - logique pure + store (scenarios qui echoueraient sur l'ancien code).
+ * Tests L4b - un test par correction de contenu (1-10).
+ * Logique pure + store uniquement (pas de composant UI / lucide).
  */
 import {validate} from '../src/features/botprofile/utils/validate';
 import {completeness} from '../src/features/botprofile/utils/completeness';
@@ -9,12 +10,16 @@ import {
   removeLanguage,
   setTextField,
 } from '../src/features/botprofile/utils/edit';
+import {mapProfileError} from '../src/features/botprofile/utils/errors';
 import {
   DEFAULT_LANG,
   emptyRights,
   type BotProfile,
 } from '../src/core/api/endpoints/botProfile.types';
-import {buildBotPhotoSource, getBotProfile} from '../src/core/api/endpoints/botProfile';
+import {
+  buildBotPhotoSource,
+  getBotProfile,
+} from '../src/core/api/endpoints/botProfile';
 import * as storage from '../src/core/storage';
 import {useBotProfileStore} from '../src/features/botprofile/store/botProfileStore';
 import {http} from '../src/core/api/http';
@@ -78,20 +83,25 @@ function profile(over: Partial<BotProfile> = {}): BotProfile {
   };
 }
 
-/** Reponses minimales pour un getBotProfile complet (textes + paralleles). */
-function mockFullProfileLoad(name = 'Demo') {
-  // 1) default texts
+/** Reponses pour getBotProfile apres la lecture textes defaut. */
+function mockParallelAfterTexts() {
   mockHttp.mockResolvedValueOnce(
-    ok({name, description: '', short_description: ''}),
+    ok({
+      commands: [{command: 'start', description: 'Start'}],
+    }),
   );
-  // 2-6) commands, menu, rights x2, photo
-  mockHttp.mockResolvedValueOnce(ok({commands: []}));
-  mockHttp.mockResolvedValueOnce(ok({menu_button: {type: 'default'}}));
-  mockHttp.mockResolvedValueOnce(ok({rights: {}}));
+  mockHttp.mockResolvedValueOnce(
+    ok({menu_button: {type: 'commands'}}),
+  );
+  mockHttp.mockResolvedValueOnce(
+    ok({rights: {can_manage_chat: true}}),
+  );
   mockHttp.mockResolvedValueOnce(ok({rights: {}}));
   mockHttp.mockResolvedValueOnce(fail(404, 'NOT_FOUND')); // photo
-  // probes: many - return same as default so no extra langs (or rate limit stop)
-  mockHttp.mockResolvedValue(ok({name, description: '', short_description: ''}));
+  // probes: same as default -> ignore
+  mockHttp.mockResolvedValue(
+    ok({name: 'Demo', description: '', short_description: ''}),
+  );
 }
 
 beforeEach(() => {
@@ -104,9 +114,13 @@ beforeEach(() => {
 
 describe('1. load change de bot vide le draft', () => {
   it('charger A, editer, charger B -> draft null pendant chargement B', async () => {
-    mockFullProfileLoad('BotA');
+    mockHttp.mockResolvedValueOnce(
+      ok({name: 'BotA', description: '', short_description: ''}),
+    );
+    mockParallelAfterTexts();
     await useBotProfileStore.getState().load('A', {name: 'BotA'});
     expect(useBotProfileStore.getState().draft?.bot_id).toBe('A');
+
     useBotProfileStore.getState().edit(d =>
       setTextField(d, DEFAULT_LANG, 'name', 'Edite'),
     );
@@ -114,24 +128,22 @@ describe('1. load change de bot vide le draft', () => {
       'Edite',
     );
 
-    // Demarre load B : doit vider avant reponse
     let resolveB!: (v: Awaited<ReturnType<typeof http>>) => void;
     const pending = new Promise<Awaited<ReturnType<typeof http>>>(r => {
       resolveB = r;
     });
     mockHttp.mockReset();
-    mockHttp.mockImplementationOnce(() => pending); // default texts B hangs
+    mockHttp.mockImplementationOnce(() => pending);
 
     const loadPromise = useBotProfileStore.getState().load('B', {name: 'BotB'});
     expect(useBotProfileStore.getState().botId).toBe('B');
     expect(useBotProfileStore.getState().draft).toBeNull();
     expect(useBotProfileStore.getState().saved).toBeNull();
-    // save sans effet
+
     await useBotProfileStore.getState().save();
-    expect(mockHttp).toHaveBeenCalledTimes(1); // seulement le load en cours
+    expect(mockHttp).toHaveBeenCalledTimes(1);
 
     resolveB(ok({name: 'BotB', description: '', short_description: ''}));
-    // finish remaining parallel calls
     mockHttp.mockResolvedValue(ok({commands: []}));
     mockHttp.mockResolvedValue(ok({menu_button: {type: 'default'}}));
     mockHttp.mockResolvedValue(ok({rights: {}}));
@@ -193,8 +205,68 @@ describe('3. getBotProfile propage erreur textes defaut', () => {
   });
 });
 
-describe('5-6. langues add/remove + hasChanges', () => {
-  it('addLanguage copie tous les textes', () => {
+describe('4. lecture complete commands menu rights', () => {
+  it('getBotProfile renseigne commands menu admin_rights', async () => {
+    mockHttp.mockResolvedValueOnce(
+      ok({name: 'Demo', description: '', short_description: ''}),
+    );
+    mockParallelAfterTexts();
+    const res = await getBotProfile('b1', {
+      name: 'Demo',
+      username: 'demo_bot',
+    });
+    expect(res.ok).toBe(true);
+    if (!res.ok) throw new Error('expected ok');
+    expect(res.data.commands['default|default']).toEqual([
+      {command: 'start', description: 'Start'},
+    ]);
+    expect(res.data.menu_button.type).toBe('commands');
+    expect(res.data.admin_rights.groups.can_manage_chat).toBe(true);
+  });
+});
+
+describe('5. diff commit langue retiree', () => {
+  it('langue absente du draft -> commit supprime l entree (gone)', () => {
+    const saved = profile({
+      texts: {
+        default: {name: 'N', description: '', short_description: ''},
+        fr: {name: 'N', description: 'd', short_description: ''},
+      },
+    });
+    const draft = profile({
+      texts: {
+        default: {name: 'N', description: '', short_description: ''},
+      },
+    });
+    const changes = buildChanges(saved, draft);
+    expect(changes.length).toBeGreaterThan(0);
+    let current = saved;
+    for (const ch of changes) {
+      current = ch.commit(current, draft);
+    }
+    expect(current.texts.fr).toBeUndefined();
+    expect(hasChanges(current, draft)).toBe(false);
+  });
+});
+
+describe('5b. removeLanguage retire commandes', () => {
+  it('retire cles finissant par |lang', () => {
+    let d = profile({
+      commands: {
+        'default|fr': [{command: 'start', description: 'x'}],
+        'default|default': [{command: 'help', description: 'h'}],
+      },
+    });
+    d = addLanguage(d, 'fr');
+    d = removeLanguage(d, 'fr');
+    expect(d.texts.fr).toBeUndefined();
+    expect(d.commands['default|fr']).toBeUndefined();
+    expect(d.commands['default|default']).toBeDefined();
+  });
+});
+
+describe('6. addLanguage copie tous les textes', () => {
+  it('copie name description short_description', () => {
     const d = addLanguage(
       profile({
         texts: {
@@ -213,37 +285,21 @@ describe('5-6. langues add/remove + hasChanges', () => {
       short_description: 'S',
     });
   });
-
-  it('removeLanguage retire commandes |lang et hasChanges false apres commit logique', () => {
-    let d = profile({
-      commands: {
-        'default|fr': [{command: 'start', description: 'x'}],
-      },
-    });
-    d = addLanguage(d, 'fr');
-    d = removeLanguage(d, 'fr');
-    expect(d.texts.fr).toBeUndefined();
-    expect(d.commands['default|fr']).toBeUndefined();
-    const saved = profile();
-    const withFr = addLanguage(saved, 'fr');
-    // apres retrait egal a saved
-    const removed = removeLanguage(withFr, 'fr');
-    expect(hasChanges(saved, removed)).toBe(false);
-  });
 });
 
-describe('7. completeness site', () => {
-  it('6 criteres poids egal', () => {
+describe('7. completeness 6 criteres', () => {
+  it('poids egal et missing', () => {
     const empty = profile();
     const c = completeness(empty);
-    expect(c.pct).toBe(Math.round((1 / 6) * 100)); // nom seul
+    expect(c.pct).toBe(Math.round((1 / 6) * 100));
     expect(c.missing).toContain('une photo');
     expect(c.missing).toContain('des commandes');
+    expect(c.missing).toContain('un bouton de menu');
   });
 });
 
 describe('8. validate site', () => {
-  it('nom obligatoire seulement default', () => {
+  it('nom obligatoire seulement default ; messages texts', () => {
     const d = profile({
       texts: {
         default: {name: '', description: '', short_description: ''},
@@ -253,6 +309,37 @@ describe('8. validate site', () => {
     const e = validate(d);
     expect(e['text:default:name']).toBeTruthy();
     expect(e['text:fr:name']).toBeUndefined();
+  });
+});
+
+describe('9. mapProfileError codes', () => {
+  it('mappe email token reseau validation 429 serveur', () => {
+    expect(mapProfileError('EMAIL_NOT_VERIFIED')).toMatch(/e-mail|email/i);
+    expect(mapProfileError('TOKEN_INVALID')).toMatch(/jeton/i);
+    expect(mapProfileError('BOT_DISCONNECTED')).toMatch(/deconnect/i);
+    expect(mapProfileError('network_error')).toMatch(/[Rr]eseau|[Nn]etwork/);
+    expect(mapProfileError('VALIDATION_ERROR')).toMatch(/invalide/i);
+    expect(mapProfileError('RATE_LIMITED')).toMatch(/Trop|demandes/i);
+    expect(mapProfileError('SERVICE_UNAVAILABLE')).toMatch(/indisponible/i);
+  });
+});
+
+describe('10. edit bloque pendant saving', () => {
+  it('edit ignore si saving true', () => {
+    const saved = profile();
+    useBotProfileStore.setState({
+      botId: 'b1',
+      saved,
+      draft: saved,
+      saving: true,
+      generation: 0,
+    });
+    useBotProfileStore.getState().edit(d =>
+      setTextField(d, DEFAULT_LANG, 'name', 'Bloque'),
+    );
+    expect(useBotProfileStore.getState().draft?.texts.default?.name).toBe(
+      'Demo',
+    );
   });
 });
 
