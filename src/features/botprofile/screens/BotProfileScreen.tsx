@@ -41,47 +41,47 @@ function makeStyles(c: ColorTokens) {
   return StyleSheet.create({
     root: {flex: 1, backgroundColor: c.bgSecondary},
     center: {
-      alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24,
+      alignItems: 'center', justifyContent: 'center', gap: m.centerGap, padding: m.centerPad,
     },
-    emptyTitle: {fontSize: 18, fontWeight: '700', color: c.textPrimary},
+    emptyTitle: {fontSize: m.emptyTitleSize, fontWeight: m.emptyTitleWeight, color: c.textPrimary},
     sub: {textAlign: 'center', color: c.textSecondary},
     cta: {
-      marginTop: 8, paddingVertical: 12, paddingHorizontal: 20,
+      marginTop: m.ctaMarginTop, paddingVertical: m.ctaPadV, paddingHorizontal: m.ctaPadH,
       borderRadius: m.inputRadius, backgroundColor: c.accent,
     },
-    ctaText: {fontWeight: '700', color: c.white},
+    ctaText: {fontWeight: m.ctaTextWeight, color: c.white},
     err: {textAlign: 'center', color: c.danger},
     scroll: {
       paddingHorizontal: m.scrollPadH, paddingBottom: m.scrollPadBottom,
-      gap: m.scrollGap, paddingTop: 12,
+      gap: m.scrollGap, paddingTop: m.scrollPadTop,
     },
     tabs: {flexDirection: 'row', gap: m.gap, paddingVertical: m.paddingV},
     tab: {
-      flexDirection: 'row', alignItems: 'center', gap: 6,
+      flexDirection: 'row', alignItems: 'center', gap: m.tabIconGap,
       paddingVertical: m.tabPadV, paddingHorizontal: m.tabPadH,
       borderRadius: m.tabRadius, minHeight: m.tabRowMinHeight,
     },
     tabOn: {backgroundColor: c.accent},
     tabOff: {backgroundColor: c.bgPrimary},
-    tabTextOn: {fontSize: m.tabLabelSize, fontWeight: '700', color: c.white},
-    tabTextOff: {fontSize: m.tabLabelSize, fontWeight: '700', color: c.textSecondary},
-    head: {gap: 2, paddingHorizontal: 4, paddingBottom: 12},
+    tabTextOn: {fontSize: m.tabLabelSize, fontWeight: m.tabFontWeight, color: c.white},
+    tabTextOff: {fontSize: m.tabLabelSize, fontWeight: m.tabFontWeight, color: c.textSecondary},
+    head: {gap: m.headGap, paddingHorizontal: m.headPadH, paddingBottom: m.headPadBottom},
     headTitle: {
       fontSize: m.headTitleSize, fontWeight: m.headTitleWeight,
-      letterSpacing: -0.01, color: c.textPrimary,
+      letterSpacing: m.letterSpacingTight, color: c.textPrimary,
     },
     headHint: {
       fontSize: m.headHintSize, lineHeight: m.headHintLineHeight,
       color: c.textSecondary,
     },
     report: {
-      padding: m.reportPad, borderRadius: m.inputRadius, gap: 6,
+      padding: m.reportPad, borderRadius: m.inputRadius, gap: m.reportGap,
       backgroundColor: c.bgPrimary,
     },
-    reportTitle: {fontWeight: '700', marginBottom: 4, color: c.textPrimary},
+    reportTitle: {fontWeight: m.reportTitleWeight, marginBottom: m.reportTitleMarginBottom, color: c.textPrimary},
     reportLineOk: {fontSize: m.reportLineSize, color: c.online},
     reportLineErr: {fontSize: m.reportLineSize, color: c.danger},
-    reportClose: {fontWeight: '600', marginTop: 8, color: c.accent},
+    reportClose: {fontWeight: m.reportCloseWeight, marginTop: m.reportCloseMarginTop, color: c.accent},
   });
 }
 
