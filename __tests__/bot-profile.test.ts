@@ -1,7 +1,6 @@
 /**
- * Tests L4b - diff, validate, completeness, edit, store save, photo source.
+ * Tests L4b - logique pure + store (pas de composant UI / lucide).
  */
-import React from 'react';
 import {validateField} from '../src/features/botprofile/utils/validate';
 import {completeness} from '../src/features/botprofile/utils/completeness';
 import {buildChanges, hasChanges} from '../src/features/botprofile/utils/diff';
@@ -19,7 +18,6 @@ import {buildBotPhotoSource} from '../src/core/api/endpoints/botProfile';
 import * as storage from '../src/core/storage';
 import {useBotProfileStore} from '../src/features/botprofile/store/botProfileStore';
 import {http} from '../src/core/api/http';
-import {ProfileSessionSection} from '../src/features/member/components/ProfileSessionSection';
 
 jest.mock('../src/core/storage');
 jest.mock('../src/core/api/http');
@@ -130,7 +128,12 @@ describe('edit / diff', () => {
     const draft = setTextField(saved, DEFAULT_LANG, 'name', 'Nouveau');
     const ch = buildChanges(saved, draft);
     expect(ch).toHaveLength(1);
-    expect(ch[0].id).toContain('name');
+    const first = ch[0];
+    expect(first).toBeDefined();
+    if (first === undefined) {
+      throw new Error('expected change');
+    }
+    expect(first.id).toContain('name');
     expect(hasChanges(saved, draft)).toBe(true);
   });
 });
@@ -149,8 +152,17 @@ describe('store save via Worker', () => {
     await useBotProfileStore.getState().save();
     expect(mockHttp).toHaveBeenCalled();
     const report = useBotProfileStore.getState().report;
+    expect(report).not.toBeNull();
+    if (report === null) {
+      throw new Error('expected report');
+    }
     expect(report).toHaveLength(1);
-    expect(report?.[0].ok).toBe(true);
+    const item = report[0];
+    expect(item).toBeDefined();
+    if (item === undefined) {
+      throw new Error('expected report item');
+    }
+    expect(item.ok).toBe(true);
     expect(useBotProfileStore.getState().saved?.texts.default.name).toBe(
       'Nouveau',
     );
@@ -178,9 +190,13 @@ describe('store save via Worker', () => {
       .mockResolvedValueOnce(fail(429, 'RATE_LIMITED'));
     await useBotProfileStore.getState().save();
     const report = useBotProfileStore.getState().report;
+    expect(report).not.toBeNull();
+    if (report === null) {
+      throw new Error('expected report');
+    }
     expect(report).toHaveLength(2);
-    expect(report?.some(r => r.ok)).toBe(true);
-    expect(report?.some(r => !r.ok)).toBe(true);
+    expect(report.some(r => r.ok)).toBe(true);
+    expect(report.some(r => !r.ok)).toBe(true);
   });
 
   it('clear vide le brouillon', () => {
@@ -207,17 +223,5 @@ describe('photo source', () => {
   it('sans jeton -> null', async () => {
     mockGetToken.mockResolvedValueOnce(null);
     expect(await buildBotPhotoSource('b1')).toBeNull();
-  });
-});
-
-describe('ProfileSessionSection', () => {
-  it('exporte un composant fonction valide', () => {
-    expect(typeof ProfileSessionSection).toBe('function');
-    // Smoke : le module parse (typecheck) et le symbole est utilisable
-    const el = React.createElement(ProfileSessionSection, {
-      onLogout: () => undefined,
-      onDelete: () => undefined,
-    });
-    expect(el.type).toBe(ProfileSessionSection);
   });
 });
