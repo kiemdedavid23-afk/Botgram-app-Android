@@ -4,6 +4,7 @@ import {
   View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator,
 } from 'react-native';
 import {useTheme, botProfileMetrics as m} from '../../../shared/theme';
+import type {ColorTokens} from '../../../shared/theme';
 import {useAuthStore} from '../../auth';
 import {useBotsStore} from '../../bots';
 import {useBotProfileStore} from '../store/botProfileStore';
@@ -18,7 +19,9 @@ import {TelegramPreview} from '../components/TelegramPreview';
 import {SaveBar} from '../components/SaveBar';
 import {hasChanges, validate} from '../utils/diff';
 import {setCommands, setMenuButton, setRight, setRights} from '../utils/edit';
-import {ADMIN_RIGHT_KEYS, DEFAULT_LANG, emptyRights} from '../../../core/api/endpoints/botProfile.types';
+import {
+  ADMIN_RIGHT_KEYS, DEFAULT_LANG, emptyRights,
+} from '../../../core/api/endpoints/botProfile.types';
 import type {AdminRightKey} from '../../../core/api/endpoints/botProfile.types';
 import {RIGHT_SCOPE} from '../utils/labels';
 import {PROFILE_TABS, type TabId} from '../utils/tabs';
@@ -34,8 +37,57 @@ function keysFor(target: 'groups' | 'channels'): AdminRightKey[] {
   });
 }
 
+function makeStyles(c: ColorTokens) {
+  return StyleSheet.create({
+    root: {flex: 1, backgroundColor: c.bgSecondary},
+    center: {
+      alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24,
+    },
+    emptyTitle: {fontSize: 18, fontWeight: '700', color: c.textPrimary},
+    sub: {textAlign: 'center', color: c.textSecondary},
+    cta: {
+      marginTop: 8, paddingVertical: 12, paddingHorizontal: 20,
+      borderRadius: m.inputRadius, backgroundColor: c.accent,
+    },
+    ctaText: {fontWeight: '700', color: c.white},
+    err: {textAlign: 'center', color: c.danger},
+    scroll: {
+      paddingHorizontal: m.scrollPadH, paddingBottom: m.scrollPadBottom,
+      gap: m.scrollGap, paddingTop: 12,
+    },
+    tabs: {flexDirection: 'row', gap: m.gap, paddingVertical: m.paddingV},
+    tab: {
+      flexDirection: 'row', alignItems: 'center', gap: 6,
+      paddingVertical: m.tabPadV, paddingHorizontal: m.tabPadH,
+      borderRadius: m.tabRadius, minHeight: m.tabRowMinHeight,
+    },
+    tabOn: {backgroundColor: c.accent},
+    tabOff: {backgroundColor: c.bgPrimary},
+    tabTextOn: {fontSize: m.tabLabelSize, fontWeight: '700', color: c.white},
+    tabTextOff: {fontSize: m.tabLabelSize, fontWeight: '700', color: c.textSecondary},
+    head: {gap: 2, paddingHorizontal: 4, paddingBottom: 12},
+    headTitle: {
+      fontSize: m.headTitleSize, fontWeight: m.headTitleWeight,
+      letterSpacing: -0.01, color: c.textPrimary,
+    },
+    headHint: {
+      fontSize: m.headHintSize, lineHeight: m.headHintLineHeight,
+      color: c.textSecondary,
+    },
+    report: {
+      padding: m.reportPad, borderRadius: m.inputRadius, gap: 6,
+      backgroundColor: c.bgPrimary,
+    },
+    reportTitle: {fontWeight: '700', marginBottom: 4, color: c.textPrimary},
+    reportLineOk: {fontSize: m.reportLineSize, color: c.online},
+    reportLineErr: {fontSize: m.reportLineSize, color: c.danger},
+    reportClose: {fontWeight: '600', marginTop: 8, color: c.accent},
+  });
+}
+
 export function BotProfileScreen({onAddBot}: Props): React.JSX.Element {
   const {colors} = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const member = useAuthStore(s => s.member);
   const bots = useBotsStore(s => s.bots);
   const loadBots = useBotsStore(s => s.load);
@@ -62,7 +114,9 @@ export function BotProfileScreen({onAddBot}: Props): React.JSX.Element {
   useEffect(() => {
     if (!botId || !botName) return;
     setLang(DEFAULT_LANG);
-    fireAndForget(load(botId, {name: botName, username: botUsername, telegram_id: botTelegramId}));
+    fireAndForget(load(botId, {
+      name: botName, username: botUsername, telegram_id: botTelegramId,
+    }));
   }, [botId, botName, botUsername, botTelegramId, load]);
 
   const dirty = hasChanges(saved, draft);
@@ -71,46 +125,42 @@ export function BotProfileScreen({onAddBot}: Props): React.JSX.Element {
 
   if (!botId || !bot) {
     return (
-      <View style={[styles.root, styles.center, {backgroundColor: colors.bgSecondary}]}>
-        <Text style={[styles.emptyTitle, {color: colors.textPrimary}]}>{texts.noBotTitle}</Text>
-        <Text style={[styles.sub, {color: colors.textSecondary}]}>{texts.noBotSub}</Text>
+      <View style={[styles.root, styles.center]}>
+        <Text style={styles.emptyTitle}>{texts.noBotTitle}</Text>
+        <Text style={styles.sub}>{texts.noBotSub}</Text>
         {onAddBot ? (
-          <Pressable onPress={onAddBot} style={[styles.cta, {backgroundColor: colors.accent}]}>
-            <Text style={[styles.ctaText, {color: '#fff'}]}>{texts.noBotCta}</Text>
+          <Pressable onPress={onAddBot} style={styles.cta}>
+            <Text style={styles.ctaText}>{texts.noBotCta}</Text>
           </Pressable>
         ) : null}
       </View>
     );
   }
-  if ((loading && !draft) || (!draft && !loadError)) {
+  if ((loading && !draft) || (!draft && !loadError) || (!draft || !saved)) {
     return (
-      <View style={[styles.root, styles.center, {backgroundColor: colors.bgSecondary}]}>
-        <ActivityIndicator color={colors.accent} />
-      </View>
-    );
-  }
-  if (loadError && !draft) {
-    return (
-      <View style={[styles.root, styles.center, {backgroundColor: colors.bgSecondary}]}>
-        <Text style={[styles.err, {color: colors.danger}]}>{loadError}</Text>
-        <Pressable
-          onPress={() => fireAndForget(load(botId, {name: bot.name, username: bot.username ?? undefined, telegram_id: String(bot.telegram_bot_id)}, true))}
-          style={[styles.cta, {backgroundColor: colors.accent}]}>
-          <Text style={[styles.ctaText, {color: '#fff'}]}>{texts.retry}</Text>
-        </Pressable>
-      </View>
-    );
-  }
-  if (!draft || !saved) {
-    return (
-      <View style={[styles.root, styles.center, {backgroundColor: colors.bgSecondary}]}>
-        <ActivityIndicator color={colors.accent} />
+      <View style={[styles.root, styles.center]}>
+        {loadError && !draft ? (
+          <>
+            <Text style={styles.err}>{loadError}</Text>
+            <Pressable
+              onPress={() => fireAndForget(load(botId, {
+                name: bot.name,
+                username: bot.username ?? undefined,
+                telegram_id: String(bot.telegram_bot_id),
+              }, true))}
+              style={styles.cta}>
+              <Text style={styles.ctaText}>{texts.retry}</Text>
+            </Pressable>
+          </>
+        ) : (
+          <ActivityIndicator color={colors.accent} />
+        )}
       </View>
     );
   }
 
   return (
-    <View style={[styles.root, {backgroundColor: colors.bgSecondary}]}>
+    <View style={styles.root}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <BotHero profile={draft} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -122,26 +172,40 @@ export function BotProfileScreen({onAddBot}: Props): React.JSX.Element {
                 <Pressable
                   key={t.id}
                   onPress={() => setTab(t.id)}
-                  style={[styles.tab, {backgroundColor: on ? colors.accent : colors.bgPrimary}]}>
-                  <Icon size={16} color={on ? '#fff' : colors.textSecondary} />
-                  <Text style={[styles.tabText, {color: on ? '#fff' : colors.textSecondary}]}>{t.label}</Text>
+                  style={[styles.tab, on ? styles.tabOn : styles.tabOff]}>
+                  <Icon
+                    size={m.tabIconSize}
+                    color={on ? colors.white : colors.textSecondary}
+                  />
+                  <Text style={on ? styles.tabTextOn : styles.tabTextOff}>
+                    {t.label}
+                  </Text>
                 </Pressable>
               );
             })}
           </View>
         </ScrollView>
         <View style={styles.head}>
-          <Text style={[styles.headTitle, {color: colors.textPrimary}]}>{currentTab.title}</Text>
-          <Text style={[styles.headHint, {color: colors.textSecondary}]}>{currentTab.hint}</Text>
+          <Text style={styles.headTitle}>{currentTab.title}</Text>
+          <Text style={styles.headHint}>{currentTab.hint}</Text>
         </View>
-        {tab === 'identity' ? <IdentitySection draft={draft} lang={lang} onLang={setLang} onEdit={edit} /> : null}
-        {tab === 'languages' ? <LanguagesSection draft={draft} onEdit={edit} /> : null}
+        {tab === 'identity' ? (
+          <IdentitySection draft={draft} lang={lang} onLang={setLang} onEdit={edit} />
+        ) : null}
+        {tab === 'languages' ? (
+          <LanguagesSection draft={draft} onEdit={edit} />
+        ) : null}
         {tab === 'commands' ? (
-          <CommandsSection draft={draft} lang={lang} onLang={setLang} errors={errors}
-            onChange={(key, list) => edit(d => setCommands(d, key, list))} />
+          <CommandsSection
+            draft={draft} lang={lang} onLang={setLang} errors={errors}
+            onChange={(key, list) => edit(d => setCommands(d, key, list))}
+          />
         ) : null}
         {tab === 'menu' ? (
-          <MenuSection draft={draft} errors={errors} onChange={b => edit(d => setMenuButton(d, b))} />
+          <MenuSection
+            draft={draft} errors={errors}
+            onChange={b => edit(d => setMenuButton(d, b))}
+          />
         ) : null}
         {tab === 'rights' ? (
           <RightsSection
@@ -149,57 +213,49 @@ export function BotProfileScreen({onAddBot}: Props): React.JSX.Element {
             onToggle={(target, key, value) => edit(d => setRight(d, target, key, value))}
             onSetAll={(target, value) => {
               const next = {...emptyRights()};
-              for (const k of keysFor(target)) next[k] = value;
+              const scoped = keysFor(target);
               for (const k of ADMIN_RIGHT_KEYS) {
-                if (!keysFor(target).includes(k)) next[k] = draft.admin_rights[target][k];
+                next[k] = scoped.includes(k) ? value : draft.admin_rights[target][k];
               }
               edit(d => setRights(d, target, next));
             }}
           />
         ) : null}
         {tab === 'info' ? (
-          <InfoSection profile={draft} saved={saved} draft={draft}
-            onResync={() => fireAndForget(load(botId, {name: bot.name, username: bot.username ?? undefined, telegram_id: String(bot.telegram_bot_id)}, true))} />
+          <InfoSection
+            profile={draft} saved={saved} draft={draft}
+            onResync={() => fireAndForget(load(botId, {
+              name: bot.name,
+              username: bot.username ?? undefined,
+              telegram_id: String(bot.telegram_bot_id),
+            }, true))}
+          />
         ) : null}
         {tab === 'identity' || tab === 'menu' || tab === 'commands' ? (
           <TelegramPreview profile={draft} lang={lang} />
         ) : null}
         {report ? (
-          <View style={[styles.report, {backgroundColor: colors.bgPrimary}]}>
-            <Text style={[styles.reportTitle, {color: colors.textPrimary}]}>{texts.reportTitle}</Text>
+          <View style={styles.report}>
+            <Text style={styles.reportTitle}>{texts.reportTitle}</Text>
             {report.map(r => (
-              <Text key={r.id} style={[styles.reportLine, {color: r.ok ? colors.online : colors.danger}]}>
+              <Text
+                key={r.id}
+                style={r.ok ? styles.reportLineOk : styles.reportLineErr}>
                 {r.label}: {r.message}
               </Text>
             ))}
             <Pressable onPress={dismissReport}>
-              <Text style={[styles.reportClose, {color: colors.accent}]}>{texts.reportClose}</Text>
+              <Text style={styles.reportClose}>{texts.reportClose}</Text>
             </Pressable>
           </View>
         ) : null}
       </ScrollView>
-      <SaveBar visible={dirty} saving={saving} onSave={() => { fireAndForget(save()); }} onDiscard={discard} />
+      <SaveBar
+        visible={dirty}
+        saving={saving}
+        onSave={() => { fireAndForget(save()); }}
+        onDiscard={discard}
+      />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {flex: 1},
-  center: {alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24},
-  emptyTitle: {fontSize: 18, fontWeight: '700'},
-  cta: {marginTop: 8, paddingVertical: 12, paddingHorizontal: 20, borderRadius: m.inputRadius},
-  scroll: {paddingHorizontal: m.scrollPadH, paddingBottom: m.scrollPadBottom, gap: m.scrollGap, paddingTop: 12},
-  tabs: {flexDirection: 'row', gap: 6, paddingVertical: 6},
-  tab: {flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: m.tabPadV, paddingHorizontal: m.tabPadH, borderRadius: 14, minHeight: 42},
-  tabText: {fontSize: m.tabFont, fontWeight: '700'},
-  head: {gap: 2, paddingHorizontal: 4, paddingBottom: 12},
-  headTitle: {fontSize: 18, fontWeight: '800', letterSpacing: -0.01},
-  headHint: {fontSize: 13, lineHeight: 18},
-  report: {padding: 14, borderRadius: m.inputRadius, gap: 6},
-  reportTitle: {fontWeight: '700', marginBottom: 4},
-  sub: {textAlign: 'center'},
-  ctaText: {fontWeight: '700'},
-  err: {textAlign: 'center'},
-  reportLine: {fontSize: 13},
-  reportClose: {fontWeight: '600', marginTop: 8},
-});
