@@ -4,7 +4,7 @@
  */
 import {validate} from '../src/features/botprofile/utils/validate';
 import {completeness} from '../src/features/botprofile/utils/completeness';
-import {buildChanges, hasChanges} from '../src/features/botprofile/utils/diff';
+import {buildChanges} from '../src/features/botprofile/utils/diff';
 import {
   addLanguage,
   removeLanguage,
@@ -368,7 +368,7 @@ describe('9. mapProfileError codes', () => {
     expect(mapProfileError('TOKEN_INVALID')).toMatch(/jeton/i);
     // accent obligatoire (texte : « déconnecté »)
     expect(mapProfileError('BOT_DISCONNECTED')).toMatch(/déconnect/i);
-    expect(mapProfileError('network_error')).toMatch(/[Rr]eseau|[Nn]etwork/);
+    expect(mapProfileError('network_error')).toMatch(/[Rr]éseau|[Nn]etwork/);
     expect(mapProfileError('VALIDATION_ERROR')).toMatch(/invalide/i);
     expect(mapProfileError('RATE_LIMITED')).toMatch(/Trop|demandes/i);
     expect(mapProfileError('SERVICE_UNAVAILABLE')).toMatch(/indisponible/i);
