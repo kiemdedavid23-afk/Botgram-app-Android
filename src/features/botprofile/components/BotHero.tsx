@@ -1,6 +1,6 @@
 /**
- * Heros profil bot - BotProfile.css .bp-hero + BotHero.tsx
- * Degrade via GradientView (shared), pas react-native-linear-gradient.
+ * Heros profil bot - BotProfile.css .bp-hero
+ * GradientView (shared). Photo via buildBotPhotoSource + onLoad/onError -> store.
  */
 import React, {useEffect, useState} from 'react';
 import {View, Text, Image, StyleSheet} from 'react-native';
@@ -11,13 +11,13 @@ import {completeness} from '../utils/completeness';
 import type {BotProfile} from '../../../core/api/endpoints/botProfile.types';
 import {DEFAULT_LANG} from '../../../core/api/endpoints/botProfile.types';
 import {texts} from '../texts';
-import {useReducedMotion} from '../../../shared/hooks/useReducedMotion';
+import {useBotProfileStore} from '../store/botProfileStore';
 
 type Props = {profile: BotProfile};
 
 export function BotHero({profile}: Props): React.JSX.Element {
   const {colors, mode} = useTheme();
-  const reduce = useReducedMotion();
+  const setPhotoPresent = useBotProfileStore(s => s.setPhotoPresent);
   const [photo, setPhoto] = useState<{
     uri: string;
     headers: Record<string, string>;
@@ -27,27 +27,27 @@ export function BotHero({profile}: Props): React.JSX.Element {
     profile.info.username ||
     'Bot';
   const initial = name.trim().charAt(0).toUpperCase() || '?';
-  const pct = completeness(profile);
+  const {pct, missing} = completeness(profile);
   const grad =
     mode === 'dark' ? gradients.brandHeroAlt : gradients.brandHero;
+  const complete = missing.length === 0;
 
   useEffect(() => {
     let cancelled = false;
-    if (!profile.hasPhoto) {
-      setPhoto(null);
-      return;
-    }
     buildBotPhotoSource(profile.bot_id)
       .then(src => {
         if (!cancelled) setPhoto(src);
       })
       .catch(() => {
-        if (!cancelled) setPhoto(null);
+        if (!cancelled) {
+          setPhoto(null);
+          setPhotoPresent(false);
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, [profile.bot_id, profile.hasPhoto]);
+  }, [profile.bot_id, setPhotoPresent]);
 
   return (
     <GradientView
@@ -59,7 +59,11 @@ export function BotHero({profile}: Props): React.JSX.Element {
           <Image
             source={photo}
             style={styles.img}
-            onError={() => setPhoto(null)}
+            onLoad={() => setPhotoPresent(true)}
+            onError={() => {
+              setPhoto(null);
+              setPhotoPresent(false);
+            }}
           />
         ) : (
           <View style={[styles.img, styles.initialBg]}>
@@ -79,9 +83,16 @@ export function BotHero({profile}: Props): React.JSX.Element {
       ) : null}
       <View style={[styles.complete, {backgroundColor: colors.heroChipBg}]}>
         <Text style={[styles.completeText, {color: colors.heroText}]}>
-          {texts.completeness} {reduce ? pct : pct}%
+          {complete
+            ? texts.completeFull
+            : `${pct} % — ${texts.completeness}`}
         </Text>
       </View>
+      {!complete ? (
+        <Text style={[styles.missing, {color: colors.heroText}]}>
+          {texts.missingPrefix} {missing.join(', ')}.
+        </Text>
+      ) : null}
     </GradientView>
   );
 }
@@ -118,4 +129,5 @@ const styles = StyleSheet.create({
     borderRadius: m.chipRadius,
   },
   completeText: {fontSize: 12, fontWeight: '600'},
+  missing: {fontSize: 11, opacity: 0.9, textAlign: 'center'},
 });
