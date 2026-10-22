@@ -78,9 +78,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.botgram"
+    namespace "com.botgram.dsi"
     defaultConfig {
-        applicationId "com.botgram"
+        applicationId "com.botgram.dsi"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

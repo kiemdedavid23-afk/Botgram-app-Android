@@ -1,4 +1,4 @@
-package com.botgram
+package com.botgram.dsi
 
 import android.app.Application
 import com.facebook.react.PackageList
