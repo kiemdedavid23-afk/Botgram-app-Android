@@ -1,26 +1,41 @@
-import type {LocalizedTexts, TextField} from '../../../core/api/endpoints/botProfile.types';
-import {FIELD_LIMITS} from './labels';
+/**
+ * Validation Telegram avant envoi - site diff.ts validate().
+ * Messages via texts.ts (R6).
+ */
+import type {BotProfile} from '../../../core/api/endpoints/botProfile.types';
+import {DEFAULT_LANG} from '../../../core/api/endpoints/botProfile.types';
+import {texts} from '../texts';
 
-export function validateField(
-  field: TextField,
-  value: string,
-): string | null {
-  const limit = FIELD_LIMITS[field];
-  if (field === 'name') {
-    const t = value.trim();
-    if (t.length < 1) return 'Le nom est requis (1–64).';
-    if (t.length > limit) return `Max ${limit} caractères.`;
-  } else if (value.length > limit) {
-    return `Max ${limit} caractères.`;
-  }
-  return null;
-}
+export function validate(draft: BotProfile): Record<string, string> {
+  const errors: Record<string, string> = {};
 
-export function validateTexts(texts: LocalizedTexts): Partial<Record<TextField, string>> {
-  const out: Partial<Record<TextField, string>> = {};
-  for (const f of ['name', 'description', 'short_description'] as TextField[]) {
-    const err = validateField(f, texts[f]);
-    if (err) out[f] = err;
+  for (const [lang, t] of Object.entries(draft.texts)) {
+    const isDefault = lang === DEFAULT_LANG;
+    if (isDefault && t.name.trim().length === 0) {
+      errors[`text:${lang}:name`] = texts.errNameRequired;
+    }
+    if (t.name.length > 64) {
+      errors[`text:${lang}:name`] = texts.errNameMax;
+    }
+    if (t.description.length > 512) {
+      errors[`text:${lang}:description`] = texts.errDescMax;
+    }
+    if (t.short_description.length > 120) {
+      errors[`text:${lang}:short_description`] = texts.errShortMax;
+    }
   }
-  return out;
+
+  const menu = draft.menu_button;
+  if (menu.type === 'web_app') {
+    if (!menu.text.trim()) errors['menu:text'] = texts.errMenuText;
+    let validUrl = false;
+    try {
+      validUrl = new URL(menu.url).protocol === 'https:';
+    } catch {
+      validUrl = false;
+    }
+    if (!validUrl) errors['menu:url'] = texts.errMenuUrl;
+  }
+
+  return errors;
 }
