@@ -163,9 +163,13 @@ describe('store save via Worker', () => {
       throw new Error('expected report item');
     }
     expect(item.ok).toBe(true);
-    expect(useBotProfileStore.getState().saved?.texts.default.name).toBe(
-      'Nouveau',
-    );
+    const savedAfter = useBotProfileStore.getState().saved;
+    expect(savedAfter).not.toBeNull();
+    if (savedAfter === null) {
+      throw new Error('expected saved profile');
+    }
+    const nameAfter = savedAfter.texts[DEFAULT_LANG]?.name;
+    expect(nameAfter).toBe('Nouveau');
   });
 
   it('echec partiel 429', async () => {
