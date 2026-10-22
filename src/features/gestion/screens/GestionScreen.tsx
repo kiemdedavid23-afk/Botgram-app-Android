@@ -4,13 +4,13 @@
  */
 import React, {useCallback, useEffect, useState} from 'react';
 import {View, Text, ScrollView, Pressable, StyleSheet, Switch} from 'react-native';
-import {useTheme, gestionMetrics as g, getShadow} from '../../../shared/theme';
+import {useTheme, gestionMetrics as g} from '../../../shared/theme';
 import {useBotsStore} from '../../bots';
 import {useAuthStore} from '../../auth';
 import {useMemberStore} from '../../member';
 import {me} from '../../../core/api/endpoints/auth';
 import {useGestionStore} from '../store/gestionStore';
-import {BotCard} from '../components/BotCard';
+import {BotsSection} from '../components/BotsSection';
 import {ConfirmDialog} from '../components/ConfirmDialog';
 import {GestionToast} from '../components/GestionToast';
 import {DevicesSection} from '../components/DevicesSection';
@@ -142,65 +142,26 @@ export function GestionScreen(): React.JSX.Element {
           </Text>
         </View>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHead}>
-            <Text style={[styles.sectionTitle, {color: colors.textHint}]}>
-              {texts.sectionBots}
-            </Text>
-            <View style={[styles.count, {backgroundColor: colors.bgTertiary}]}>
-              <Text style={[styles.countText, {color: colors.textSecondary}]}>
-                {texts.botsCount(bots.length)}
-              </Text>
-            </View>
-          </View>
-          {bots.length === 0 ? (
-            <View
-              style={[
-                styles.empty,
-                {backgroundColor: colors.bgPrimary},
-                getShadow('sm', mode),
-              ]}>
-              <Text style={[styles.emptyTitle, {color: colors.textPrimary}]}>
-                {texts.emptyBotsTitle}
-              </Text>
-              <Text style={[styles.emptySub, {color: colors.textSecondary}]}>
-                {texts.emptyBotsSub}
-              </Text>
-            </View>
-          ) : (
-            bots.map(bot => (
-              <BotCard
-                key={bot.id}
-                bot={bot}
-                isDefault={member?.selected_bot_id === bot.id}
-                busyKey={busy}
-                onRetry={() =>
-                  fireAndForget(
-                    runBot(
-                      `${bot.id}:retry`,
-                      () => retryWebhook(bot.id),
-                      texts.toastRetry,
-                    ),
-                  )
-                }
-                onResync={() =>
-                  fireAndForget(
-                    runBot(
-                      `${bot.id}:resync`,
-                      () => resyncWebhook(bot.id),
-                      texts.toastResync,
-                    ),
-                  )
-                }
-                onDisconnect={() => {
-                  setDropPending(false);
-                  setConfirm({kind: 'disconnect', botId: bot.id});
-                }}
-                onDelete={() => setConfirm({kind: 'delete', botId: bot.id})}
-              />
-            ))
-          )}
-        </View>
+        <BotsSection
+          bots={bots}
+          selectedBotId={member?.selected_bot_id}
+          busy={busy}
+          onRetry={id =>
+            fireAndForget(
+              runBot(`${id}:retry`, () => retryWebhook(id), texts.toastRetry),
+            )
+          }
+          onResync={id =>
+            fireAndForget(
+              runBot(`${id}:resync`, () => resyncWebhook(id), texts.toastResync),
+            )
+          }
+          onDisconnect={id => {
+            setDropPending(false);
+            setConfirm({kind: 'disconnect', botId: id});
+          }}
+          onDelete={id => setConfirm({kind: 'delete', botId: id})}
+        />
 
         <DevicesSection
           sessions={sessions}
