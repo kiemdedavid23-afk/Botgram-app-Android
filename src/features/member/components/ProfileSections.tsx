@@ -14,8 +14,6 @@ import {
   ShieldCheck,
   Bot as BotIcon,
   Pencil,
-  LogOut,
-  Trash2,
 } from 'lucide-react-native';
 import {
   useTheme,
@@ -34,6 +32,7 @@ import {
 } from '../utils/format';
 import {texts} from '../texts';
 import {ProfileRow} from './ProfileRow';
+import {ProfileSessionSection} from './ProfileSessionSection';
 
 type Props = {
   member: Member;
@@ -198,35 +197,7 @@ export function ProfileSections({
         </View>
       </View>
 
-      <View style={styles.section}>
-        <Text
-          style={[
-            styles.sectionTitle,
-            styles.sectionTitleSolo,
-            {color: colors.textHint},
-          ]}>
-          {texts.sectionSession}
-        </Text>
-        <View style={cardStyle}>
-          <ProfileRow
-            icon={<LogOut />}
-            tone="danger"
-            label={texts.logout}
-            value=""
-            onPress={onLogout}
-            valueDanger
-          />
-          <Divider />
-          <ProfileRow
-            icon={<Trash2 />}
-            tone="danger"
-            label={texts.deleteAccount}
-            value=""
-            onPress={onDelete}
-            valueDanger
-          />
-        </View>
-      </View>
+      <ProfileSessionSection onLogout={onLogout} onDelete={onDelete} />
     </>
   );
 }

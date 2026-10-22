@@ -20,6 +20,7 @@ import {
 } from '../../../shared/theme';
 import {useMemberStore} from '../store/memberStore';
 import {texts} from '../texts';
+import {mapDeleteError} from '../utils/deleteErrors';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 
 type Step = 'confirm' | 'code';
@@ -29,17 +30,6 @@ type Props = {
   email: string;
   onClose: () => void;
 };
-
-function mapDeleteError(code: string | null): string {
-  if (!code) return texts.errorGeneric;
-  if (code === 'CODE_INVALID') return texts.errorCodeInvalid;
-  if (code === 'ACCOUNT_CLEANUP_PENDING') return texts.errorCleanupPending;
-  if (code === 'EMAIL_NOT_VERIFIED') return texts.errorEmailNotVerified;
-  if (code === 'RATE_LIMITED' || code === 'TOO_MANY_REQUESTS') {
-    return texts.errorRateLimit;
-  }
-  return texts.errorGeneric;
-}
 
 export function DeleteAccountDialog({
   visible,
