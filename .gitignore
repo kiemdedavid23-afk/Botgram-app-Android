@@ -44,3 +44,4 @@ coverage/
 *.log
 *.tmp
 .cache/
+android/app/google-services.json
