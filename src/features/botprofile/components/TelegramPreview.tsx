@@ -14,7 +14,7 @@ type Props = {profile: BotProfile; lang: string};
 
 function makeStyles(c: ColorTokens) {
   return StyleSheet.create({
-    root: {gap: 8, marginTop: m.rootMarginTop},
+    root: {gap: m.gridGap, marginTop: m.rootMarginTop},
     label: {
       paddingHorizontal: m.labelPadH, fontSize: m.labelFontSize,
       fontWeight: m.labelFontWeight, letterSpacing: m.labelLetterSpacing,
@@ -22,7 +22,7 @@ function makeStyles(c: ColorTokens) {
     },
     grid: {gap: m.gridGap},
     phone: {
-      borderRadius: m.phoneRadius, borderWidth: 1, borderColor: c.border,
+      borderRadius: m.phoneRadius, borderWidth: m.borderWidth, borderColor: c.border,
       padding: m.phonePadding, minHeight: m.phoneMinHeight,
       backgroundColor: c.bgChat,
     },
@@ -41,7 +41,7 @@ function makeStyles(c: ColorTokens) {
     tag: {
       fontSize: m.tagSize, fontWeight: m.tagWeight, letterSpacing: m.tagLetterSpacing,
       textTransform: 'uppercase', paddingVertical: m.tagPadV, paddingHorizontal: m.tagPadH,
-      borderRadius: 99, overflow: 'hidden',
+      borderRadius: m.fullRadius, overflow: 'hidden',
       backgroundColor: c.accentSoft, color: c.accent,
     },
     short: {
@@ -58,7 +58,7 @@ function makeStyles(c: ColorTokens) {
       backgroundColor: c.bubbleIn,
     },
     emptyTitle: {
-      fontSize: m.emptyTitleSize, fontWeight: m.emptyTitleWeight, textAlign: 'center',
+      fontSize: m.emptyTitleSizePrev, fontWeight: m.emptyTitleWeightPrev, textAlign: 'center',
       color: c.bubbleInText,
     },
     emptyBody: {
@@ -73,8 +73,8 @@ function makeStyles(c: ColorTokens) {
     },
     inputPill: {
       flex: 1, paddingVertical: m.inputPillPaddingV, paddingHorizontal: m.inputPillPaddingH,
-      borderRadius: 99, backgroundColor: c.bgPrimary, color: c.textHint,
-      fontSize: m.inputFontSize, overflow: 'hidden',
+      borderRadius: m.fullRadius, backgroundColor: c.bgPrimary, color: c.textHint,
+      fontSize: m.previewInputFontSize, overflow: 'hidden',
     },
   });
 }

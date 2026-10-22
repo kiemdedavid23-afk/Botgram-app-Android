@@ -26,7 +26,7 @@ function keysFor(target: Target): AdminRightKey[] {
 
 function makeStyles(c: ColorTokens) {
   return StyleSheet.create({
-    root: {paddingBottom: 6},
+    root: {paddingBottom: m.rootPadBottom},
     title: {
       fontSize: m.titleFontSize, fontWeight: m.titleFontWeight,
       paddingHorizontal: m.headPaddingH, paddingTop: m.headPaddingTop,
@@ -37,19 +37,19 @@ function makeStyles(c: ColorTokens) {
       paddingHorizontal: m.headPaddingH, marginBottom: m.tabsMarginBottom,
     },
     tab: {
-      paddingVertical: m.tabPadV, paddingHorizontal: m.tabPadH,
-      borderRadius: m.tabRadius, borderWidth: 1, borderColor: c.border,
+      paddingVertical: m.rightsTabPadV, paddingHorizontal: m.rightsTabPadH,
+      borderRadius: m.rightsTabRadius, borderWidth: m.borderWidth, borderColor: c.border,
     },
     tabOn: {backgroundColor: c.accent},
     tabOff: {backgroundColor: c.bgPrimary},
-    tabTextOn: {color: c.white, fontWeight: m.tabFontWeight, fontSize: m.tabFontSize},
-    tabTextOff: {color: c.textSecondary, fontWeight: m.tabFontWeight, fontSize: m.tabFontSize},
+    tabTextOn: {color: c.white, fontWeight: m.rightsTabFontWeight, fontSize: m.rightsTabFontSize},
+    tabTextOff: {color: c.textSecondary, fontWeight: m.rightsTabFontWeight, fontSize: m.rightsTabFontSize},
     actions: {
-      flexDirection: 'row', gap: m.actionsGap,
+      flexDirection: 'row', gap: m.rightsActionsGap,
       paddingHorizontal: m.headPaddingH, marginBottom: m.actionsMarginBottom,
     },
     btn: {
-      paddingVertical: m.btnPadV, paddingHorizontal: m.btnPadH, borderRadius: m.btnRadius,
+      paddingVertical: m.rightsBtnPadV, paddingHorizontal: m.rightsBtnPadH, borderRadius: m.rightsBtnRadius,
     },
     btnAccent: {backgroundColor: c.accentSoft},
     btnMuted: {backgroundColor: c.bgSecondary},
@@ -57,16 +57,16 @@ function makeStyles(c: ColorTokens) {
     btnTextMuted: {color: c.textSecondary, fontWeight: m.tabFontWeight},
     card: {
       marginHorizontal: m.cardMarginH, borderRadius: m.cardRadius,
-      borderWidth: 1, borderColor: c.border, backgroundColor: c.bgPrimary, overflow: 'hidden',
+      borderWidth: m.borderWidth, borderColor: c.border, backgroundColor: c.bgPrimary, overflow: 'hidden',
     },
     div: {height: StyleSheet.hairlineWidth, marginLeft: m.headPaddingH, backgroundColor: c.border},
     row: {
       flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-      paddingVertical: m.rowPaddingV, paddingHorizontal: m.rowPaddingH, gap: 12,
+      paddingVertical: m.rowPaddingV, paddingHorizontal: m.rowPaddingH, gap: m.rowGap,
     },
-    label: {flex: 1, fontSize: m.labelSize, fontWeight: m.labelWeight, color: c.textPrimary},
+    label: {flex: 1, fontSize: m.rightsLabelSize, fontWeight: m.rightsLabelWeight, color: c.textPrimary},
     sw: {
-      width: m.switchWidth, height: m.switchHeight, borderRadius: 99, justifyContent: 'center',
+      width: m.switchWidth, height: m.switchHeight, borderRadius: m.fullRadius, justifyContent: 'center',
     },
     swOn: {backgroundColor: c.accent},
     swOff: {backgroundColor: c.bgTertiary},

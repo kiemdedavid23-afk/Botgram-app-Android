@@ -42,11 +42,11 @@ export function LangChips({languages, active, onSelect}: Props): React.JSX.Eleme
 }
 
 const styles = StyleSheet.create({
-  row: {flexDirection: 'row', gap: 8},
+  row: {flexDirection: 'row', gap: m.chipRowGap},
   chip: {
     paddingVertical: m.chipPadV,
     paddingHorizontal: m.chipPadH,
     borderRadius: m.chipRadius,
   },
-  chipText: {fontSize: 13, fontWeight: '600'},
+  chipText: {fontSize: m.chipFontSize, fontWeight: m.chipFontWeight},
 });

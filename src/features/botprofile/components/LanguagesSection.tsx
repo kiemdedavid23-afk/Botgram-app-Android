@@ -62,22 +62,22 @@ export function LanguagesSection({draft, onEdit}: Props): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  stack: {gap: 8},
+  stack: {gap: m.langStackGap},
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 14,
+    padding: m.langRowPad,
     borderRadius: m.inputRadius,
   },
-  label: {fontSize: 15, fontWeight: '600'},
-  addBlock: {marginTop: 8, gap: 6},
-  addTitle: {fontSize: 13, fontWeight: '600'},
+  label: {fontSize: m.langNameSize, fontWeight: m.langNameWeight},
+  addBlock: {marginTop: m.langAddMarginTop, gap: m.fieldInnerGap},
+  addTitle: {fontSize: m.langAddTitleSize, fontWeight: m.chipFontWeight},
   addRow: {
-    padding: 12,
+    padding: m.langRowGap,
     borderRadius: m.inputRadius,
-    borderWidth: 1,
+    borderWidth: m.borderWidth,
   },
-  remove: {fontWeight: '600'},
-  addLabel: {fontWeight: '600'},
+  remove: {fontWeight: m.chipFontWeight},
+  addLabel: {fontWeight: m.chipFontWeight},
 });

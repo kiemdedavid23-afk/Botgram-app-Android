@@ -20,7 +20,7 @@ type Props = {
 
 function makeStyles(c: ColorTokens) {
   return StyleSheet.create({
-    root: {paddingBottom: 6},
+    root: {paddingBottom: m.rootPadBottom},
     title: {
       fontSize: m.titleFontSize, fontWeight: m.titleFontWeight,
       paddingHorizontal: m.headPaddingH, paddingTop: m.headPaddingTop,
@@ -33,14 +33,14 @@ function makeStyles(c: ColorTokens) {
     },
     card: {
       marginHorizontal: m.cardMarginH, borderRadius: m.cardRadius,
-      borderWidth: 1, borderColor: c.border, backgroundColor: c.bgPrimary, overflow: 'hidden',
+      borderWidth: m.borderWidth, borderColor: c.border, backgroundColor: c.bgPrimary, overflow: 'hidden',
     },
     fields: {
-      marginHorizontal: m.cardMarginH, borderRadius: m.cardRadius, borderWidth: 1,
+      marginHorizontal: m.cardMarginH, borderRadius: m.cardRadius, borderWidth: m.borderWidth,
       borderColor: c.border, backgroundColor: c.bgPrimary, marginTop: m.fieldMarginTop,
       gap: m.fieldsGap, padding: m.fieldsPad,
     },
-    div: {height: StyleSheet.hairlineWidth, marginLeft: 48, backgroundColor: c.border},
+    div: {height: StyleSheet.hairlineWidth, marginLeft: m.radioMarginLeft, backgroundColor: c.border},
     row: {
       flexDirection: 'row', alignItems: 'center', gap: m.rowGap,
       paddingVertical: m.optionPaddingV, paddingHorizontal: m.optionPaddingH,
@@ -50,7 +50,7 @@ function makeStyles(c: ColorTokens) {
       borderWidth: m.radioDotBorder, borderColor: c.border, backgroundColor: 'transparent',
     },
     dotOn: {borderColor: c.accent, backgroundColor: c.accent},
-    info: {flex: 1, gap: 2},
+    info: {flex: 1, gap: m.infoInnerGap},
     val: {fontSize: m.valSize, fontWeight: m.valWeight, color: c.textPrimary},
     key: {fontSize: m.keySize, lineHeight: m.keyLineHeight, color: c.textHint},
     fieldLabel: {
@@ -58,7 +58,7 @@ function makeStyles(c: ColorTokens) {
       letterSpacing: m.sectionLabelSpacing, textTransform: 'uppercase', color: c.textHint,
     },
     input: {
-      minHeight: m.inputHeight, borderWidth: 1, borderRadius: m.inputRadius,
+      minHeight: m.inputHeight, borderWidth: m.borderWidth, borderRadius: m.inputRadius,
       paddingHorizontal: m.inputPadH, fontSize: m.inputFontSize,
       color: c.textPrimary, backgroundColor: c.bgSecondary, borderColor: c.border,
     },

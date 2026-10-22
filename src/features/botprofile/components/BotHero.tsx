@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     borderRadius: m.heroRadius,
     padding: m.heroPad,
     alignItems: 'center',
-    gap: 10,
+    gap: m.heroGap,
     overflow: 'hidden',
   },
   avatar: {
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     height: m.heroAvatar,
     borderRadius: m.heroAvatar / 2,
     overflow: 'hidden',
-    borderWidth: 3,
+    borderWidth: m.heroAvatarBorder,
   },
   img: {width: '100%', height: '100%'},
   initialBg: {
@@ -119,15 +119,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'transparent',
   },
-  initial: {fontSize: 40, fontWeight: '700'},
+  initial: {fontSize: m.heroInitialSize, fontWeight: m.heroInitialWeight},
   name: {fontSize: m.heroNameSize, fontWeight: m.heroNameWeight},
-  user: {fontSize: 14, opacity: 0.9},
+  user: {fontSize: m.heroUserSize, opacity: m.heroUserOpacity},
   complete: {
-    marginTop: 4,
+    marginTop: m.heroCompleteMarginTop,
     paddingVertical: m.chipPadV,
     paddingHorizontal: m.chipPadH,
     borderRadius: m.chipRadius,
   },
-  completeText: {fontSize: 12, fontWeight: '600'},
-  missing: {fontSize: 11, opacity: 0.9, textAlign: 'center'},
+  completeText: {fontSize: m.heroCompleteTextSize, fontWeight: m.heroCompleteTextWeight},
+  missing: {fontSize: m.heroMissingSize, opacity: m.heroMissingOpacity, textAlign: 'center'},
 });

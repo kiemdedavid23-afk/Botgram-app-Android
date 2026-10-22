@@ -68,15 +68,15 @@ export function InfoSection({
 }
 
 const styles = StyleSheet.create({
-  stack: {gap: 12},
-  card: {borderRadius: m.inputRadius, padding: 14, gap: 4},
-  k: {fontSize: 12, marginTop: 6},
-  v: {fontSize: 15, fontWeight: '600'},
+  stack: {gap: m.infoStackGap},
+  card: {borderRadius: m.inputRadius, padding: m.infoCardPad, gap: m.infoCardGap},
+  k: {fontSize: m.infoKeySize, marginTop: m.infoKeyMarginTop},
+  v: {fontSize: m.infoValSize, fontWeight: m.infoValWeight},
   btn: {
     height: m.inputHeight,
     borderRadius: m.inputRadius,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  btnText: {fontWeight: '700', fontSize: 15},
+  btnText: {fontWeight: m.infoBtnWeight, fontSize: m.infoBtnFontSize},
 });

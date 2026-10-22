@@ -88,22 +88,22 @@ export function IdentitySection({
 }
 
 const styles = StyleSheet.create({
-  stack: {gap: 14},
-  field: {gap: 6},
+  stack: {gap: m.stackGap},
+  field: {gap: m.fieldInnerGap},
   fieldHead: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  label: {fontSize: 13, fontWeight: '600'},
-  counter: {fontSize: 12},
+  label: {fontSize: m.labelSize, fontWeight: m.labelWeight},
+  counter: {fontSize: m.counterSize},
   input: {
     minHeight: m.inputHeight,
     borderRadius: m.inputRadius,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 15,
+    borderWidth: m.borderWidth,
+    paddingHorizontal: m.inputPadH,
+    paddingVertical: m.inputPadV,
+    fontSize: m.inputFontSize,
   },
-  area: {minHeight: 88, textAlignVertical: 'top'},
-  err: {fontSize: 12},
+  area: {minHeight: m.areaMinHeight, textAlignVertical: 'top'},
+  err: {fontSize: m.errFontSize},
 });

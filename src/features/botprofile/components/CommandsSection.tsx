@@ -27,7 +27,7 @@ type Props = {
 
 function makeStyles(c: ColorTokens) {
   return StyleSheet.create({
-    root: {paddingBottom: 6},
+    root: {paddingBottom: m.rootPadBottom},
     title: {
       fontSize: m.titleFontSize, fontWeight: m.titleFontWeight,
       paddingHorizontal: m.headPaddingH, paddingTop: m.headPaddingTop,
@@ -45,7 +45,7 @@ function makeStyles(c: ColorTokens) {
     },
     chip: {
       paddingVertical: m.chipPadV, paddingHorizontal: m.chipPadH,
-      borderRadius: m.chipRadius, borderWidth: 1, borderColor: c.border,
+      borderRadius: m.chipRadius, borderWidth: m.borderWidth, borderColor: c.border,
     },
     chipOn: {backgroundColor: c.accent},
     chipOff: {backgroundColor: c.bgPrimary},
@@ -70,13 +70,13 @@ function makeStyles(c: ColorTokens) {
     item: {
       flexDirection: 'row', gap: m.itemGap, alignItems: 'flex-start',
       paddingVertical: m.itemPaddingV, paddingHorizontal: m.itemPaddingH,
-      borderTopWidth: 1, borderTopColor: c.bgSecondary,
+      borderTopWidth: m.borderWidth, borderTopColor: c.bgSecondary,
     },
     fields: {flex: 1, gap: m.fieldGapInner},
     line: {flexDirection: 'row', alignItems: 'center', gap: m.lineGap},
     slash: {fontSize: m.slashFontSize, fontWeight: m.slashFontWeight, color: c.accent},
     input: {
-      flex: 1, minHeight: m.inputHeight, borderWidth: 1, borderRadius: m.inputRadius,
+      flex: 1, minHeight: m.inputHeight, borderWidth: m.borderWidth, borderRadius: m.inputRadius,
       paddingHorizontal: m.inputPadH, fontSize: m.inputFontSize,
       color: c.textPrimary, backgroundColor: c.bgPrimary, borderColor: c.border,
     },
@@ -184,7 +184,7 @@ export function CommandsSection({
                 <TextInput
                   value={item.command}
                   onChangeText={t =>
-                    update(index, {command: t.toLowerCase().replace(/[^a-z0-9_]/g, '')})
+                    update(index, {command: t})
                   }
                   placeholder="commande"
                   placeholderTextColor={colors.textHint}
