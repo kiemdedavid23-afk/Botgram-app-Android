@@ -16,7 +16,7 @@ export const botProfileMetrics = {
   tabFontWeight: '700' as TextStyle['fontWeight'],
   gap: 6, paddingV: 6, paddingH: 14, tabMinHeight: 52, tabMinWidth: 66,
   tabRadius: 14, tabFontSize: 11.5, tabPaddingV: 6, tabPaddingH: 10, tabGap: 3,
-  tabRowMinHeight: 42, tabIconSize: 16, tabLabelSize: 14,
+  tabRowMinHeight: 42, tabIconSize: 16, tabIconGap: 8, tabLabelSize: 14,
   headTitleSize: 18, headTitleWeight: '800' as TextStyle['fontWeight'],
   headHintSize: 13, headHintLineHeight: 18, headGap: 2, headPadH: 4, headPadBottom: 12,
   reportPad: 14, reportLineSize: 13, reportGap: 6, reportTitleMarginBottom: 4,
