@@ -1,5 +1,49 @@
 # LIVRAISONS - Botgram app (cumulatif)
 
+## L4c - patch 1 (logique) — profil bot partie 2/2
+
+### Réserves L4b
+
+| # | Point | Fait / non fait | Fichier | Test qui le couvre |
+|---|-------|-----------------|---------|-------------------|
+| 1 | getBotProfile propage erreurs commands/menu/rights | **fait** | `src/core/api/endpoints/botProfileRead.ts` | `L4c-5. lecture en erreur remonte loadError` (commands, menu, rights) |
+| 2 | Suppression readHasPhoto ; hasPhoto via Image only | **fait** | `src/core/api/endpoints/botProfileRead.ts` (plus de readHasPhoto) | `L4c-6. hasPhoto initial false` |
+| 3 | Split botProfile.ts (313 → read + write) | **fait** | `src/core/api/endpoints/botProfileRead.ts` + `src/core/api/endpoints/botProfile.ts` | imports + getBotProfile / setMy* |
+| 4 | Tableaux LIVRAISONS exhaustifs héros/identité/… | **non fait** (reporté patch 2 UI) | — | — |
+
+### Fichiers (chemins complets)
+
+| Chemin | Action | Lignes |
+|--------|--------|--------|
+| `src/core/api/endpoints/botProfileRead.ts` | créé | 286 |
+| `src/core/api/endpoints/botProfile.ts` | modifié | 137 |
+| `src/features/botprofile/utils/labels.ts` | modifié | + SCOPE/RIGHT |
+| `src/features/botprofile/utils/validate.ts` | modifié | + commandes + menu |
+| `src/features/botprofile/utils/diff.ts` | modifié | + cmd/menu/rights |
+| `src/features/botprofile/utils/edit.ts` | modifié | + parseCmdKey, setCommands… |
+| `src/features/botprofile/texts.ts` | modifié | + onglets + errCmd* |
+| `src/shared/theme/botProfileMetrics.ts` | modifié | + tabs/cmds/menu/rights/preview |
+| `__tests__/bot-profile.test.ts` | modifié | + L4c-1..6 |
+
+### Exports non encore utilisés par l’UI (patch 2)
+
+- `SCOPE_LABELS`, `RIGHT_LABELS`, `RIGHT_SCOPE` → CommandsSection / RightsSection
+- `setCommands`, `setMenuButton`, `setRight`, `setRights`, `parseCmdKey` → sections UI
+- `botProfileTabs`, `botProfileCmds`, `botProfileMenu`, `botProfileRights`, `botProfilePreview` → composants UI
+- textes `tabCommands`, `tabMenu`, `tabRights`, `cmds*`, `menu*`, `rights*`, `preview*` → écran + sections
+
+### CI attendue
+
+- typecheck 0, lint 0 warning
+- suites démarrent ; tests L4b + L4c-1..6 verts
+- ≥ 138 tests au total
+
+### Fichiers à supprimer
+
+aucun
+
+---
+
 ## L4b - Profil Telegram du bot (partie 1/2)
 
 ### Navigation
