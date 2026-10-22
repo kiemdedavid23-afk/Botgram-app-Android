@@ -8,7 +8,6 @@ import type {BotProfile} from '../../../core/api/endpoints/botProfile.types';
 import {hasChanges} from '../utils/diff';
 import {texts} from '../texts';
 import {ConfirmDialog} from '../../gestion/components/ConfirmDialog';
-import {fireAndForget} from '../../../core/utils/fireAndForget';
 
 type Props = {
   profile: BotProfile;
