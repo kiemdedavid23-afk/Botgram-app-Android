@@ -5,7 +5,7 @@
 import React, {type ReactNode} from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {ArrowLeft} from 'lucide-react-native';
-import {useTheme, dashboardMetrics as dm, shellMetrics as sm, fontWeight} from '../theme';
+import {useTheme, dashboardMetrics as dm, shellMetrics as sm} from '../theme';
 
 type Props = {
   title: string;
