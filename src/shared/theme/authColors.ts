@@ -47,4 +47,15 @@ export const authMetrics = {
   sheetRadius: 16,
   sheetButtonRadius: 12,
   sheetButtonPadding: 12,
+  /** ombre FAB — Auth.css .auth-fab box-shadow */
+  fabShadowOpacity: 1,
+  fabShadowRadius: 14,
+  fabShadowOffsetX: 0,
+  fabShadowOffsetY: 4,
+  fabElevation: 6,
+  /** disabled opacity — sans équivalent site (état disabled app) */
+  fabDisabledOpacity: 0.5,
+  /** icône flèche FAB — Auth.css */
+  fabIconSize: 26,
 } as const;
+

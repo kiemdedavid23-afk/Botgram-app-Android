@@ -6,7 +6,8 @@ import type {TextStyle} from 'react-native';
 export const botProfileMetrics = {
   scrollPadH: 14, scrollPadBottom: 110, scrollGap: 12, scrollPadTop: 12,
   heroMinHeight: 300, heroRadius: 22, heroPad: 16, heroAvatar: 104,
-  heroNameSize: 22, heroNameWeight: '700' as TextStyle['fontWeight'],
+  heroNameSize: 22, /** BotProfile.css:113 font-weight 800 */
+  heroNameWeight: '800' as TextStyle['fontWeight'],
   heroGap: 10, heroAvatarBorder: 3, heroInitialSize: 40,
   heroInitialWeight: '700' as TextStyle['fontWeight'], heroUserSize: 14,
   heroUserOpacity: 0.9, heroCompleteMarginTop: 4, heroCompleteTextSize: 12,

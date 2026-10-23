@@ -39,3 +39,10 @@ export {memberProfileMetrics} from './memberProfileMetrics';
 export {settingsMetrics} from './settingsMetrics';
 export {gestionMetrics} from './gestionMetrics';
 export {botProfileMetrics} from './botProfileMetrics';
+
+export {navMetrics} from './navMetrics';
+export {brandBarMetrics} from './brandBarMetrics';
+export {shellMetrics} from './shellMetrics';
+export {emptyScreenMetrics} from './emptyScreenMetrics';
+export {rootNavigatorMetrics} from './rootNavigatorMetrics';
+export {authColors, authMetrics} from './authColors';
