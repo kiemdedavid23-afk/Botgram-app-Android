@@ -7,7 +7,7 @@ import {View, ActivityIndicator, Text, StyleSheet} from 'react-native';
 import {NavigationContainer, DefaultTheme, DarkTheme} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
-import {useTheme, space, fontSize, fontWeight, radii, rootNavigatorMetrics as rm} from '../shared/theme';
+import {useTheme, space, fontSize, fontWeight, radii} from '../shared/theme';
 import {useAuthStore} from '../features/auth/store/authStore';
 import {fireAndForget} from '../core/utils/fireAndForget';
 import {WelcomeScreen} from '../features/auth/screens/WelcomeScreen';
@@ -255,13 +255,13 @@ const styles = StyleSheet.create({
   // centrage booting (ActivityIndicator)
   flexCenter: {flex: 1, justifyContent: 'center', alignItems: 'center'},
   // padding 12 — bandeau hors-ligne / fin de session (proche sheet section padding 0 14 6, Design tokens §5)
-  banner: {padding: rm.bannerPadding},
+  banner: {padding: 12},
   bannerText: {textAlign: 'center'},
   // marginHorizontal 22 = authMetrics.bodyPaddingH (Auth.css body) ; paddingVertical 14 ≈ fieldPaddingV ; borderRadius 12 = radii.md (Design tokens §3 md 12)
   logoutBtn: {
-    marginHorizontal: rm.logoutMarginH,
+    marginHorizontal: 22,
     marginTop: space.md,
-    paddingVertical: rm.logoutPadV,
+    paddingVertical: 14,
     borderRadius: radii.md,
     alignItems: 'center',
   },
