@@ -2,6 +2,7 @@ import React from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {ArrowLeft} from 'lucide-react-native';
 import {authColors, authMetrics} from '../../../shared/theme/authColors';
+import {shellMetrics as sm} from '../../../shared/theme/shellMetrics';
 
 type Props = {title: string; onBack?: () => void};
 
@@ -9,8 +10,8 @@ export function AuthHeader({title, onBack}: Props): React.JSX.Element {
   return (
     <View style={styles.head}>
       {onBack ? (
-        <Pressable onPress={onBack} hitSlop={12} style={styles.back}>
-          <ArrowLeft size={24} color={authColors.text} />
+        <Pressable onPress={onBack} hitSlop={sm.authBackHitSlop} style={styles.back}>
+          <ArrowLeft size={sm.authBackIconSize} color={authColors.text} />
         </Pressable>
       ) : (
         <View style={styles.back} />
@@ -25,16 +26,21 @@ const styles = StyleSheet.create({
     height: authMetrics.headHeight,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: sm.authPadH,
     backgroundColor: authColors.bg,
   },
-  back: {width: 36, height: 36, alignItems: 'center', justifyContent: 'center'},
+  back: {
+    width: sm.backBtnSize,
+    height: sm.backBtnSize,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: sm.authTitleSize,
+    fontWeight: sm.titleWeight,
     color: authColors.text,
-    marginRight: 36,
+    marginRight: sm.authTitleMarginRight,
   },
 });
