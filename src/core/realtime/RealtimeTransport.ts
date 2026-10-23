@@ -1,13 +1,20 @@
 /**
- * Interface du transport temps réel (section 7).
- * Seul core/realtime connaît /updates (R6).
- * Implémentation PollingTransport livrée aux étapes suivantes.
- * Ne pas créer de WebSocket ici (interdit jusqu'à v1.2).
+ * Interface du transport temps réel (section 7 du contrat).
+ * Seul core/realtime connaît /updates, /ws/ticket et /ws (R6).
+ * Une seule dépendance du reste de l'application.
  */
 
-export type ConnectionState = 'idle' | 'connecting' | 'connected' | 'disconnected' | 'error';
+export type ConnectionState =
+  | 'idle'
+  | 'connecting'
+  | 'connected'
+  | 'polling'
+  | 'disconnected';
 
-export type RealtimeEventHandler = (payload: unknown) => void;
+/** Handler d'événements normalisés (types dans events.ts). */
+export type RealtimeEventHandler = (
+  event: import('./events').RealtimeEvent,
+) => void;
 
 export type RealtimeTransport = {
   start: () => void;
@@ -17,29 +24,33 @@ export type RealtimeTransport = {
 };
 
 /**
- * Transport no-op pour le socle (étape 1).
- * Remplacé par PollingTransport dès l'étape 5.
+ * Fabrique injectable de WebSocket (un seul `new WebSocket` dans le dépôt).
  */
-export function createNoopTransport(): RealtimeTransport {
-  let state: ConnectionState = 'idle';
-  const handlers = new Set<RealtimeEventHandler>();
+export type WebSocketFactory = (url: string) => WebSocket;
 
-  return {
-    start() {
-      state = 'connected';
-    },
-    stop() {
-      state = 'idle';
-      handlers.clear();
-    },
-    subscribe(handler) {
-      handlers.add(handler);
-      return () => {
-        handlers.delete(handler);
-      };
-    },
-    getConnectionState() {
-      return state;
-    },
-  };
-}
+/**
+ * Horloge injectable (ms depuis epoch).
+ */
+export type Clock = () => number;
+
+/**
+ * Minuterie injectable.
+ */
+export type TimerApi = {
+  setTimeout: (fn: () => void, ms: number) => ReturnType<typeof setTimeout>;
+  clearTimeout: (id: ReturnType<typeof setTimeout>) => void;
+  setInterval: (fn: () => void, ms: number) => ReturnType<typeof setInterval>;
+  clearInterval: (id: ReturnType<typeof setInterval>) => void;
+};
+
+export const defaultWebSocketFactory: WebSocketFactory = (url: string) =>
+  new WebSocket(url);
+
+export const defaultClock: Clock = () => Date.now();
+
+export const defaultTimerApi: TimerApi = {
+  setTimeout: (fn, ms) => setTimeout(fn, ms),
+  clearTimeout: id => clearTimeout(id),
+  setInterval: (fn, ms) => setInterval(fn, ms),
+  clearInterval: id => clearInterval(id),
+};
