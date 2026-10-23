@@ -206,7 +206,11 @@ export function createRealtimeTransport(
     if (reconnectT) return;
     const delay = computeWait(clock, waitUntil, reconnectAttempt);
     reconnectAttempt += 1;
-    setState('disconnected');
+    // Ne pas écraser 'polling' : le sondage reste actif pendant les
+    // tentatives WebSocket en arrière-plan (contrat 7.7 / 7.8).
+    if (state !== 'polling') {
+      setState('disconnected');
+    }
     reconnectT = timers.setTimeout(() => {
       reconnectT = null;
       fireAndForget(connectSeries());
