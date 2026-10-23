@@ -12,7 +12,7 @@ export function AuthFab({onPress, disabled}: Props): React.JSX.Element {
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button">
-      <ArrowRight size={26} color={authColors.white} />
+      <ArrowRight size={authMetrics.fabIconSize} color={authColors.white} />
     </Pressable>
   );
 }
@@ -29,10 +29,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: authColors.fabShadow,
-    shadowOpacity: 1,
-    shadowRadius: 14,
-    shadowOffset: {width: 0, height: 4},
-    elevation: 6,
+    shadowOpacity: authMetrics.fabShadowOpacity,
+    shadowRadius: authMetrics.fabShadowRadius,
+    shadowOffset: {width: authMetrics.fabShadowOffsetX, height: authMetrics.fabShadowOffsetY},
+    elevation: authMetrics.fabElevation,
   },
-  disabled: {opacity: 0.5},
+  disabled: {opacity: authMetrics.fabDisabledOpacity},
 });

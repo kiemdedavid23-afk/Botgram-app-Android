@@ -5,7 +5,7 @@
 import React, {type ReactNode} from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {ArrowLeft} from 'lucide-react-native';
-import {useTheme, dashboardMetrics as dm} from '../theme';
+import {useTheme, dashboardMetrics as dm, shellMetrics as sm, fontWeight} from '../theme';
 
 type Props = {
   title: string;
@@ -27,11 +27,11 @@ export function SettingsShell({title, onBack, children}: Props): React.JSX.Eleme
         ]}>
         <Pressable
           onPress={onBack}
-          hitSlop={8}
+          hitSlop={sm.backHitSlop}
           accessibilityRole="button"
           accessibilityLabel="Retour"
           style={styles.backBtn}>
-          <ArrowLeft size={22} color={colors.textPrimary} />
+          <ArrowLeft size={sm.backIconSize} color={colors.textPrimary} />
         </Pressable>
         <Text
           style={[
@@ -57,11 +57,11 @@ const styles = StyleSheet.create({
     paddingRight: dm.subHeaderPadRight,
     paddingBottom: dm.subHeaderPadBottom,
     paddingLeft: dm.subHeaderPadLeft,
-    borderBottomWidth: 1,
+    borderBottomWidth: sm.headerBorderWidth,
   },
   backBtn: {
-    width: 36,
-    height: 36,
+    width: sm.backBtnSize,
+    height: sm.backBtnSize,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     fontSize: dm.subHeaderTitleSize,
-    fontWeight: '600',
+    fontWeight: sm.titleWeight,
   },
   body: {flex: 1},
 });

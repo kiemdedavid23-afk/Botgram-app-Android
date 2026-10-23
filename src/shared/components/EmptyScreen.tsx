@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
-import {useTheme, fontSize, fontWeight, space} from '../theme';
+import {useTheme, fontSize, fontWeight, space, emptyScreenMetrics as em} from '../theme';
 
 type Props = {
   title: string;
@@ -30,17 +30,17 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: em.padH,
     paddingBottom: space.bottomNavZone,
   },
   title: {
     fontSize: fontSize.pageHeader,
     fontWeight: fontWeight.bold,
-    letterSpacing: -0.02 * fontSize.pageHeader,
+    letterSpacing: -em.titleLetterSpacingFactor * fontSize.pageHeader,
     textAlign: 'center',
   },
   subtitle: {
-    marginTop: 8,
+    marginTop: em.subtitleMarginTop,
     fontSize: fontSize.listSubtitle,
     textAlign: 'center',
   },

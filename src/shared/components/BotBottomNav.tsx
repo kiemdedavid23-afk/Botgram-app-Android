@@ -1,7 +1,7 @@
 /**
  * Barre de navigation basse flottante en pilule — espace bot.
  * Onglets : Échanges / Contacts / Paramètres / Profil (avatar bot)
- * Avatar : 24 px, dégradé 145deg #3390ec → #5c6bc0, initiale.
+ * Avatar : navAvatarSize, dégradé gradients.avatar, initiale.
  * Badge non-lus prévu mais non branché (étape 1).
  */
 import React from 'react';
@@ -16,7 +16,8 @@ import {
 import {MessagesSquare, CircleUser, Settings} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {GradientView} from './GradientView';
-import {useTheme, getShadow, navPillBorder, gradients, fontWeight, fontSize, space, radii} from '../theme';
+import {useTheme, getShadow, navPillBorder,
+  navMetrics as nm, gradients, fontWeight, fontSize, space, radii} from '../theme';
 
 export type BotTabId = 'chats' | 'contacts' | 'settings' | 'profile';
 
@@ -161,14 +162,14 @@ export function BotBottomNav({
 const styles = StyleSheet.create({
   zone: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
+    left: nm.edge,
+    right: nm.edge,
+    bottom: nm.edge,
     height: space.bottomNavZone,
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingHorizontal: space.bottomNavMarginH,
-    zIndex: 100,
+    zIndex: nm.zIndex,
   },
   pill: {
     flexDirection: 'row',
@@ -178,7 +179,7 @@ const styles = StyleSheet.create({
     maxWidth: space.bottomNavPillMaxWidth,
     height: space.bottomNavPillHeight,
     borderRadius: radii.navPill,
-    borderWidth: 1,
+    borderWidth: nm.borderWidth,
     paddingHorizontal: space.bottomNavPillPaddingH,
   },
   item: {
@@ -187,10 +188,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.navItemActive,
-    gap: 2,
+    gap: nm.itemGap,
   },
   itemPressed: {
-    opacity: 0.7,
+    opacity: nm.itemPressedOpacity,
   },
   iconWrap: {
     position: 'relative',
@@ -200,15 +201,15 @@ const styles = StyleSheet.create({
   label: {
     fontSize: fontSize.navLabel,
     fontWeight: fontWeight.medium,
-    letterSpacing: 0.01 * fontSize.navLabel,
+    letterSpacing: nm.labelLetterSpacingFactor * fontSize.navLabel,
   },
   badge: {
     position: 'absolute',
-    top: -6,
-    right: -10,
+    top: nm.badgeOffsetTop,
+    right: nm.badgeOffsetRight,
     minWidth: space.badgeMin,
     height: space.badgeMin,
-    paddingHorizontal: 4,
+    paddingHorizontal: nm.badgePadH,
     borderRadius: space.badgeRadius,
     alignItems: 'center',
     justifyContent: 'center',
@@ -219,14 +220,14 @@ const styles = StyleSheet.create({
     lineHeight: fontSize.badge,
   },
   avatarOuter: {
-    width: 28,
-    height: 28,
-    margin: -2,
-    borderRadius: 14,
+    width: nm.avatarOuterSize,
+    height: nm.avatarOuterSize,
+    margin: nm.avatarOuterMargin,
+    borderRadius: nm.avatarOuterSize / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
+    borderWidth: nm.avatarRingBorder,
+    borderColor: nm.transparent,
   },
   avatar: {
     width: space.navAvatarSize,

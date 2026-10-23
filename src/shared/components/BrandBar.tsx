@@ -5,7 +5,7 @@
 import React, {type ReactNode} from 'react';
 import {View, Text, StyleSheet, type StyleProp, type ViewStyle} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useTheme, space, fontSize, fontWeight} from '../theme';
+import {useTheme, space, fontSize, fontWeight, brandBarMetrics as bm} from '../theme';
 
 type Props = {
   title?: string;
@@ -34,10 +34,7 @@ export function BrandBar({
       ]}>
       <View style={styles.inner}>
         <Text
-          style={[
-            styles.title,
-            {color: colors.accent},
-          ]}
+          style={[styles.title, {color: colors.accent}]}
           numberOfLines={1}>
           {title}
         </Text>
@@ -62,11 +59,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: fontSize.brandTitle,
     fontWeight: fontWeight.bold,
-    letterSpacing: -0.3,
+    letterSpacing: bm.titleLetterSpacing,
   },
   right: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: bm.rightGap,
   },
 });

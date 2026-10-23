@@ -23,6 +23,7 @@ import {
   fontWeight,
   getShadow,
   navPillBorder,
+  navMetrics as nm,
 } from '../theme';
 
 export type MemberTabId = 'dashboard' | 'member' | 'settings';
@@ -119,14 +120,14 @@ export function BottomNav({
 const styles = StyleSheet.create({
   zone: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
+    left: nm.edge,
+    right: nm.edge,
+    bottom: nm.edge,
     height: space.bottomNavZone,
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingHorizontal: space.bottomNavMarginH,
-    zIndex: 100,
+    zIndex: nm.zIndex,
   },
   pill: {
     flexDirection: 'row',
@@ -136,7 +137,7 @@ const styles = StyleSheet.create({
     maxWidth: space.bottomNavPillMaxWidth,
     height: space.bottomNavPillHeight,
     borderRadius: radii.navPill,
-    borderWidth: 1,
+    borderWidth: nm.borderWidth,
     paddingHorizontal: space.bottomNavPillPaddingH,
   },
   item: {
@@ -145,10 +146,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.navItemActive,
-    gap: 2,
+    gap: nm.itemGap,
   },
   itemPressed: {
-    opacity: 0.7,
+    opacity: nm.itemPressedOpacity,
   },
   iconWrap: {
     position: 'relative',
@@ -158,6 +159,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: fontSize.navLabel,
     fontWeight: fontWeight.medium,
-    letterSpacing: 0.01 * fontSize.navLabel,
+    letterSpacing: nm.labelLetterSpacingFactor * fontSize.navLabel,
   },
 });
