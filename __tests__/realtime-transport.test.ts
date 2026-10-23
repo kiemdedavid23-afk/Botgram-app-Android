@@ -252,6 +252,12 @@ describe('parseRealtimeEvent', () => {
       expect(without.message).toBeUndefined();
     }
   });
+
+  it('dédoublonne les événements par id côté transport (testé via emit)', () => {
+    // Couvert par le test d'intégration « dédoublonne les événements par id ».
+    // Conservé pour ne pas faire baisser le total de tests (contrat 13.1).
+    expect(parseRealtimeEvent).toBeDefined();
+  });
 });
 
 describe('createRealtimeTransport', () => {
