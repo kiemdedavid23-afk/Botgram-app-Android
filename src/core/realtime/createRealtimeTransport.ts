@@ -29,6 +29,7 @@ import {
   REPLACED_WAIT_MS,
 } from './connectionRunner';
 import {RECONSIDER_MS, DEDUP_SIZE, computeWait} from './wsHelpers';
+import {fireAndForget} from '../utils/fireAndForget';
 
 export type RealtimeDeps = {
   webSocketFactory?: WebSocketFactory;
@@ -133,7 +134,7 @@ export function createRealtimeTransport(
       onHello: () => {
         setState('connected');
         reconnectAttempt = 0;
-        void catchUp();
+        fireAndForget(catchUp());
         if (endpointIndex > 0) scheduleReconsider();
       },
       onEvent: emit,
@@ -142,7 +143,7 @@ export function createRealtimeTransport(
         stopInternal();
       },
       onNeedNextEndpoint: () => {
-        void advanceOrPoll();
+        fireAndForget(advanceOrPoll());
       },
       onClosedNormal: () => {
         scheduleReconnect();
@@ -208,7 +209,7 @@ export function createRealtimeTransport(
     setState('disconnected');
     reconnectT = timers.setTimeout(() => {
       reconnectT = null;
-      void connectSeries();
+      fireAndForget(connectSeries());
     }, delay);
   }
 
@@ -217,13 +218,15 @@ export function createRealtimeTransport(
     reconsiderT = timers.setTimeout(() => {
       reconsiderT = null;
       if (!shouldRun() || endpointIndex === 0) return;
-      void (async () => {
-        const tr = await requestWsTicket();
-        if (!tr.ok || tr.data.endpoints.length === 0) return;
-        endpoints = tr.data.endpoints;
-        pollFallbackS = tr.data.poll_fallback_s || pollFallbackS;
-        openAt(0);
-      })();
+      fireAndForget(
+        (async () => {
+          const tr = await requestWsTicket();
+          if (!tr.ok || tr.data.endpoints.length === 0) return;
+          endpoints = tr.data.endpoints;
+          pollFallbackS = tr.data.poll_fallback_s || pollFallbackS;
+          openAt(0);
+        })(),
+      );
     }, RECONSIDER_MS);
   }
 
@@ -231,7 +234,7 @@ export function createRealtimeTransport(
     if (pollT) return;
     setState('polling');
     const tick = () => {
-      if (shouldRun()) void catchUp();
+      if (shouldRun()) fireAndForget(catchUp());
     };
     tick();
     pollT = timers.setInterval(tick, pollFallbackS * 1000);
@@ -278,7 +281,7 @@ export function createRealtimeTransport(
   function evaluate(): void {
     if (shouldRun()) {
       if (state === 'idle' || state === 'disconnected') {
-        void connectSeries();
+        fireAndForget(connectSeries());
       }
     } else {
       stopInternal();
