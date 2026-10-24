@@ -5,7 +5,6 @@
 import {create} from 'zustand';
 import {
   listConversations,
-  getConversation,
   searchConversations,
   type ConversationSummary,
 } from '../../../core/api/endpoints/conversations';
