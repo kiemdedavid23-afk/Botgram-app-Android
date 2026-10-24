@@ -7,6 +7,24 @@ import {useRealtimeLifecycle} from '../src/app/useRealtimeLifecycle';
 import {useAuthStore} from '../src/features/auth/store/authStore';
 import {useConversationsStore} from '../src/features/conversations/store/conversationsStore';
 import {useBotsStore} from '../src/features/bots/store/botsStore';
+import type {Bot} from '../src/core/api/endpoints/bots';
+
+
+function makeBot(overrides: Partial<Bot> = {}): Bot {
+  return {
+    id: 'bot1',
+    telegram_bot_id: 1001,
+    username: null,
+    name: 'Bot 1',
+    status: 'connected',
+    selected: false,
+    muted: false,
+    created_at: 1_700_000_000_000,
+    connected_at: 1_700_000_000_000,
+    disconnected_at: null,
+    ...overrides,
+  };
+}
 
 const mockStart = jest.fn();
 const mockStop = jest.fn();
@@ -62,12 +80,7 @@ const mockBotsLoad = jest.fn((_force?: boolean) => Promise.resolve());
 jest.mock('../src/features/bots/store/botsStore', () => {
   const {create} = jest.requireActual('zustand') as typeof import('zustand');
   const store = create(() => ({
-    bots: [] as Array<{
-      id: string;
-      selected: boolean;
-      username: string | null;
-      name: string;
-    }>,
+    bots: [] as Bot[],
     load: (force?: boolean) => mockBotsLoad(force),
   }));
   return {useBotsStore: store};
@@ -188,14 +201,7 @@ describe('useRealtimeLifecycle', () => {
     act(() => {
       useAuthStore.setState({state: 'signedIn'});
       useBotsStore.setState({
-        bots: [
-          {
-            id: 'bot1',
-            selected: true,
-            username: null,
-            name: 'Bot 1',
-          },
-        ],
+        bots: [makeBot({id: 'bot1', selected: true})],
       });
     });
     act(() => {
