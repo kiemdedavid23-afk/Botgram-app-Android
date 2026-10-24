@@ -18,11 +18,13 @@ import {registerMemberDataCleaner} from '../../../core/utils/memberData';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 import type {RealtimeEvent} from '../../../core/realtime';
 import {sortItems, mergeById, displayTitle} from './merge';
+import type {FolderId} from './filters';
+import {conversationsTexts} from '../texts';
+import {applyRealtimeEventToStore} from './applyEvent';
 
 const cacheKey = (botId: string) => `conversations.page1.${botId}`;
-
-import type {FolderId} from './filters';
-export type {FolderId} from './filters';
+/** Clés écrites — toutes supprimées à la déconnexion (13.5). */
+const knownCacheKeys = new Set<string>();
 
 type ConversationsStore = {
   botId: string | null;
@@ -36,8 +38,8 @@ type ConversationsStore = {
   searchItems: ConversationSummary[];
   searching: boolean;
   folder: FolderId;
-  /** Total non-lus bot actif (badge). */
   unreadTotal: number;
+  lastLoadedAt: number;
   setBotId: (id: string | null) => void;
   setFolder: (f: FolderId) => void;
   setSearchQuery: (q: string) => void;
@@ -66,6 +68,7 @@ export const useConversationsStore = create<ConversationsStore>((set, get) => ({
   searching: false,
   folder: 'all',
   unreadTotal: 0,
+  lastLoadedAt: 0,
 
   setBotId(id) {
     if (get().botId === id) return;
@@ -77,6 +80,7 @@ export const useConversationsStore = create<ConversationsStore>((set, get) => ({
       searchQuery: '',
       searchItems: [],
       unreadTotal: 0,
+      lastLoadedAt: 0,
     });
     if (id) fireAndForget(get().load(true));
   },
@@ -93,17 +97,29 @@ export const useConversationsStore = create<ConversationsStore>((set, get) => ({
     const botId = get().botId;
     if (!botId) return;
     if (get().loading && !force) return;
+    // Données fraîches (< 30 s) : pas de rechargement inutile
+    if (
+      !force &&
+      get().lastLoadedAt > 0 &&
+      Date.now() - get().lastLoadedAt < 30_000 &&
+      get().items.length > 0
+    ) {
+      return;
+    }
     set({loading: true, error: null});
     const res = await listConversations(botId, {limit: 50});
+    if (get().botId !== botId) return;
     if (!res.ok) {
-      const cached = await cacheGetString(cacheKey(botId));
+      const key = cacheKey(botId);
+      const cached = await cacheGetString(key);
+      if (get().botId !== botId) return;
       if (cached) {
         try {
           const items = JSON.parse(cached) as ConversationSummary[];
           set({
             items: sortItems(items),
             loading: false,
-            offline: true,
+            offline: res.status === 0,
             error: null,
           });
           return;
@@ -113,19 +129,23 @@ export const useConversationsStore = create<ConversationsStore>((set, get) => ({
       }
       set({
         loading: false,
-        error: res.error.message || 'Erreur de chargement',
+        error: res.error.message || conversationsTexts.loadError,
         offline: res.status === 0,
       });
       return;
     }
     const items = sortItems(res.data.items);
-    await cacheSetString(cacheKey(botId), JSON.stringify(items));
+    const key = cacheKey(botId);
+    knownCacheKeys.add(key);
+    await cacheSetString(key, JSON.stringify(items));
+    if (get().botId !== botId) return;
     set({
       items,
       nextCursor: res.data.next_cursor,
       loading: false,
       offline: false,
       error: null,
+      lastLoadedAt: Date.now(),
     });
   },
 
@@ -137,6 +157,10 @@ export const useConversationsStore = create<ConversationsStore>((set, get) => ({
       limit: 50,
       cursor: nextCursor,
     });
+    if (get().botId !== botId) {
+      set({loadingMore: false});
+      return;
+    }
     if (!res.ok) {
       set({loadingMore: false});
       return;
@@ -150,12 +174,15 @@ export const useConversationsStore = create<ConversationsStore>((set, get) => ({
 
   async search(q) {
     const botId = get().botId;
-    if (!botId || q.trim().length < 1) {
+    const query = q.trim();
+    if (!botId || query.length < 1) {
       set({searchItems: [], searching: false});
       return;
     }
     set({searching: true});
-    const res = await searchConversations(botId, q.trim(), 30);
+    const res = await searchConversations(botId, query, 30);
+    if (get().botId !== botId) return;
+    if (get().searchQuery.trim() !== query) return;
     if (!res.ok) {
       set({searching: false, searchItems: []});
       return;
@@ -175,102 +202,18 @@ export const useConversationsStore = create<ConversationsStore>((set, get) => ({
   },
 
   applyRealtimeEvent(ev) {
-    const botId = get().botId;
-    if (!botId) return;
-
-    if (ev.type === 'updates') {
-      const relevant = ev.conversations.filter(c => c.bot_id === botId);
-      if (relevant.length > 0) {
-        set(s => ({
-          items: mergeById(s.items, relevant),
-        }));
-      }
-      if (ev.unread[botId] !== undefined) {
-        set({unreadTotal: ev.unread[botId] ?? 0});
-      }
-      return;
-    }
-
-    if (ev.type === 'message.new' || ev.type === 'message.updated') {
-      if (ev.bot_id !== botId) return;
-      if (ev.conversation) {
-        const prev = get().items.find(i => i.id === ev.conversation!.id);
-        const oldUnread = prev?.unread_count ?? 0;
-        const newUnread = ev.conversation.unread_count ?? oldUnread;
-        const delta = newUnread - oldUnread;
-        set(s => ({
-          items: mergeById(s.items, [ev.conversation!]),
-          unreadTotal: Math.max(0, s.unreadTotal + delta),
-        }));
-      } else {
-        fireAndForget(
-          getConversation(ev.conversation_id).then(res => {
-            if (!res.ok) return;
-            const c = res.data.conversation;
-            if (c.bot_id !== get().botId) return;
-            set(s => ({
-              items: mergeById(s.items, [c]),
-            }));
-          }),
-        );
-      }
-      return;
-    }
-
-    if (ev.type === 'conversation.read') {
-      set(s => {
-        const prev = s.items.find(i => i.id === ev.conversation_id);
-        const old = prev?.unread_count ?? 0;
-        return {
-          items: s.items.map(i =>
-            i.id === ev.conversation_id ? {...i, unread_count: 0} : i,
-          ),
-          unreadTotal: Math.max(0, s.unreadTotal - old),
-        };
-      });
-      return;
-    }
-
-    if (ev.type === 'conversation.changed') {
-      if (ev.reason === 'removed') {
-        set(s => ({
-          items: s.items.filter(i => i.id !== ev.conversation_id),
-        }));
-        return;
-      }
-      if (ev.reason === 'pinned') {
-        fireAndForget(
-          getConversation(ev.conversation_id).then(res => {
-            if (!res.ok) return;
-            set(s => ({
-              items: mergeById(s.items, [res.data.conversation], {
-                bumpToTop: true,
-              }),
-            }));
-          }),
-        );
-      }
-      return;
-    }
-
-    if (ev.type === 'resync' && ev.scopes.includes('conversations')) {
-      fireAndForget(get().load(true));
-      return;
-    }
-
-    if (ev.type === 'bot.changed' && ev.bot_id === botId) {
-      if (
-        ev.reason === 'disconnected' ||
-        ev.reason === 'deleted'
-      ) {
-        set({items: [], nextCursor: null, unreadTotal: 0});
-      }
-    }
+    applyRealtimeEventToStore(ev, {
+      get,
+      set,
+      load: (force?: boolean) => get().load(force),
+    });
   },
 
   clear() {
-    const botId = get().botId;
-    if (botId) fireAndForget(cacheDelete(cacheKey(botId)));
+    for (const key of knownCacheKeys) {
+      fireAndForget(cacheDelete(key));
+    }
+    knownCacheKeys.clear();
     set({
       botId: null,
       items: [],
@@ -284,6 +227,7 @@ export const useConversationsStore = create<ConversationsStore>((set, get) => ({
       searching: false,
       folder: 'all',
       unreadTotal: 0,
+      lastLoadedAt: 0,
     });
   },
 }));
@@ -293,3 +237,4 @@ registerMemberDataCleaner(() => {
 });
 
 export {selectFilteredItems, folderCounts} from './filters';
+export type {FolderId} from './filters';
