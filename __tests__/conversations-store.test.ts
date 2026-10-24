@@ -9,23 +9,56 @@ import {
 import {stripPreview} from '../src/core/utils/stripPreview';
 import type {ConversationSummary} from '../src/core/api/endpoints/conversations';
 
-const mockList = jest.fn();
-const mockGet = jest.fn();
-const mockSearch = jest.fn();
-const mockCacheDelete = jest.fn(() => Promise.resolve());
-const mockCacheSet = jest.fn(() => Promise.resolve());
-const mockCacheGet = jest.fn(() => Promise.resolve(undefined));
+const mockList = jest.fn(
+  (_botId: string, _opts?: {limit?: number; cursor?: string | null}) =>
+    Promise.resolve({
+      ok: false as const,
+      error: {code: 'MOCK', message: 'unmocked'},
+      status: 0,
+      requestId: null,
+      headers: new Headers(),
+    }),
+);
+const mockGet = jest.fn((_id: string) =>
+  Promise.resolve({
+    ok: false as const,
+    error: {code: 'MOCK', message: 'unmocked'},
+    status: 0,
+    requestId: null,
+    headers: new Headers(),
+  }),
+);
+const mockSearch = jest.fn((_botId: string, _q: string, _limit?: number) =>
+  Promise.resolve({
+    ok: false as const,
+    error: {code: 'MOCK', message: 'unmocked'},
+    status: 0,
+    requestId: null,
+    headers: new Headers(),
+  }),
+);
+const mockCacheDelete = jest.fn((_key: string) => Promise.resolve());
+const mockCacheSet = jest.fn((_key: string, _value: string) =>
+  Promise.resolve(),
+);
+const mockCacheGet = jest.fn(
+  (_key: string): Promise<string | undefined> => Promise.resolve(undefined),
+);
 
 jest.mock('../src/core/api/endpoints/conversations', () => ({
-  listConversations: (...a: unknown[]) => mockList(...a),
-  getConversation: (...a: unknown[]) => mockGet(...a),
-  searchConversations: (...a: unknown[]) => mockSearch(...a),
+  listConversations: (
+    botId: string,
+    opts?: {limit?: number; cursor?: string | null},
+  ) => mockList(botId, opts),
+  getConversation: (id: string) => mockGet(id),
+  searchConversations: (botId: string, q: string, limit?: number) =>
+    mockSearch(botId, q, limit),
 }));
 
 jest.mock('../src/core/storage', () => ({
-  cacheGetString: (...a: unknown[]) => mockCacheGet(...a),
-  cacheSetString: (...a: unknown[]) => mockCacheSet(...a),
-  cacheDelete: (...a: unknown[]) => mockCacheDelete(...a),
+  cacheGetString: (key: string) => mockCacheGet(key),
+  cacheSetString: (key: string, value: string) => mockCacheSet(key, value),
+  cacheDelete: (key: string) => mockCacheDelete(key),
 }));
 
 jest.mock('../src/core/utils/memberData', () => ({
@@ -276,7 +309,7 @@ describe('conversationsStore', () => {
     useConversationsStore.getState().clear();
     await Promise.resolve();
     expect(mockCacheDelete).toHaveBeenCalled();
-    const keys = mockCacheDelete.mock.calls.map(c => c[0] as string);
+    const keys = mockCacheDelete.mock.calls.map(c => c[0]);
     expect(keys.some(k => k.includes('botA'))).toBe(true);
     expect(keys.some(k => k.includes('botB'))).toBe(true);
   });
