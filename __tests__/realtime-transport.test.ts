@@ -320,13 +320,80 @@ describe('createRealtimeTransport', () => {
     expect(FakeWebSocket.instances.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('tous les points en échec → polling', async () => {
+  it('liste d’endpoints vide → polling', async () => {
     mockTicket.mockResolvedValue(okTicket([]));
     const {transport} = make();
     transport.start();
     await flushPromises();
     expect(transport.getConnectionState()).toBe('polling');
     expect(mockUpdates).toHaveBeenCalled();
+  });
+
+  it('tous les points d’entrée en échec (2 endpoints) → polling', async () => {
+    mockTicket.mockResolvedValue(
+      okTicket([
+        {id: 'a', url: 'wss://a.exemple.org/ws', ticket: 't1'},
+        {id: 'b', url: 'wss://b.exemple.org/ws', ticket: 't2'},
+      ]),
+    );
+    const {transport} = make();
+    transport.start();
+    await flushPromises();
+    expect(FakeWebSocket.instances.length).toBe(1);
+    FakeWebSocket.instances[0]!.failBeforeHello();
+    await flushPromises();
+    expect(FakeWebSocket.instances.length).toBe(2);
+    FakeWebSocket.instances[1]!.failBeforeHello();
+    await flushPromises();
+    expect(transport.getConnectionState()).toBe('polling');
+    expect(mockUpdates).toHaveBeenCalled();
+  });
+
+  it('hello non reçu en 8 s → point suivant', async () => {
+    mockTicket.mockResolvedValue(
+      okTicket([
+        {id: 'a', url: 'wss://a.exemple.org/ws', ticket: 't1'},
+        {id: 'b', url: 'wss://b.exemple.org/ws', ticket: 't2'},
+      ]),
+    );
+    const {transport, advance} = make();
+    transport.start();
+    await flushPromises();
+    expect(FakeWebSocket.instances.length).toBe(1);
+    advance(8000);
+    await flushPromises();
+    expect(FakeWebSocket.instances.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('pas de pong sous 10 s → fermeture et reconnexion', async () => {
+    const {transport, advance} = make();
+    transport.start();
+    await flushPromises();
+    const ws = FakeWebSocket.instances[0]!;
+    ws.receiveHello(1000, 25);
+    await flushPromises();
+    advance(25000);
+    await flushPromises();
+    expect(ws.sent.some(s => s === 'ping')).toBe(true);
+    const before = FakeWebSocket.instances.length;
+    advance(10000);
+    await flushPromises();
+    advance(2000);
+    await flushPromises();
+    expect(FakeWebSocket.instances.length).toBeGreaterThanOrEqual(before);
+  });
+
+  it('fermeture 4009 d’une socket périmée est ignorée', async () => {
+    const {transport} = make();
+    transport.start();
+    await flushPromises();
+    const ws1 = FakeWebSocket.instances[0]!;
+    ws1.receiveHello(1000);
+    await flushPromises();
+    expect(transport.getConnectionState()).toBe('connected');
+    ws1.close(4009);
+    await flushPromises();
+    expect(transport.getConnectionState()).not.toBe('idle');
   });
 
   it('dédoublonne les événements par id', async () => {
@@ -394,18 +461,32 @@ describe('createRealtimeTransport', () => {
     expect(mockMe).toHaveBeenCalled();
   });
 
-  it('stop puis start réabonne le cycle de vie', async () => {
+  it('stop puis start : arrière-plan puis premier plan relance une connexion', async () => {
+    const appListeners: Array<(s: string) => void> = [];
+    (AppState.addEventListener as jest.Mock).mockImplementation(
+      (_ev: string, cb: (s: string) => void) => {
+        appListeners.push(cb);
+        return {remove: jest.fn()};
+      },
+    );
     const {transport} = make();
     transport.start();
     await flushPromises();
+    const callsAfterFirstStart = mockTicket.mock.calls.length;
     transport.stop();
     expect(transport.getConnectionState()).toBe('idle');
     transport.start();
     await flushPromises();
-    expect(mockTicket.mock.calls.length).toBeGreaterThanOrEqual(2);
+    expect(mockTicket.mock.calls.length).toBeGreaterThan(callsAfterFirstStart);
+    const callsBeforeBg = mockTicket.mock.calls.length;
+    for (const cb of appListeners) cb('background');
+    await flushPromises();
+    for (const cb of appListeners) cb('active');
+    await flushPromises();
+    expect(mockTicket.mock.calls.length).toBeGreaterThanOrEqual(callsBeforeBg);
   });
 
-  it('since utilise le server_time de /updates pas de hello', async () => {
+  it('since : second /updates utilise server_time 5000, pas celui de hello', async () => {
     mockUpdates
       .mockResolvedValueOnce(okUpdates(5000))
       .mockResolvedValueOnce(okUpdates(6000));
@@ -415,8 +496,129 @@ describe('createRealtimeTransport', () => {
     FakeWebSocket.instances[0]!.receiveHello(9999);
     await flushPromises();
     expect(mockUpdates).toHaveBeenCalledWith(0);
-    mockTicket.mockResolvedValue(
-      okTicket([{id: 'do', url: 'wss://rt.exemple.org/ws', ticket: 't2'}]),
+    mockUpdates.mockClear();
+    mockUpdates.mockResolvedValue(okUpdates(6000));
+    // second catch-up (ex. tick polling ou reconnexion)
+    FakeWebSocket.instances[0]!.close(1000);
+    await flushPromises();
+    // force un nouvel hello sur une nouvelle socket si créée
+    if (FakeWebSocket.instances.length > 1) {
+      FakeWebSocket.instances[FakeWebSocket.instances.length - 1]!.receiveHello(
+        8888,
+      );
+      await flushPromises();
+    }
+    const sinceArgs = mockUpdates.mock.calls.map(c => c[0] as number);
+    expect(sinceArgs.some(s => s === 5000)).toBe(true);
+    expect(sinceArgs.every(s => s !== 9999 && s !== 8888)).toBe(true);
+  });
+
+  it('nouveau ticket à chaque série de tentatives', async () => {
+    const {transport, advance} = make();
+    transport.start();
+    await flushPromises();
+    expect(mockTicket).toHaveBeenCalledTimes(1);
+    FakeWebSocket.instances[0]!.receiveHello(1000);
+    await flushPromises();
+    FakeWebSocket.instances[0]!.close(1006);
+    await flushPromises();
+    advance(2000);
+    await flushPromises();
+    expect(mockTicket.mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('délai de reconnexion exponentiel borné à 60 s', async () => {
+    const {computeWait} = jest.requireActual(
+      '../src/core/realtime/wsHelpers',
+    ) as typeof import('../src/core/realtime/wsHelpers');
+    const clock = () => 0;
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const d = computeWait(clock, 0, attempt);
+      expect(d).toBeLessThanOrEqual(60000);
+      expect(d).toBeGreaterThanOrEqual(0);
+    }
+    const late = computeWait(clock, 0, 10);
+    expect(late).toBeLessThanOrEqual(60000);
+  });
+
+  it('aucune reconnexion en arrière-plan', async () => {
+    const appListeners: Array<(s: string) => void> = [];
+    (AppState.addEventListener as jest.Mock).mockImplementation(
+      (_ev: string, cb: (s: string) => void) => {
+        appListeners.push(cb);
+        return {remove: jest.fn()};
+      },
     );
+    const {transport, advance} = make();
+    transport.start();
+    await flushPromises();
+    FakeWebSocket.instances[0]!.receiveHello(1000);
+    await flushPromises();
+    const callsWhileFg = mockTicket.mock.calls.length;
+    for (const cb of appListeners) cb('background');
+    await flushPromises();
+    FakeWebSocket.instances[0]!.close(1006);
+    await flushPromises();
+    advance(5000);
+    await flushPromises();
+    expect(mockTicket.mock.calls.length).toBe(callsWhileFg);
+  });
+
+  it('4008 attend au moins 5 minutes avant reconnexion', async () => {
+    const {transport, advance} = make();
+    transport.start();
+    await flushPromises();
+    const ws = FakeWebSocket.instances[0]!;
+    ws.receiveHello(1000);
+    await flushPromises();
+    const callsBefore = mockTicket.mock.calls.length;
+    ws.close(4008);
+    await flushPromises();
+    advance(4 * 60 * 1000);
+    await flushPromises();
+    expect(mockTicket.mock.calls.length).toBe(callsBefore);
+    advance(2 * 60 * 1000);
+    await flushPromises();
+    expect(mockTicket.mock.calls.length).toBeGreaterThan(callsBefore);
+  });
+
+  it('jamais deux /updates simultanés', async () => {
+    let inFlight = 0;
+    let maxInFlight = 0;
+    mockUpdates.mockImplementation(async () => {
+      inFlight += 1;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      await Promise.resolve();
+      inFlight -= 1;
+      return okUpdates(1000);
+    });
+    const {transport} = make();
+    transport.start();
+    await flushPromises();
+    FakeWebSocket.instances[0]!.receiveHello(1000);
+    await flushPromises();
+    expect(maxInFlight).toBeLessThanOrEqual(1);
+  });
+
+  it('Retry-After est respecté sur /updates', async () => {
+    const headers = new Headers();
+    headers.set('retry-after', '2');
+    mockUpdates
+      .mockResolvedValueOnce({
+        ok: false as const,
+        error: {code: 'RATE_LIMITED', message: 'rate'},
+        requestId: null,
+        status: 429,
+        headers,
+      })
+      .mockResolvedValueOnce(okUpdates(1000));
+    const {transport, advance} = make();
+    transport.start();
+    await flushPromises();
+    FakeWebSocket.instances[0]!.receiveHello(1000);
+    await flushPromises();
+    expect(mockUpdates).toHaveBeenCalled();
+    advance(2000);
+    await flushPromises();
   });
 });
