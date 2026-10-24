@@ -96,6 +96,8 @@ export function ConversationRow({
   );
 }
 
+const PREVIEW_FLEX = 1;
+
 const styles = StyleSheet.create({
   item: {
     flexDirection: 'row',
@@ -118,6 +120,7 @@ const styles = StyleSheet.create({
   },
   title: {fontSize: cm.titleSize, flexShrink: 1},
   preview: {fontSize: cm.previewSize},
+  previewFlex: {flex: PREVIEW_FLEX},
   badge: {
     height: cm.badgeMinSize,
     borderRadius: cm.badgeMinSize / 2,
