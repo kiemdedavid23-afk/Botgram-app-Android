@@ -490,24 +490,23 @@ describe('createRealtimeTransport', () => {
     mockUpdates
       .mockResolvedValueOnce(okUpdates(5000))
       .mockResolvedValueOnce(okUpdates(6000));
-    const {transport} = make();
+    const {transport, advance} = make();
     transport.start();
     await flushPromises();
     FakeWebSocket.instances[0]!.receiveHello(9999);
     await flushPromises();
     expect(mockUpdates).toHaveBeenCalledWith(0);
+    // lastServerTime doit être 5000 (réponse /updates), pas 9999 (hello)
     mockUpdates.mockClear();
     mockUpdates.mockResolvedValue(okUpdates(6000));
-    // second catch-up (ex. tick polling ou reconnexion)
     FakeWebSocket.instances[0]!.close(1000);
     await flushPromises();
-    // force un nouvel hello sur une nouvelle socket si créée
-    if (FakeWebSocket.instances.length > 1) {
-      FakeWebSocket.instances[FakeWebSocket.instances.length - 1]!.receiveHello(
-        8888,
-      );
-      await flushPromises();
-    }
+    // reconnexion avec délai exponentiel (1 s min)
+    advance(2000);
+    await flushPromises();
+    const last = FakeWebSocket.instances[FakeWebSocket.instances.length - 1]!;
+    last.receiveHello(8888);
+    await flushPromises();
     const sinceArgs = mockUpdates.mock.calls.map(c => c[0] as number);
     expect(sinceArgs.some(s => s === 5000)).toBe(true);
     expect(sinceArgs.every(s => s !== 9999 && s !== 8888)).toBe(true);

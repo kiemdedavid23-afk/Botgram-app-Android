@@ -1,6 +1,5 @@
 /**
  * Partie 0 — branchement transport ↔ auth (R1, R2).
- * Sans @testing-library (non listé) : react-test-renderer.
  */
 import React from 'react';
 import renderer, {act} from 'react-test-renderer';
@@ -11,33 +10,31 @@ const mockStart = jest.fn();
 const mockStop = jest.fn();
 let subscribedHandler: ((ev: {type: string}) => void) | null = null;
 const mockUnsub = jest.fn();
-const mockSubscribe = jest.fn(
-  (h: (ev: {type: string}) => void) => {
-    subscribedHandler = h;
-    return mockUnsub;
-  },
-);
+const mockSubscribe = jest.fn((h: (ev: {type: string}) => void) => {
+  subscribedHandler = h;
+  return mockUnsub;
+});
 
 jest.mock('../src/core/realtime', () => ({
   getRealtimeTransport: () => ({
     start: mockStart,
     stop: mockStop,
     subscribe: mockSubscribe,
-    getConnectionState: () => 'idle' as const,
+    getConnectionState: () => 'idle',
   }),
 }));
 
 const mockApplySignedOut = jest.fn(() => Promise.resolve());
+
 jest.mock('../src/features/auth/store/authStore', () => {
-  const {create} = jest.requireActual('zustand');
-  type AuthState =
-    | 'booting'
-    | 'signedOut'
-    | 'signedIn'
-    | 'upgradeRequired'
-    | 'accountDisabled';
-  const useAuthStore = create(() => ({
-    state: 'booting' as AuthState,
+  const {create} = jest.requireActual('zustand') as typeof import('zustand');
+  const store = create(() => ({
+    state: 'booting' as
+      | 'booting'
+      | 'signedOut'
+      | 'signedIn'
+      | 'upgradeRequired'
+      | 'accountDisabled',
     member: null,
     offline: false,
     endReason: null,
@@ -46,7 +43,7 @@ jest.mock('../src/features/auth/store/authStore', () => {
     pendingCode: null,
   }));
   return {
-    useAuthStore,
+    useAuthStore: store,
     applySignedOut: (...args: unknown[]) => mockApplySignedOut(...args),
   };
 });
