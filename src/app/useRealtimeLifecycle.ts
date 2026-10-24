@@ -1,10 +1,5 @@
 /**
- * Cycle de vie temps réel + conversations (Partie 0 / L5b).
- * - transport start/stop selon auth
- * - session.revoked → applySignedOut
- * - abonnement unique aux événements → conversationsStore
- * - bot actif suivi hors écran (botsStore)
- * - resync bots → botsStore.load
+ * Cycle de vie temps réel + conversations + fil (Partie 0 / L5b / L5c).
  */
 import {useEffect, useRef} from 'react';
 import {
@@ -14,6 +9,7 @@ import {
 import {useAuthStore, applySignedOut} from '../features/auth/store/authStore';
 import {useBotsStore} from '../features/bots/store/botsStore';
 import {useConversationsStore} from '../features/conversations/store/conversationsStore';
+import {useThreadStore} from '../features/thread/store/threadStore';
 import {fireAndForget} from '../core/utils/fireAndForget';
 
 export function useRealtimeLifecycle(): void {
@@ -21,14 +17,12 @@ export function useRealtimeLifecycle(): void {
   const bots = useBotsStore(s => s.bots);
   const unsubRef = useRef<(() => void) | null>(null);
 
-  // Bot actif hors écran
   useEffect(() => {
     if (authState !== 'signedIn') return;
     const selected = bots.find(b => b.selected) ?? bots[0] ?? null;
     useConversationsStore.getState().setBotId(selected?.id ?? null);
   }, [authState, bots]);
 
-  // Transport + abonnement unique
   useEffect(() => {
     const transport = getRealtimeTransport();
 
@@ -44,6 +38,7 @@ export function useRealtimeLifecycle(): void {
             fireAndForget(useBotsStore.getState().load(true));
           }
           useConversationsStore.getState().applyRealtimeEvent(ev);
+          useThreadStore.getState().applyRealtimeEvent(ev);
         });
       }
     } else {
@@ -53,6 +48,7 @@ export function useRealtimeLifecycle(): void {
       }
       transport.stop();
       useConversationsStore.getState().setBotId(null);
+      useThreadStore.getState().close();
     }
 
     return () => {
