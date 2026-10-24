@@ -14,42 +14,60 @@ export const conversationsMetrics = {
   avatarFontWeight: '600' as const,
   /** .chat-item__content gap 3px */
   contentGap: 3,
-  /** .chat-item__title — proche 15/600 (tokens typo liste) */
+  /** .chat-item__title */
   titleSize: 15,
   titleWeight: '600' as const,
-  /** .chat-item__time — 11–12 secondary */
+  /** .chat-item__time */
   timeSize: 12,
   /** .chat-item__preview */
   previewSize: 14,
-  /** .chat-item__badge min */
+  /** .chat-item__badge */
   badgeMinSize: 18,
   badgeFontSize: 11,
   badgeWeight: '700' as const,
-  /** .search-bar--main margin 8 12 4, radius 22, padding 10 14 — site; tokens barre recherche rayon 12 aussi cité design tokens §5 → on utilise 12 du design system pour cohérence tokens §5 */
+  /** badge paddingHorizontal — ConversationsPage.css .chat-item__badge */
+  badgePadH: 6,
+  /** .search-bar--main */
   searchMarginT: 8,
   searchMarginH: 12,
   searchMarginB: 4,
   searchRadius: 12,
   searchPaddingV: 9,
   searchPaddingH: 12,
-  /** .folders-row padding 4 12 10 */
+  /** .folders-row */
   foldersPaddingT: 4,
   foldersPaddingH: 12,
   foldersPaddingB: 10,
-  /** .folders-track radius 20, padding 3 */
+  /** .folders-track */
   foldersTrackRadius: 20,
   foldersTrackPad: 3,
-  /** .folder-tab padding 7 14, radius 16, font 14/500 */
+  /** .folder-tab */
   folderTabPadV: 7,
   folderTabPadH: 14,
   folderTabRadius: 16,
   folderTabFont: 14,
-  /** .folder-tab__count 12/600, 18 min */
+  /** .folder-tab gap 6 — ConversationsPage.css .folder-tab gap: 6px */
+  folderTabGap: 6,
+  /** .folder-tab__count */
   folderCountSize: 12,
   folderCountMin: 18,
-  /** densité two / three — écart vertical item */
+  /** .folder-tab__count padding 0 5px */
+  folderCountPadH: 5,
+  /** densité */
   densityTwoExtra: 0,
   densityThreeExtra: 4,
-  /** bandeau hors ligne padding */
   offlinePad: 8,
+  /** icône épingle — taille visuelle liste */
+  pinIconSize: 14,
+  /** gaps ligne titre / contenu */
+  rowGap: 8,
+  titleRowGap: 4,
+  /** indicateur recherche position */
+  searchingOffset: 16,
+  footerSpinnerMargin: 12,
+  previewFlex: 1,
+  /** SearchBar icône et gap */
+  searchIconSize: 18,
+  searchRowGap: 8,
+  searchHitSlop: 8,
 } as const;
