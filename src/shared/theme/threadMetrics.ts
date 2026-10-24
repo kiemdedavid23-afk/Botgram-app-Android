@@ -36,6 +36,9 @@ export const threadMetrics = {
   btnGap: 4,
   btnFont: 13,
   btnMarginT: 4,
+  /** bouton callback_data grisé — MessageBubble.css disabled feel */
+  btnOpacityEnabled: 1,
+  btnOpacityDisabled: 0.55,
   /** non-texte libellé */
   kindLabelSize: 13,
   offlinePad: 8,
