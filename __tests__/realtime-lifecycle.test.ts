@@ -24,7 +24,9 @@ jest.mock('../src/core/realtime', () => ({
   }),
 }));
 
-const mockApplySignedOut = jest.fn(() => Promise.resolve());
+const mockApplySignedOut = jest.fn((_reason?: string | null) =>
+  Promise.resolve(),
+);
 
 jest.mock('../src/features/auth/store/authStore', () => {
   const {create} = jest.requireActual('zustand') as typeof import('zustand');
