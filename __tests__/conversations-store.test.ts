@@ -27,6 +27,7 @@ jest.mock('../src/core/storage', () => ({
   ),
   cacheSetString: jest.fn(() => Promise.resolve()),
   cacheDelete: jest.fn(() => Promise.resolve()),
+  cacheDeleteByPrefix: jest.fn(() => Promise.resolve()),
 }));
 
 jest.mock('../src/core/utils/memberData', () => ({
@@ -51,6 +52,10 @@ const mockCacheSet = CacheApi.cacheSetString as jest.MockedFunction<
 const mockCacheDelete = CacheApi.cacheDelete as jest.MockedFunction<
   typeof CacheApi.cacheDelete
 >;
+const mockCacheDeleteByPrefix =
+  CacheApi.cacheDeleteByPrefix as jest.MockedFunction<
+    typeof CacheApi.cacheDeleteByPrefix
+  >;
 
 type SearchPage = {items: ConversationSummary[]; next_cursor: null};
 
@@ -282,7 +287,7 @@ describe('conversationsStore', () => {
     expect(titles).not.toContain('Old');
   });
 
-  it('clear supprime toutes les clés cache conversations', async () => {
+  it('clear appelle cacheDeleteByPrefix(conversations.page1.)', async () => {
     mockList.mockResolvedValue(
       okResult<ConversationsPage>({
         items: [conv({id: 'c1'})],
@@ -291,15 +296,60 @@ describe('conversationsStore', () => {
     );
     useConversationsStore.setState({botId: 'botA'});
     await useConversationsStore.getState().load(true);
-    useConversationsStore.setState({botId: 'botB'});
-    await useConversationsStore.getState().load(true);
     expect(mockCacheSet).toHaveBeenCalled();
     useConversationsStore.getState().clear();
     await Promise.resolve();
-    expect(mockCacheDelete).toHaveBeenCalled();
-    const keys = mockCacheDelete.mock.calls.map(c => c[0]);
-    expect(keys.some(k => k.includes('botA'))).toBe(true);
-    expect(keys.some(k => k.includes('botB'))).toBe(true);
+    expect(mockCacheDeleteByPrefix).toHaveBeenCalledWith('conversations.page1.');
+  });
+
+  it('loadMore : changement de bot ignore le résultat', async () => {
+    let resolveMore!: (v: HttpResult<ConversationsPage>) => void;
+    const deferred = new Promise<HttpResult<ConversationsPage>>(r => {
+      resolveMore = r;
+    });
+    useConversationsStore.setState({
+      botId: 'bot1',
+      items: [conv({id: 'old'})],
+      nextCursor: 'cur',
+    });
+    mockList.mockReturnValueOnce(deferred);
+    const p = useConversationsStore.getState().loadMore();
+    useConversationsStore.setState({botId: 'bot2', items: []});
+    resolveMore(
+      okResult<ConversationsPage>({
+        items: [conv({id: 'pollute', bot_id: 'bot1'})],
+        next_cursor: null,
+      }),
+    );
+    await p;
+    expect(useConversationsStore.getState().botId).toBe('bot2');
+    expect(
+      useConversationsStore.getState().items.every(i => i.id !== 'pollute'),
+    ).toBe(true);
+  });
+
+  it('search : changement de bot remet searching à false', async () => {
+    let resolveSearch!: (v: HttpResult<SearchPage>) => void;
+    const deferred = new Promise<HttpResult<SearchPage>>(r => {
+      resolveSearch = r;
+    });
+    mockSearch.mockReturnValueOnce(deferred);
+    useConversationsStore.setState({
+      botId: 'bot1',
+      searchQuery: 'ab',
+      searching: false,
+    });
+    const p = useConversationsStore.getState().search('ab');
+    useConversationsStore.setState({botId: 'bot2'});
+    resolveSearch(
+      okResult<SearchPage>({
+        items: [conv({id: 'x', title: 'X'})],
+        next_cursor: null,
+      }),
+    );
+    await p;
+    expect(useConversationsStore.getState().searching).toBe(false);
+    expect(useConversationsStore.getState().searchItems).toEqual([]);
   });
 
   it('erreur HTTP non réseau avec cache : pas offline', async () => {
