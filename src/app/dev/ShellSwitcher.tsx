@@ -9,7 +9,7 @@ import {BrandBar} from '../../shared/components/BrandBar';
 import {BottomNav, type MemberTabId} from '../../shared/components/BottomNav';
 import {BotBottomNav, type BotTabId} from '../../shared/components/BotBottomNav';
 import {EmptyScreen} from '../../shared/components/EmptyScreen';
-import {ConversationsScreen} from '../../features/conversations';
+import {BotChatsStack} from '../../features/conversations/navigation/BotChatsStack';
 import {useConversationsStore} from '../../features/conversations/store/conversationsStore';
 import {useBotsStore} from '../../features/bots/store/botsStore';
 
@@ -98,33 +98,35 @@ function BotInner(): React.JSX.Element {
   const selected = bots.find(b => b.selected) ?? bots[0];
   const botName = selected?.name ?? 'Bot';
 
+  const nav = (
+    <BotBottomNav
+      activeTab={tab}
+      onTabPress={setTab}
+      botName={botName}
+      unreadBadge={unreadBadge}
+      visible
+    />
+  );
+
   return (
     <View style={styles.botRoot}>
       {tab === 'chats' ? (
-        <ConversationsScreen
-          onOpenConversation={_id => {
-            // L5c : écran fil — pas encore disponible
-          }}
-        />
+        <BotChatsStack footer={nav} />
       ) : (
-        <EmptyScreen
-          title={
-            tab === 'contacts'
-              ? 'Contacts'
-              : tab === 'settings'
-                ? 'Paramètres'
-                : 'Profil'
-          }
-          subtitle="Espace bot"
-        />
+        <>
+          <EmptyScreen
+            title={
+              tab === 'contacts'
+                ? 'Contacts'
+                : tab === 'settings'
+                  ? 'Paramètres'
+                  : 'Profil'
+            }
+            subtitle="Espace bot"
+          />
+          {nav}
+        </>
       )}
-      <BotBottomNav
-        activeTab={tab}
-        onTabPress={setTab}
-        botName={botName}
-        unreadBadge={unreadBadge}
-        visible
-      />
     </View>
   );
 }
