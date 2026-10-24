@@ -16,6 +16,9 @@ export type {
   UpdatesEvent,
   ResyncEvent,
   ConversationSummary,
+  Message,
+  MessagePayload,
+  InlineButton,
 } from './events';
 export {parseRealtimeEvent, eventId} from './events';
 export {createRealtimeTransport} from './createRealtimeTransport';
