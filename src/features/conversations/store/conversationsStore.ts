@@ -5,13 +5,14 @@
 import {create} from 'zustand';
 import {
   listConversations,
+  getConversation,
   searchConversations,
   type ConversationSummary,
 } from '../../../core/api/endpoints/conversations';
 import {
   cacheGetString,
   cacheSetString,
-  cacheDelete,
+  cacheDeleteByPrefix,
 } from '../../../core/storage';
 import {registerMemberDataCleaner} from '../../../core/utils/memberData';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
@@ -19,11 +20,14 @@ import type {RealtimeEvent} from '../../../core/realtime';
 import {sortItems, mergeById, displayTitle} from './merge';
 import type {FolderId} from './filters';
 import {conversationsTexts} from '../texts';
+import {conversationsMetrics as cm} from '../../../shared/theme/conversationsMetrics';
+
+/** Délai de fraîcheur avant rechargement auto (ms). */
+const FRESH_MS = cm.listFreshMs;
 import {applyRealtimeEventToStore} from './applyEvent';
 
-const cacheKey = (botId: string) => `conversations.page1.${botId}`;
-/** Clés écrites — toutes supprimées à la déconnexion (13.5). */
-const knownCacheKeys = new Set<string>();
+const CACHE_PREFIX = 'conversations.page1.';
+const cacheKey = (botId: string) => `${CACHE_PREFIX}${botId}`;
 
 type ConversationsStore = {
   botId: string | null;
@@ -100,7 +104,7 @@ export const useConversationsStore = create<ConversationsStore>((set, get) => ({
     if (
       !force &&
       get().lastLoadedAt > 0 &&
-      Date.now() - get().lastLoadedAt < 30_000 &&
+      Date.now() - get().lastLoadedAt < FRESH_MS &&
       get().items.length > 0
     ) {
       return;
@@ -135,7 +139,6 @@ export const useConversationsStore = create<ConversationsStore>((set, get) => ({
     }
     const items = sortItems(res.data.items);
     const key = cacheKey(botId);
-    knownCacheKeys.add(key);
     await cacheSetString(key, JSON.stringify(items));
     if (get().botId !== botId) return;
     set({
@@ -180,8 +183,14 @@ export const useConversationsStore = create<ConversationsStore>((set, get) => ({
     }
     set({searching: true});
     const res = await searchConversations(botId, query, 30);
-    if (get().botId !== botId) return;
-    if (get().searchQuery.trim() !== query) return;
+    if (get().botId !== botId) {
+      set({searching: false});
+      return;
+    }
+    if (get().searchQuery.trim() !== query) {
+      set({searching: false});
+      return;
+    }
     if (!res.ok) {
       set({searching: false, searchItems: []});
       return;
@@ -209,10 +218,7 @@ export const useConversationsStore = create<ConversationsStore>((set, get) => ({
   },
 
   clear() {
-    for (const key of knownCacheKeys) {
-      fireAndForget(cacheDelete(key));
-    }
-    knownCacheKeys.clear();
+    fireAndForget(cacheDeleteByPrefix(CACHE_PREFIX));
     set({
       botId: null,
       items: [],
