@@ -98,11 +98,11 @@ function decodeEntities(s: string): string {
 
 function parseMarkdownV2(input: string): TextSegment[] {
   // Déséchapper d'abord les séquences \\X
-  let s = input.replace(/\\([_*\[\]()~`>#+\-=|{}.!\\])/g, '$1');
+  let s = input.replace(/\\([_*\x5b\x5d()~`>#+\-=|{}.!\\])/g, '$1');
   const out: TextSegment[] = [];
   // Approche simple : *bold* _italic_ __underline__ ~strike~ `code` [text](url)
   const tokenRe =
-    /\*([^*]+)\*|_([^_]+)_|__([^_]+)__|~([^~]+)~|`([^`]+)`|\[([^\]]+)\]\(([^)]+)\)|([^*_~`\[]+)/g;
+    /\*([^*]+)\*|_([^_]+)_|__([^_]+)__|~([^~]+)~|`([^`]+)`|\x5b([^\x5d]+)\x5d\(([^)]+)\)|([^*_~`\x5b]+)/g;
   let m: RegExpExecArray | null;
   while ((m = tokenRe.exec(s)) !== null) {
     if (m[1]) out.push({text: m[1], bold: true});
