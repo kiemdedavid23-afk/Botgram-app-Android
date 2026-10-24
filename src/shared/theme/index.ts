@@ -46,3 +46,5 @@ export {shellMetrics} from './shellMetrics';
 export {emptyScreenMetrics} from './emptyScreenMetrics';
 export {rootNavigatorMetrics} from './rootNavigatorMetrics';
 export {authColors, authMetrics} from './authColors';
+export {conversationsMetrics} from './conversationsMetrics';
+export {threadMetrics} from './threadMetrics';
