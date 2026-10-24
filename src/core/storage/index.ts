@@ -16,5 +16,6 @@ export {
   cacheGetBoolean,
   cacheDelete,
   cacheClearAll,
+  cacheDeleteByPrefix,
   APPEARANCE_STORAGE_KEY,
 } from './cache';

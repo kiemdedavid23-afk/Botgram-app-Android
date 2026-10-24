@@ -67,5 +67,15 @@ export async function cacheClearAll(): Promise<void> {
   mmkv.clearAll();
 }
 
+/** Supprime toutes les clés dont le nom commence par `prefix` (13.5). */
+export async function cacheDeleteByPrefix(prefix: string): Promise<void> {
+  const mmkv = await getInstance();
+  for (const key of mmkv.getAllKeys()) {
+    if (key.startsWith(prefix)) {
+      mmkv.delete(key);
+    }
+  }
+}
+
 /** Clé dédiée aux réglages d'apparence (distincte du site web). */
 export const APPEARANCE_STORAGE_KEY = 'appearance';
