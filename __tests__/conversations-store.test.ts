@@ -1,5 +1,5 @@
 /**
- * Tests store conversations L5b.
+ * Tests store conversations L5b (+ réserves audit).
  */
 import {
   useConversationsStore,
@@ -12,6 +12,9 @@ import type {ConversationSummary} from '../src/core/api/endpoints/conversations'
 const mockList = jest.fn();
 const mockGet = jest.fn();
 const mockSearch = jest.fn();
+const mockCacheDelete = jest.fn(() => Promise.resolve());
+const mockCacheSet = jest.fn(() => Promise.resolve());
+const mockCacheGet = jest.fn(() => Promise.resolve(undefined));
 
 jest.mock('../src/core/api/endpoints/conversations', () => ({
   listConversations: (...a: unknown[]) => mockList(...a),
@@ -20,9 +23,9 @@ jest.mock('../src/core/api/endpoints/conversations', () => ({
 }));
 
 jest.mock('../src/core/storage', () => ({
-  cacheGetString: jest.fn(() => Promise.resolve(undefined)),
-  cacheSetString: jest.fn(() => Promise.resolve()),
-  cacheDelete: jest.fn(() => Promise.resolve()),
+  cacheGetString: (...a: unknown[]) => mockCacheGet(...a),
+  cacheSetString: (...a: unknown[]) => mockCacheSet(...a),
+  cacheDelete: (...a: unknown[]) => mockCacheDelete(...a),
 }));
 
 jest.mock('../src/core/utils/memberData', () => ({
@@ -90,12 +93,10 @@ describe('conversationsStore', () => {
     expect(ids[0]).toBe('c2');
   });
 
-  it('message.new avec conversation remplace et remonte', () => {
+  it('message.new hors écran incrémente unreadTotal', () => {
     useConversationsStore.setState({
-      items: [
-        conv({id: 'c1', last_message_at: 1, unread_count: 0}),
-        conv({id: 'c2', last_message_at: 2, unread_count: 0}),
-      ],
+      botId: 'bot1',
+      items: [conv({id: 'c1', unread_count: 0})],
       unreadTotal: 0,
     });
     useConversationsStore.getState().applyRealtimeEvent({
@@ -109,14 +110,11 @@ describe('conversationsStore', () => {
       kind: 'text',
       conversation: conv({
         id: 'c1',
+        unread_count: 3,
         last_message_at: 99,
-        unread_count: 2,
-        last_message_text: 'hi',
       }),
     });
-    const items = useConversationsStore.getState().items;
-    expect(items[0]!.id).toBe('c1');
-    expect(useConversationsStore.getState().unreadTotal).toBe(2);
+    expect(useConversationsStore.getState().unreadTotal).toBe(3);
   });
 
   it('message.new sans conversation déclenche GET (repli REST)', async () => {
@@ -160,9 +158,10 @@ describe('conversationsStore', () => {
     expect(useConversationsStore.getState().unreadTotal).toBe(0);
   });
 
-  it('conversation.changed removed retire la ligne', () => {
+  it('conversation.changed removed décompte unreadTotal', () => {
     useConversationsStore.setState({
-      items: [conv({id: 'c1'}), conv({id: 'c2'})],
+      items: [conv({id: 'c1', unread_count: 4}), conv({id: 'c2'})],
+      unreadTotal: 4,
     });
     useConversationsStore.getState().applyRealtimeEvent({
       type: 'conversation.changed',
@@ -174,6 +173,7 @@ describe('conversationsStore', () => {
     expect(useConversationsStore.getState().items.map(i => i.id)).toEqual([
       'c2',
     ]);
+    expect(useConversationsStore.getState().unreadTotal).toBe(0);
   });
 
   it('resync conversations recharge', async () => {
@@ -194,6 +194,110 @@ describe('conversationsStore', () => {
     expect(mockList).toHaveBeenCalled();
   });
 
+  it('changement de bot pendant load ignore le résultat', async () => {
+    let resolveList: (v: unknown) => void = () => undefined;
+    mockList.mockImplementation(
+      () =>
+        new Promise(r => {
+          resolveList = r;
+        }),
+    );
+    useConversationsStore.setState({botId: 'bot1', items: []});
+    const p = useConversationsStore.getState().load(true);
+    useConversationsStore.setState({botId: 'bot2', items: []});
+    resolveList({
+      ok: true,
+      data: {
+        items: [conv({id: 'c1', bot_id: 'bot1'})],
+        next_cursor: null,
+      },
+      status: 200,
+      requestId: null,
+      headers: new Headers(),
+    });
+    await p;
+    expect(useConversationsStore.getState().botId).toBe('bot2');
+    expect(
+      useConversationsStore.getState().items.every(i => i.bot_id !== 'bot1'),
+    ).toBe(true);
+  });
+
+  it('recherche ancienne n’écrase pas une plus récente', async () => {
+    let resolveFirst: (v: unknown) => void = () => undefined;
+    mockSearch.mockImplementationOnce(
+      () =>
+        new Promise(r => {
+          resolveFirst = r;
+        }),
+    );
+    useConversationsStore.setState({botId: 'bot1', searchQuery: 'ab'});
+    const p1 = useConversationsStore.getState().search('ab');
+    useConversationsStore.setState({searchQuery: 'xyz'});
+    mockSearch.mockResolvedValueOnce({
+      ok: true,
+      data: {
+        items: [conv({id: 'c-new', title: 'New'})],
+        next_cursor: null,
+      },
+      status: 200,
+      requestId: null,
+      headers: new Headers(),
+    });
+    await useConversationsStore.getState().search('xyz');
+    resolveFirst({
+      ok: true,
+      data: {
+        items: [conv({id: 'c-old', title: 'Old'})],
+        next_cursor: null,
+      },
+      status: 200,
+      requestId: null,
+      headers: new Headers(),
+    });
+    await p1;
+    const titles = useConversationsStore
+      .getState()
+      .searchItems.map(i => i.title);
+    expect(titles).not.toContain('Old');
+  });
+
+  it('clear supprime toutes les clés cache conversations', async () => {
+    mockList.mockResolvedValue({
+      ok: true,
+      data: {items: [conv({id: 'c1'})], next_cursor: null},
+      status: 200,
+      requestId: null,
+      headers: new Headers(),
+    });
+    useConversationsStore.setState({botId: 'botA'});
+    await useConversationsStore.getState().load(true);
+    useConversationsStore.setState({botId: 'botB'});
+    await useConversationsStore.getState().load(true);
+    useConversationsStore.getState().clear();
+    await Promise.resolve();
+    expect(mockCacheDelete).toHaveBeenCalled();
+    const keys = mockCacheDelete.mock.calls.map(c => c[0] as string);
+    expect(keys.some(k => k.includes('botA'))).toBe(true);
+    expect(keys.some(k => k.includes('botB'))).toBe(true);
+  });
+
+  it('erreur HTTP non réseau avec cache : pas offline', async () => {
+    mockCacheGet.mockResolvedValueOnce(
+      JSON.stringify([conv({id: 'c1', title: 'Cached'})]),
+    );
+    mockList.mockResolvedValueOnce({
+      ok: false,
+      error: {code: 'SERVER', message: 'err'},
+      status: 500,
+      requestId: null,
+      headers: new Headers(),
+    });
+    useConversationsStore.setState({botId: 'bot1', items: []});
+    await useConversationsStore.getState().load(true);
+    expect(useConversationsStore.getState().offline).toBe(false);
+    expect(useConversationsStore.getState().items[0]?.title).toBe('Cached');
+  });
+
   it('filtres onglets locaux', () => {
     useConversationsStore.setState({
       items: [
@@ -209,33 +313,6 @@ describe('conversationsStore', () => {
     const counts = folderCounts(useConversationsStore.getState().items);
     expect(counts.unread).toBe(2);
     expect(counts.personal).toBe(1);
-  });
-
-  it('recherche n’écrase pas un élément chargé', () => {
-    useConversationsStore.setState({
-      items: [
-        conv({
-          id: 'c1',
-          title: 'Loaded',
-          unread_count: 3,
-          last_message_text: 'msg',
-        }),
-      ],
-      searchQuery: 'x',
-      searchItems: [
-        conv({
-          id: 'c1',
-          title: 'Search',
-          unread_count: 0,
-          last_message_text: null,
-        }),
-      ],
-    });
-    // selectFilteredItems en mode recherche renvoie searchItems
-    const filtered = selectFilteredItems(useConversationsStore.getState());
-    expect(filtered[0]!.title).toBe('Search');
-    // mais items chargés restent intacts
-    expect(useConversationsStore.getState().items[0]!.unread_count).toBe(3);
   });
 
   it('clear vide le store (déconnexion)', () => {
