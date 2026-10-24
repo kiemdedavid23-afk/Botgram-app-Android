@@ -44,12 +44,14 @@ export function ThreadHeader({
           />
           <Text
             numberOfLines={1}
-            style={{
-              color: colors.textPrimary,
-              fontSize: tm.titleSize,
-              fontWeight: fontWeight.semibold,
-              flex: 1,
-            }}>
+            style={[
+              styles.title,
+              {
+                color: colors.textPrimary,
+                fontSize: tm.titleSize,
+                fontWeight: fontWeight.semibold,
+              },
+            ]}>
             {title}
           </Text>
         </View>
@@ -77,4 +79,5 @@ const styles = StyleSheet.create({
     gap: tm.headerInfoGap,
     minWidth: 0,
   },
+  title: {flex: 1},
 });

@@ -26,11 +26,11 @@ export function InlineButtons({rows}: Props): React.JSX.Element {
                 }}
                 style={[
                   styles.btn,
+                  isUrl ? styles.btnEnabled : styles.btnDisabled,
                   {
                     backgroundColor: isUrl
                       ? colors.accentSoft
                       : colors.bgTertiary,
-                    opacity: isUrl ? 1 : 0.55,
                   },
                 ]}>
                 <Text
