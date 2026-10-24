@@ -71,7 +71,7 @@ export function ConversationRow({
         <View style={styles.row}>
           <Text
             numberOfLines={1}
-            style={[styles.preview, {color: colors.textSecondary, flex: 1}]}>
+            style={[styles.preview, styles.previewFlex, {color: colors.textSecondary}]}>
             {preview}
           </Text>
           {showBadge ? (
