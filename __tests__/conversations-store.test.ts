@@ -7,63 +7,73 @@ import {
   folderCounts,
 } from '../src/features/conversations/store/conversationsStore';
 import {stripPreview} from '../src/core/utils/stripPreview';
-import type {ConversationSummary} from '../src/core/api/endpoints/conversations';
-
-const mockList = jest.fn(
-  (_botId: string, _opts?: {limit?: number; cursor?: string | null}) =>
-    Promise.resolve({
-      ok: false as const,
-      error: {code: 'MOCK', message: 'unmocked'},
-      status: 0,
-      requestId: null,
-      headers: new Headers(),
-    }),
-);
-const mockGet = jest.fn((_id: string) =>
-  Promise.resolve({
-    ok: false as const,
-    error: {code: 'MOCK', message: 'unmocked'},
-    status: 0,
-    requestId: null,
-    headers: new Headers(),
-  }),
-);
-const mockSearch = jest.fn((_botId: string, _q: string, _limit?: number) =>
-  Promise.resolve({
-    ok: false as const,
-    error: {code: 'MOCK', message: 'unmocked'},
-    status: 0,
-    requestId: null,
-    headers: new Headers(),
-  }),
-);
-const mockCacheDelete = jest.fn((_key: string) => Promise.resolve());
-const mockCacheSet = jest.fn((_key: string, _value: string) =>
-  Promise.resolve(),
-);
-const mockCacheGet = jest.fn(
-  (_key: string): Promise<string | undefined> => Promise.resolve(undefined),
-);
+import type {HttpResult} from '../src/core/api/http';
+import {
+  listConversations,
+  getConversation,
+  searchConversations,
+  type ConversationSummary,
+  type ConversationsPage,
+} from '../src/core/api/endpoints/conversations';
 
 jest.mock('../src/core/api/endpoints/conversations', () => ({
-  listConversations: (
-    botId: string,
-    opts?: {limit?: number; cursor?: string | null},
-  ) => mockList(botId, opts),
-  getConversation: (id: string) => mockGet(id),
-  searchConversations: (botId: string, q: string, limit?: number) =>
-    mockSearch(botId, q, limit),
+  listConversations: jest.fn(),
+  getConversation: jest.fn(),
+  searchConversations: jest.fn(),
 }));
 
 jest.mock('../src/core/storage', () => ({
-  cacheGetString: (key: string) => mockCacheGet(key),
-  cacheSetString: (key: string, value: string) => mockCacheSet(key, value),
-  cacheDelete: (key: string) => mockCacheDelete(key),
+  cacheGetString: jest.fn(() => Promise.resolve(undefined as string | undefined)),
+  cacheSetString: jest.fn(() => Promise.resolve()),
+  cacheDelete: jest.fn(() => Promise.resolve()),
 }));
 
 jest.mock('../src/core/utils/memberData', () => ({
   registerMemberDataCleaner: jest.fn(() => jest.fn()),
 }));
+
+import {
+  cacheGetString,
+  cacheSetString,
+  cacheDelete,
+} from '../src/core/storage';
+
+const mockList = listConversations as jest.MockedFunction<
+  typeof listConversations
+>;
+const mockGet = getConversation as jest.MockedFunction<typeof getConversation>;
+const mockSearch = searchConversations as jest.MockedFunction<
+  typeof searchConversations
+>;
+const mockCacheGet = cacheGetString as jest.MockedFunction<
+  typeof cacheGetString
+>;
+const mockCacheSet = cacheSetString as jest.MockedFunction<
+  typeof cacheSetString
+>;
+const mockCacheDelete = cacheDelete as jest.MockedFunction<typeof cacheDelete>;
+
+type SearchPage = {items: ConversationSummary[]; next_cursor: null};
+
+function okResult<T>(data: T): HttpResult<T> {
+  return {
+    ok: true,
+    data,
+    status: 200,
+    requestId: null,
+    headers: new Headers(),
+  };
+}
+
+function failResult<T>(status = 0): HttpResult<T> {
+  return {
+    ok: false,
+    error: {code: 'x', message: 'x'},
+    status,
+    requestId: null,
+    headers: new Headers(),
+  };
+}
 
 function conv(
   partial: Partial<ConversationSummary> & {id: string},
@@ -151,15 +161,11 @@ describe('conversationsStore', () => {
   });
 
   it('message.new sans conversation déclenche GET (repli REST)', async () => {
-    mockGet.mockResolvedValue({
-      ok: true,
-      data: {
+    mockGet.mockResolvedValue(
+      okResult({
         conversation: conv({id: 'c9', last_message_at: 50, title: 'Rest'}),
-      },
-      status: 200,
-      requestId: null,
-      headers: new Headers(),
-    });
+      }),
+    );
     useConversationsStore.setState({items: [], botId: 'bot1'});
     useConversationsStore.getState().applyRealtimeEvent({
       type: 'message.new',
@@ -174,6 +180,7 @@ describe('conversationsStore', () => {
     await Promise.resolve();
     await Promise.resolve();
     expect(mockGet).toHaveBeenCalledWith('c9');
+    expect(getConversation).toHaveBeenCalledWith('c9');
   });
 
   it('conversation.read remet unread à 0', () => {
@@ -210,13 +217,12 @@ describe('conversationsStore', () => {
   });
 
   it('resync conversations recharge', async () => {
-    mockList.mockResolvedValue({
-      ok: true,
-      data: {items: [conv({id: 'c1'})], next_cursor: null},
-      status: 200,
-      requestId: null,
-      headers: new Headers(),
-    });
+    mockList.mockResolvedValue(
+      okResult<ConversationsPage>({
+        items: [conv({id: 'c1'})],
+        next_cursor: null,
+      }),
+    );
     useConversationsStore.setState({botId: 'bot1', items: []});
     useConversationsStore.getState().applyRealtimeEvent({
       type: 'resync',
@@ -228,26 +234,20 @@ describe('conversationsStore', () => {
   });
 
   it('changement de bot pendant load ignore le résultat', async () => {
-    let resolveList: (v: unknown) => void = () => undefined;
-    mockList.mockImplementation(
-      () =>
-        new Promise(r => {
-          resolveList = r;
-        }),
-    );
+    let resolveList!: (v: HttpResult<ConversationsPage>) => void;
+    const deferred = new Promise<HttpResult<ConversationsPage>>(r => {
+      resolveList = r;
+    });
+    mockList.mockReturnValueOnce(deferred);
     useConversationsStore.setState({botId: 'bot1', items: []});
     const p = useConversationsStore.getState().load(true);
     useConversationsStore.setState({botId: 'bot2', items: []});
-    resolveList({
-      ok: true,
-      data: {
+    resolveList(
+      okResult<ConversationsPage>({
         items: [conv({id: 'c1', bot_id: 'bot1'})],
         next_cursor: null,
-      },
-      status: 200,
-      requestId: null,
-      headers: new Headers(),
-    });
+      }),
+    );
     await p;
     expect(useConversationsStore.getState().botId).toBe('bot2');
     expect(
@@ -256,37 +256,27 @@ describe('conversationsStore', () => {
   });
 
   it('recherche ancienne n’écrase pas une plus récente', async () => {
-    let resolveFirst: (v: unknown) => void = () => undefined;
-    mockSearch.mockImplementationOnce(
-      () =>
-        new Promise(r => {
-          resolveFirst = r;
-        }),
-    );
+    let resolveFirst!: (v: HttpResult<SearchPage>) => void;
+    const deferred = new Promise<HttpResult<SearchPage>>(r => {
+      resolveFirst = r;
+    });
+    mockSearch.mockReturnValueOnce(deferred);
     useConversationsStore.setState({botId: 'bot1', searchQuery: 'ab'});
     const p1 = useConversationsStore.getState().search('ab');
     useConversationsStore.setState({searchQuery: 'xyz'});
-    mockSearch.mockResolvedValueOnce({
-      ok: true,
-      data: {
+    mockSearch.mockResolvedValueOnce(
+      okResult<SearchPage>({
         items: [conv({id: 'c-new', title: 'New'})],
         next_cursor: null,
-      },
-      status: 200,
-      requestId: null,
-      headers: new Headers(),
-    });
+      }),
+    );
     await useConversationsStore.getState().search('xyz');
-    resolveFirst({
-      ok: true,
-      data: {
+    resolveFirst(
+      okResult<SearchPage>({
         items: [conv({id: 'c-old', title: 'Old'})],
         next_cursor: null,
-      },
-      status: 200,
-      requestId: null,
-      headers: new Headers(),
-    });
+      }),
+    );
     await p1;
     const titles = useConversationsStore
       .getState()
@@ -295,17 +285,17 @@ describe('conversationsStore', () => {
   });
 
   it('clear supprime toutes les clés cache conversations', async () => {
-    mockList.mockResolvedValue({
-      ok: true,
-      data: {items: [conv({id: 'c1'})], next_cursor: null},
-      status: 200,
-      requestId: null,
-      headers: new Headers(),
-    });
+    mockList.mockResolvedValue(
+      okResult<ConversationsPage>({
+        items: [conv({id: 'c1'})],
+        next_cursor: null,
+      }),
+    );
     useConversationsStore.setState({botId: 'botA'});
     await useConversationsStore.getState().load(true);
     useConversationsStore.setState({botId: 'botB'});
     await useConversationsStore.getState().load(true);
+    expect(mockCacheSet).toHaveBeenCalled();
     useConversationsStore.getState().clear();
     await Promise.resolve();
     expect(mockCacheDelete).toHaveBeenCalled();
@@ -318,13 +308,7 @@ describe('conversationsStore', () => {
     mockCacheGet.mockResolvedValueOnce(
       JSON.stringify([conv({id: 'c1', title: 'Cached'})]),
     );
-    mockList.mockResolvedValueOnce({
-      ok: false,
-      error: {code: 'SERVER', message: 'err'},
-      status: 500,
-      requestId: null,
-      headers: new Headers(),
-    });
+    mockList.mockResolvedValueOnce(failResult<ConversationsPage>(500));
     useConversationsStore.setState({botId: 'bot1', items: []});
     await useConversationsStore.getState().load(true);
     expect(useConversationsStore.getState().offline).toBe(false);
