@@ -5,19 +5,25 @@
  * Événements synthétiques : updates, resync (produits par le transport).
  */
 
-/** Résumé de conversation (élément de GET /updates). */
+/** Résumé de conversation (GET /updates et GET /bots/:id/conversations). */
 export type ConversationSummary = {
   id: string;
   bot_id: string;
   chat_type?: string;
   title?: string | null;
   username?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  contact_id?: string | null;
+  pinned?: boolean;
+  pinned_at?: number | null;
+  has_photo?: boolean;
+  photo_url?: string | null;
+  initials?: string | null;
   last_message_at?: number;
   created_at?: number;
-  last_message_text?: string | null;
   unread_count?: number;
-  pinned?: boolean;
-  [key: string]: unknown;
+  last_message_text?: string | null;
 };
 
 /** Message (élément de GET /conversations/:id/messages). */
@@ -29,7 +35,6 @@ export type MessagePayload = {
   status?: string;
   text?: string | null;
   parse_mode?: string | null;
-  [key: string]: unknown;
 };
 
 export type HelloEvent = {
