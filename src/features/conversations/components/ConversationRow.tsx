@@ -50,7 +50,7 @@ export function ConversationRow({
           <View style={styles.titleRow}>
             {item.pinned ? (
               <Pin
-                size={14}
+                size={cm.pinIconSize}
                 color={colors.textSecondary}
                 strokeWidth={2}
               />
@@ -71,7 +71,11 @@ export function ConversationRow({
         <View style={styles.row}>
           <Text
             numberOfLines={1}
-            style={[styles.preview, styles.previewFlex, {color: colors.textSecondary}]}>
+            style={[
+              styles.preview,
+              styles.previewFlex,
+              {color: colors.textSecondary},
+            ]}>
             {preview}
           </Text>
           {showBadge ? (
@@ -96,8 +100,6 @@ export function ConversationRow({
   );
 }
 
-const PREVIEW_FLEX = 1;
-
 const styles = StyleSheet.create({
   item: {
     flexDirection: 'row',
@@ -109,22 +111,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
+    gap: cm.rowGap,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
     minWidth: 0,
-    gap: 4,
+    gap: cm.titleRowGap,
   },
   title: {fontSize: cm.titleSize, flexShrink: 1},
   preview: {fontSize: cm.previewSize},
-  previewFlex: {flex: PREVIEW_FLEX},
+  previewFlex: {flex: cm.previewFlex},
   badge: {
     height: cm.badgeMinSize,
     borderRadius: cm.badgeMinSize / 2,
-    paddingHorizontal: 6,
+    paddingHorizontal: cm.badgePadH,
     alignItems: 'center',
     justifyContent: 'center',
   },
