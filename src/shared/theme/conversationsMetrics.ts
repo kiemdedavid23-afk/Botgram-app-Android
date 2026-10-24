@@ -70,4 +70,6 @@ export const conversationsMetrics = {
   searchIconSize: 18,
   searchRowGap: 8,
   searchHitSlop: 8,
+  /** Délai de fraîcheur liste avant rechargement auto (ms) */
+  listFreshMs: 30_000,
 } as const;
