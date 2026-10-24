@@ -46,11 +46,11 @@ export function Avatar({
   }
 
   return (
-    <View style={{width: size, height: size, borderRadius: r, overflow: 'hidden'}}>
+    <View style={[styles.clip, {width: size, height: size, borderRadius: r}]}>
       <GradientView
         colors={[...gradients.avatar.colors]}
         angle={gradients.avatar.angle ?? 145}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
       <View style={[styles.center, {width: size, height: size}]}>
         <Text
@@ -67,6 +67,7 @@ export function Avatar({
 }
 
 const styles = StyleSheet.create({
+  clip: {overflow: 'hidden'},
   center: {
     alignItems: 'center',
     justifyContent: 'center',
