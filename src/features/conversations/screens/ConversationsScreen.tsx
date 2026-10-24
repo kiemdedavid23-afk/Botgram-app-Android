@@ -16,6 +16,7 @@ import {EmptyScreen} from '../../../shared/components/EmptyScreen';
 import {SearchBar} from '../../../shared/components/SearchBar';
 import {conversationsMetrics as cm} from '../../../shared/theme/conversationsMetrics';
 import {getRealtimeTransport} from '../../../core/realtime';
+import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {useBotsStore} from '../../bots/store/botsStore';
 import {
   useConversationsStore,
@@ -82,7 +83,7 @@ export function ConversationsScreen({
         return;
       }
       searchTimer.current = setTimeout(() => {
-        void search(q);
+        fireAndForget(search(q));
       }, 300);
     },
     [setSearchQuery, clearSearch, search],
@@ -191,7 +192,7 @@ export function ConversationsScreen({
           <ActivityIndicator color={colors.accent} />
         </View>
       ) : error && filtered.length === 0 ? (
-        <Pressable onPress={() => void load(true)} style={styles.center}>
+        <Pressable onPress={() => fireAndForget(load(true))} style={styles.center}>
           <EmptyScreen title={error} subtitle={t.retry} />
         </Pressable>
       ) : filtered.length === 0 ? (
@@ -205,13 +206,13 @@ export function ConversationsScreen({
           keyExtractor={item => item.id}
           renderItem={renderItem}
           onEndReached={() => {
-            if (!searchQuery) void loadMore();
+            if (!searchQuery) fireAndForget(loadMore());
           }}
           onEndReachedThreshold={0.4}
           ListFooterComponent={
             loadingMore ? (
-              <ActivityIndicator color={colors.accent} style={{margin: 12}} />
-            ) : null
+              <ActivityIndicator color={colors.accent} style={styles.footerSpinner} />
+            ) : undefined
           }
         />
       )}
