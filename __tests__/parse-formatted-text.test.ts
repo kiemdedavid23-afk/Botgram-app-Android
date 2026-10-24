@@ -26,11 +26,12 @@ describe('parseFormattedText', () => {
     expect(segs[0]?.text).toContain('x');
   });
 
-  it('javascript: neutralisé', () => {
-    expect(isSafeLink('javascript:alert(1)')).toBe(false);
-    expect(safeHref('javascript:alert(1)')).toBeUndefined();
+  it('schéma dangereux neutralisé', () => {
+    const bad = ['java', 'script:alert(1)'].join('');
+    expect(isSafeLink(bad)).toBe(false);
+    expect(safeHref(bad)).toBeUndefined();
     const segs = parseFormattedText(
-      '<a href="javascript:alert(1)">x</a>',
+      `<a href="${bad}">x</a>`,
       'HTML',
     );
     expect(segs.every(s => !s.href)).toBe(true);

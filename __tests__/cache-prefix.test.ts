@@ -1,28 +1,30 @@
 /**
  * cacheDeleteByPrefix — suppression durable des clés par préfixe (13.5).
  */
-const store = new Map<string, string>();
+const mockStore = new Map<string, string>();
 
 jest.mock('react-native-mmkv', () => ({
   MMKV: jest.fn().mockImplementation(() => ({
     set: (k: string, v: string) => {
-      store.set(k, v);
+      mockStore.set(k, v);
     },
-    getString: (k: string) => store.get(k),
+    getString: (k: string) => mockStore.get(k),
     getNumber: () => undefined,
     getBoolean: () => undefined,
     delete: (k: string) => {
-      store.delete(k);
+      mockStore.delete(k);
     },
     clearAll: () => {
-      store.clear();
+      mockStore.clear();
     },
-    getAllKeys: () => Array.from(store.keys()),
+    getAllKeys: () => Array.from(mockStore.keys()),
   })),
 }));
 
 jest.mock('../src/core/storage/secureStorage', () => ({
-  getOrCreateMmkvKey: jest.fn(() => Promise.resolve('test-key-32chars-padding!!')),
+  getOrCreateMmkvKey: jest.fn(() =>
+    Promise.resolve('test-key-32chars-padding!!'),
+  ),
 }));
 
 import {
@@ -33,7 +35,7 @@ import {
 
 describe('cacheDeleteByPrefix', () => {
   beforeEach(() => {
-    store.clear();
+    mockStore.clear();
   });
 
   it('supprime conversations.page1.* sans toucher appearance', async () => {

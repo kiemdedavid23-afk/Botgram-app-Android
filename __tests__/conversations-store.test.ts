@@ -49,9 +49,6 @@ const mockCacheGet = CacheApi.cacheGetString as jest.MockedFunction<
 const mockCacheSet = CacheApi.cacheSetString as jest.MockedFunction<
   typeof CacheApi.cacheSetString
 >;
-const mockCacheDelete = CacheApi.cacheDelete as jest.MockedFunction<
-  typeof CacheApi.cacheDelete
->;
 const mockCacheDeleteByPrefix =
   CacheApi.cacheDeleteByPrefix as jest.MockedFunction<
     typeof CacheApi.cacheDeleteByPrefix

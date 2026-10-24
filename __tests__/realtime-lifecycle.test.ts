@@ -6,6 +6,7 @@ import renderer, {act} from 'react-test-renderer';
 import {useRealtimeLifecycle} from '../src/app/useRealtimeLifecycle';
 import {useAuthStore} from '../src/features/auth/store/authStore';
 import {useConversationsStore} from '../src/features/conversations/store/conversationsStore';
+import {useBotsStore} from '../src/features/bots/store/botsStore';
 
 const mockStart = jest.fn();
 const mockStop = jest.fn();
@@ -56,13 +57,18 @@ jest.mock('../src/features/auth/store/authStore', () => {
   };
 });
 
-const mockBotsLoad = jest.fn(() => Promise.resolve());
+const mockBotsLoad = jest.fn((_force?: boolean) => Promise.resolve());
 
 jest.mock('../src/features/bots/store/botsStore', () => {
   const {create} = jest.requireActual('zustand') as typeof import('zustand');
   const store = create(() => ({
-    bots: [] as Array<{id: string; selected: boolean}>,
-    load: mockBotsLoad,
+    bots: [] as Array<{
+      id: string;
+      selected: boolean;
+      username: string | null;
+      name: string;
+    }>,
+    load: (force?: boolean) => mockBotsLoad(force),
   }));
   return {useBotsStore: store};
 });
@@ -84,6 +90,17 @@ jest.mock('../src/core/storage', () => ({
   cacheDeleteByPrefix: jest.fn(() => Promise.resolve()),
 }));
 
+jest.mock('../src/features/thread/store/threadStore', () => {
+  const {create} = jest.requireActual('zustand') as typeof import('zustand');
+  const store = create(() => ({
+    conversationId: null as string | null,
+    applyRealtimeEvent: jest.fn(),
+    close: jest.fn(),
+    clear: jest.fn(),
+  }));
+  return {useThreadStore: store};
+});
+
 function Harness(): null {
   useRealtimeLifecycle();
   return null;
@@ -103,6 +120,7 @@ describe('useRealtimeLifecycle', () => {
         email: null,
         pendingCode: null,
       });
+      useBotsStore.setState({bots: []});
       useConversationsStore.getState().clear();
     });
   });
@@ -155,6 +173,8 @@ describe('useRealtimeLifecycle', () => {
     act(() => {
       renderer.create(React.createElement(Harness));
     });
+    const load = useBotsStore.getState().load;
+    expect(typeof load).toBe('function');
     act(() => {
       subscribedHandler?.({
         type: 'resync',
@@ -167,6 +187,21 @@ describe('useRealtimeLifecycle', () => {
   it('message.new hors écran incrémente unreadTotal', () => {
     act(() => {
       useAuthStore.setState({state: 'signedIn'});
+      useBotsStore.setState({
+        bots: [
+          {
+            id: 'bot1',
+            selected: true,
+            username: null,
+            name: 'Bot 1',
+          },
+        ],
+      });
+    });
+    act(() => {
+      renderer.create(React.createElement(Harness));
+    });
+    act(() => {
       useConversationsStore.setState({
         botId: 'bot1',
         items: [
@@ -180,9 +215,7 @@ describe('useRealtimeLifecycle', () => {
         unreadTotal: 0,
       });
     });
-    act(() => {
-      renderer.create(React.createElement(Harness));
-    });
+    expect(useConversationsStore.getState().botId).toBe('bot1');
     act(() => {
       subscribedHandler?.({
         type: 'message.new',
