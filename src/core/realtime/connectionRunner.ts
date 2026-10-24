@@ -1,8 +1,9 @@
 /**
- * Ouverture WebSocket, hello, ping/pong, codes de fermeture (contrat §7.3–7.5).
+ * Ouverture WebSocket, hello, ping/pong, codes de fermeture (v1.3.1 §7.3–7.5).
+ * onerror / fermeture avant hello → échec immédiat (pas d'attente 8 s).
  */
 import type {WsEndpoint} from '../api/endpoints/realtime';
-import type {WebSocketFactory, Clock, TimerApi} from './RealtimeTransport';
+import type {WebSocketFactory, TimerApi} from './RealtimeTransport';
 import {parseRealtimeEvent, type RealtimeEvent} from './events';
 import {
   HELLO_TIMEOUT_MS,
@@ -22,6 +23,8 @@ export type ConnectionCallbacks = {
   onClosedTooMany: () => void;
   onClosedReplaced: () => void;
   onClosedSessionEnded: () => void;
+  /** Appelé après STABLE_RESET_MS de connexion stable (reset backoff). */
+  onStable: () => void;
 };
 
 export type ConnectionHandle = {
@@ -32,7 +35,6 @@ export type ConnectionHandle = {
 
 export function createConnectionRunner(
   wsFactory: WebSocketFactory,
-  _clock: Clock,
   timers: TimerApi,
   getGeneration: () => number,
   cbs: ConnectionCallbacks,
@@ -43,6 +45,7 @@ export function createConnectionRunner(
   let pongT: ReturnType<typeof setTimeout> | null = null;
   let stableT: ReturnType<typeof setTimeout> | null = null;
   let heartbeatS = 25;
+  let helloReceived = false;
 
   function clearTimers(): void {
     if (helloT) {
@@ -103,6 +106,13 @@ export function createConnectionRunner(
     }
   }
 
+  function failOpen(g: number): void {
+    if (g !== getGeneration()) return;
+    clearTimers();
+    close(g);
+    cbs.onNeedNextEndpoint();
+  }
+
   function onMsg(g: number, data: string): void {
     if (g !== getGeneration()) return;
     if (data === 'pong') {
@@ -119,6 +129,7 @@ export function createConnectionRunner(
     if (!ev) return;
     onActivity(g);
     if (ev.type === 'hello') {
+      helloReceived = true;
       if (helloT) {
         timers.clearTimeout(helloT);
         helloT = null;
@@ -128,7 +139,7 @@ export function createConnectionRunner(
       }
       if (stableT) timers.clearTimeout(stableT);
       stableT = timers.setTimeout(() => {
-        /* reset attempt côté manager */
+        if (g === getGeneration()) cbs.onStable();
       }, STABLE_RESET_MS);
       startPing(g);
       cbs.onHello(heartbeatS);
@@ -145,6 +156,7 @@ export function createConnectionRunner(
   function open(ep: WsEndpoint, g: number): void {
     clearTimers();
     close(g);
+    helloReceived = false;
     let ws: WebSocket;
     try {
       ws = wsFactory(buildWsUrl(ep.url, ep.ticket));
@@ -154,17 +166,30 @@ export function createConnectionRunner(
     }
     socket = ws;
     helloT = timers.setTimeout(() => {
-      if (g !== getGeneration()) return;
-      close(g);
-      cbs.onNeedNextEndpoint();
+      if (g !== getGeneration() || helloReceived) return;
+      failOpen(g);
     }, HELLO_TIMEOUT_MS);
+
+    ws.onerror = () => {
+      if (g !== getGeneration()) return;
+      if (!helloReceived) {
+        failOpen(g);
+      }
+    };
+
     ws.onmessage = (e: WebSocketMessageEvent) => {
       onMsg(g, typeof e.data === 'string' ? e.data : String(e.data ?? ''));
     };
+
     ws.onclose = (e: WebSocketCloseEvent) => {
       if (g !== getGeneration()) return;
       socket = null;
+      const hadHello = helloReceived;
       clearTimers();
+      if (!hadHello) {
+        cbs.onNeedNextEndpoint();
+        return;
+      }
       const code = e.code;
       if (code === 4001) {
         cbs.onClosedSessionEnded();

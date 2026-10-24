@@ -1,12 +1,11 @@
 /**
- * Événements temps réel normalisés (contrat §7.6).
- * message et conversation sont OPTIONNELS (Worker v15.4 vs v15.5).
- * Quand absents → relecture REST (chemin obligatoire et testé).
- * Types message / conversation alignés sur les éléments REST ;
- * définitions complètes arriveront avec L5b/L5c.
+ * Événements temps réel normalisés (contrat v1.3.1 §7.6).
+ * hello et session.revoked N'ONT PAS de champ id (Worker room.js).
+ * message / conversation optionnels (v15.4 vs v15.5).
+ * Événements synthétiques : updates, resync (produits par le transport).
  */
 
-/** Résumé de conversation tel que renvoyé par GET /updates (élément). */
+/** Résumé de conversation (élément de GET /updates). */
 export type ConversationSummary = {
   id: string;
   bot_id: string;
@@ -21,7 +20,7 @@ export type ConversationSummary = {
   [key: string]: unknown;
 };
 
-/** Message tel que renvoyé par GET /conversations/:id/messages (élément). */
+/** Message (élément de GET /conversations/:id/messages). */
 export type MessagePayload = {
   id: string;
   conversation_id: string;
@@ -35,7 +34,6 @@ export type MessagePayload = {
 
 export type HelloEvent = {
   type: 'hello';
-  id: string;
   at: number;
   server_time: number;
   heartbeat_s?: number;
@@ -95,15 +93,24 @@ export type BotChangedEvent = {
 
 export type SessionRevokedEvent = {
   type: 'session.revoked';
-  id: string;
   at: number;
   reason?: string;
 };
 
-/**
- * Événement normalisé livré aux abonnés.
- * bot_request.* et types inconnus sont ignorés (jamais émis).
- */
+/** Synthétique : après chaque GET /updates réussi. */
+export type UpdatesEvent = {
+  type: 'updates';
+  conversations: ConversationSummary[];
+  unread: Record<string, number>;
+  has_more: boolean;
+};
+
+/** Synthétique : à hello (bots+conversations) et has_more (conversations). */
+export type ResyncEvent = {
+  type: 'resync';
+  scopes: Array<'bots' | 'conversations'>;
+};
+
 export type RealtimeEvent =
   | HelloEvent
   | MessageNewEvent
@@ -111,7 +118,9 @@ export type RealtimeEvent =
   | ConversationReadEvent
   | ConversationChangedEvent
   | BotChangedEvent
-  | SessionRevokedEvent;
+  | SessionRevokedEvent
+  | UpdatesEvent
+  | ResyncEvent;
 
 const KNOWN_TYPES = new Set([
   'hello',
@@ -124,16 +133,15 @@ const KNOWN_TYPES = new Set([
 ]);
 
 /**
- * Parse un message JSON brut reçu du WebSocket ou synthétisé.
- * Retourne null si type inconnu, bot_request.*, ou forme invalide.
- * Ne journalise jamais le contenu.
+ * Parse un message JSON brut du WebSocket.
+ * hello et session.revoked acceptés SANS id (contrat v1.3.1).
+ * Autres types : id obligatoire. bot_request.* et inconnus → null.
  */
 export function parseRealtimeEvent(raw: unknown): RealtimeEvent | null {
   if (raw === null || typeof raw !== 'object') return null;
   const obj = raw as Record<string, unknown>;
   const type = obj.type;
   if (typeof type !== 'string' || !KNOWN_TYPES.has(type)) return null;
-  if (typeof obj.id !== 'string') return null;
   const at = typeof obj.at === 'number' ? obj.at : 0;
 
   switch (type) {
@@ -141,15 +149,22 @@ export function parseRealtimeEvent(raw: unknown): RealtimeEvent | null {
       if (typeof obj.server_time !== 'number') return null;
       return {
         type: 'hello',
-        id: obj.id,
         at,
         server_time: obj.server_time,
         heartbeat_s:
           typeof obj.heartbeat_s === 'number' ? obj.heartbeat_s : undefined,
       };
     }
+    case 'session.revoked': {
+      return {
+        type: 'session.revoked',
+        at,
+        reason: typeof obj.reason === 'string' ? obj.reason : undefined,
+      };
+    }
     case 'message.new': {
       if (
+        typeof obj.id !== 'string' ||
         typeof obj.bot_id !== 'string' ||
         typeof obj.conversation_id !== 'string' ||
         typeof obj.message_id !== 'string' ||
@@ -184,6 +199,7 @@ export function parseRealtimeEvent(raw: unknown): RealtimeEvent | null {
     }
     case 'message.updated': {
       if (
+        typeof obj.id !== 'string' ||
         typeof obj.message_id !== 'string' ||
         typeof obj.conversation_id !== 'string' ||
         typeof obj.bot_id !== 'string' ||
@@ -215,7 +231,12 @@ export function parseRealtimeEvent(raw: unknown): RealtimeEvent | null {
       };
     }
     case 'conversation.read': {
-      if (typeof obj.conversation_id !== 'string') return null;
+      if (
+        typeof obj.id !== 'string' ||
+        typeof obj.conversation_id !== 'string'
+      ) {
+        return null;
+      }
       return {
         type: 'conversation.read',
         id: obj.id,
@@ -225,6 +246,7 @@ export function parseRealtimeEvent(raw: unknown): RealtimeEvent | null {
     }
     case 'conversation.changed': {
       if (
+        typeof obj.id !== 'string' ||
         typeof obj.conversation_id !== 'string' ||
         typeof obj.reason !== 'string'
       ) {
@@ -239,7 +261,9 @@ export function parseRealtimeEvent(raw: unknown): RealtimeEvent | null {
       };
     }
     case 'bot.changed': {
-      if (typeof obj.bot_id !== 'string') return null;
+      if (typeof obj.id !== 'string' || typeof obj.bot_id !== 'string') {
+        return null;
+      }
       return {
         type: 'bot.changed',
         id: obj.id,
@@ -248,15 +272,15 @@ export function parseRealtimeEvent(raw: unknown): RealtimeEvent | null {
         reason: typeof obj.reason === 'string' ? obj.reason : undefined,
       };
     }
-    case 'session.revoked': {
-      return {
-        type: 'session.revoked',
-        id: obj.id,
-        at,
-        reason: typeof obj.reason === 'string' ? obj.reason : undefined,
-      };
-    }
     default:
       return null;
   }
+}
+
+/** Dédoublonnage : uniquement quand id est présent. */
+export function eventId(ev: RealtimeEvent): string | undefined {
+  if ('id' in ev && typeof (ev as {id?: string}).id === 'string') {
+    return (ev as {id: string}).id;
+  }
+  return undefined;
 }

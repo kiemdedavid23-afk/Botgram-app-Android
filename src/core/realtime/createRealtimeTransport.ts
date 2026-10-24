@@ -1,16 +1,8 @@
 /**
- * Gestionnaire temps réel : choisit WebSocket ou sondage (contrat §7).
- * Cycle de vie : premier plan + session + réseau. Une seule socket.
+ * Gestionnaire temps réel (contrat v1.3.1 §7).
  */
-import {AppState, type AppStateStatus} from 'react-native';
-import NetInfo, {type NetInfoState} from '@react-native-community/netinfo';
-import {onSessionEvent} from '../api/session';
-import {listBots} from '../api/endpoints/bots';
-import {
-  requestWsTicket,
-  fetchUpdates,
-  type WsEndpoint,
-} from '../api/endpoints/realtime';
+import {AppState} from 'react-native';
+import {requestWsTicket, type WsEndpoint} from '../api/endpoints/realtime';
 import {
   type ConnectionState,
   type RealtimeTransport,
@@ -22,7 +14,7 @@ import {
   defaultClock,
   defaultTimerApi,
 } from './RealtimeTransport';
-import type {RealtimeEvent} from './events';
+import {eventId, type RealtimeEvent} from './events';
 import {
   createConnectionRunner,
   TOO_MANY_WAIT_MS,
@@ -30,12 +22,21 @@ import {
 } from './connectionRunner';
 import {RECONSIDER_MS, DEDUP_SIZE, computeWait} from './wsHelpers';
 import {fireAndForget} from '../utils/fireAndForget';
+import {
+  type CatchUpState,
+  runHelloCatchUp,
+  runUpdatesOnce,
+} from './catchUp';
+import {
+  bindLifecycle,
+  unbindLifecycle,
+  checkSessionAfter4001,
+} from './lifecycle';
 
 export type RealtimeDeps = {
   webSocketFactory?: WebSocketFactory;
   clock?: Clock;
   timers?: TimerApi;
-  onAfterHello?: () => Promise<void>;
 };
 
 export function createRealtimeTransport(
@@ -44,29 +45,24 @@ export function createRealtimeTransport(
   const wsFactory = deps.webSocketFactory ?? defaultWebSocketFactory;
   const clock = deps.clock ?? defaultClock;
   const timers = deps.timers ?? defaultTimerApi;
-  const onAfterHello = deps.onAfterHello;
 
   let state: ConnectionState = 'idle';
   const handlers = new Set<RealtimeEventHandler>();
   let started = false;
-  let foreground = AppState.currentState === 'active';
+  let foreground = true;
   let networkOk = true;
   let sessionActive = true;
-
   let gen = 0;
   let endpointIndex = 0;
   let endpoints: WsEndpoint[] = [];
   let pollFallbackS = 30;
-  let lastServerTime = 0;
-  let updatesBusy = false;
   let reconnectAttempt = 0;
   let waitUntil = 0;
   let recentIds: string[] = [];
-
+  const catchUp: CatchUpState = {lastServerTime: 0, busy: false};
   let reconnectT: ReturnType<typeof setTimeout> | null = null;
   let pollT: ReturnType<typeof setInterval> | null = null;
   let reconsiderT: ReturnType<typeof setTimeout> | null = null;
-
   const unsubs: Array<() => void> = [];
 
   function setState(n: ConnectionState): void {
@@ -74,9 +70,10 @@ export function createRealtimeTransport(
   }
 
   function emit(ev: RealtimeEvent): void {
-    if (ev.id) {
-      if (recentIds.includes(ev.id)) return;
-      recentIds.push(ev.id);
+    const id = eventId(ev);
+    if (id) {
+      if (recentIds.includes(id)) return;
+      recentIds.push(id);
       if (recentIds.length > DEDUP_SIZE) {
         recentIds = recentIds.slice(-DEDUP_SIZE);
       }
@@ -94,74 +91,47 @@ export function createRealtimeTransport(
     return started && foreground && networkOk && sessionActive;
   }
 
-  async function catchUp(): Promise<void> {
-    if (updatesBusy) return;
-    updatesBusy = true;
-    try {
-      let since = lastServerTime;
-      let more = true;
-      let n = 0;
-      while (more && n < 5) {
-        n += 1;
-        const res = await fetchUpdates(since);
-        if (!res.ok) {
-          const ra = Number(res.headers.get('retry-after') ?? 0);
-          if (ra > 0) {
-            await new Promise<void>(r => {
-              timers.setTimeout(() => r(), Math.min(ra, 30) * 1000);
-            });
-            continue;
-          }
-          break;
-        }
-        lastServerTime = res.data.server_time;
-        since = res.data.server_time;
-        more = res.data.has_more === true;
-      }
-      await listBots();
-      if (onAfterHello) await onAfterHello();
-    } finally {
-      updatesBusy = false;
-    }
-  }
-
-  const runner = createConnectionRunner(
-    wsFactory,
-    clock,
-    timers,
-    () => gen,
-    {
-      onHello: () => {
-        setState('connected');
-        reconnectAttempt = 0;
-        fireAndForget(catchUp());
-        if (endpointIndex > 0) scheduleReconsider();
-      },
-      onEvent: emit,
-      onSessionRevoked: () => {
-        sessionActive = false;
-        stopInternal();
-      },
-      onNeedNextEndpoint: () => {
-        fireAndForget(advanceOrPoll());
-      },
-      onClosedNormal: () => {
-        scheduleReconnect();
-      },
-      onClosedTooMany: () => {
-        waitUntil = clock() + TOO_MANY_WAIT_MS;
-        scheduleReconnect();
-      },
-      onClosedReplaced: () => {
-        waitUntil = clock() + REPLACED_WAIT_MS;
-        scheduleReconnect();
-      },
-      onClosedSessionEnded: () => {
-        sessionActive = false;
-        setState('disconnected');
-      },
+  const runner = createConnectionRunner(wsFactory, timers, () => gen, {
+    onHello: () => {
+      setState('connected');
+      fireAndForget(runHelloCatchUp(catchUp, timers, emit));
+      if (endpointIndex > 0) scheduleReconsider();
     },
-  );
+    onEvent: emit,
+    onSessionRevoked: () => {
+      sessionActive = false;
+      stopInternal(false);
+    },
+    onNeedNextEndpoint: () => {
+      fireAndForget(advanceOrPoll());
+    },
+    onClosedNormal: () => scheduleReconnect(),
+    onClosedTooMany: () => {
+      waitUntil = clock() + TOO_MANY_WAIT_MS;
+      scheduleReconnect();
+    },
+    onClosedReplaced: () => {
+      waitUntil = clock() + REPLACED_WAIT_MS;
+      scheduleReconnect();
+    },
+    onClosedSessionEnded: () => {
+      fireAndForget(handle4001());
+    },
+    onStable: () => {
+      reconnectAttempt = 0;
+    },
+  });
+
+  async function handle4001(): Promise<void> {
+    const result = await checkSessionAfter4001();
+    if (result === 'ended') {
+      sessionActive = false;
+      setState('disconnected');
+      return;
+    }
+    if (shouldRun()) scheduleReconnect();
+    else setState('disconnected');
+  }
 
   function openAt(index: number): void {
     if (!shouldRun()) return;
@@ -187,14 +157,6 @@ export function createRealtimeTransport(
       openAt(next);
       return;
     }
-    const tr = await requestWsTicket();
-    if (tr.ok && tr.data.endpoints.length > 0) {
-      endpoints = tr.data.endpoints;
-      pollFallbackS = tr.data.poll_fallback_s || 30;
-      endpointIndex = 0;
-      openAt(0);
-      return;
-    }
     startPolling();
   }
 
@@ -206,11 +168,7 @@ export function createRealtimeTransport(
     if (reconnectT) return;
     const delay = computeWait(clock, waitUntil, reconnectAttempt);
     reconnectAttempt += 1;
-    // Ne pas écraser 'polling' : le sondage reste actif pendant les
-    // tentatives WebSocket en arrière-plan (contrat 7.7 / 7.8).
-    if (state !== 'polling') {
-      setState('disconnected');
-    }
+    if (state !== 'polling') setState('disconnected');
     reconnectT = timers.setTimeout(() => {
       reconnectT = null;
       fireAndForget(connectSeries());
@@ -238,7 +196,11 @@ export function createRealtimeTransport(
     if (pollT) return;
     setState('polling');
     const tick = () => {
-      if (shouldRun()) fireAndForget(catchUp());
+      if (shouldRun()) {
+        fireAndForget(
+          runUpdatesOnce(catchUp, timers, emit, {emitResyncOnHasMore: true}),
+        );
+      }
     };
     tick();
     pollT = timers.setInterval(tick, pollFallbackS * 1000);
@@ -263,7 +225,7 @@ export function createRealtimeTransport(
     openAt(0);
   }
 
-  function stopInternal(): void {
+  function stopInternal(clearStarted: boolean): void {
     if (reconnectT) {
       timers.clearTimeout(reconnectT);
       reconnectT = null;
@@ -279,7 +241,7 @@ export function createRealtimeTransport(
     runner.clearTimers();
     runner.close(gen);
     gen += 1;
-    setState(started ? 'disconnected' : 'idle');
+    setState(clearStarted ? 'idle' : started ? 'disconnected' : 'idle');
   }
 
   function evaluate(): void {
@@ -288,7 +250,7 @@ export function createRealtimeTransport(
         fireAndForget(connectSeries());
       }
     } else {
-      stopInternal();
+      stopInternal(false);
     }
   }
 
@@ -296,36 +258,30 @@ export function createRealtimeTransport(
     if (started) return;
     started = true;
     sessionActive = true;
+    foreground = AppState.currentState === 'active';
+    const bound = bindLifecycle({
+      setForeground: v => {
+        foreground = v;
+      },
+      setNetworkOk: v => {
+        networkOk = v;
+      },
+      onSessionEnded: () => {
+        sessionActive = false;
+        stopInternal(false);
+      },
+      evaluate,
+    });
+    unsubs.push(...bound);
     evaluate();
   }
 
   function stop(): void {
     started = false;
-    stopInternal();
+    stopInternal(true);
+    unbindLifecycle(unsubs);
     setState('idle');
-    for (const u of unsubs) u();
-    unsubs.length = 0;
   }
-
-  const appSub = AppState.addEventListener('change', (n: AppStateStatus) => {
-    foreground = n === 'active';
-    evaluate();
-  });
-  unsubs.push(() => appSub.remove());
-
-  const netUnsub = NetInfo.addEventListener((s: NetInfoState) => {
-    networkOk = s.isConnected !== false;
-    evaluate();
-  });
-  unsubs.push(netUnsub);
-
-  const sessUnsub = onSessionEvent(ev => {
-    if (ev.type === 'ended') {
-      sessionActive = false;
-      stopInternal();
-    }
-  });
-  unsubs.push(sessUnsub);
 
   return {
     start,
