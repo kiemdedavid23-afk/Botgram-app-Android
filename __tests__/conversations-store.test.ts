@@ -8,13 +8,12 @@ import {
 } from '../src/features/conversations/store/conversationsStore';
 import {stripPreview} from '../src/core/utils/stripPreview';
 import type {HttpResult} from '../src/core/api/http';
-import {
-  listConversations,
-  getConversation,
-  searchConversations,
-  type ConversationSummary,
-  type ConversationsPage,
+import type {
+  ConversationSummary,
+  ConversationsPage,
 } from '../src/core/api/endpoints/conversations';
+import * as ConversationsApi from '../src/core/api/endpoints/conversations';
+import * as CacheApi from '../src/core/storage';
 
 jest.mock('../src/core/api/endpoints/conversations', () => ({
   listConversations: jest.fn(),
@@ -23,7 +22,9 @@ jest.mock('../src/core/api/endpoints/conversations', () => ({
 }));
 
 jest.mock('../src/core/storage', () => ({
-  cacheGetString: jest.fn(() => Promise.resolve(undefined as string | undefined)),
+  cacheGetString: jest.fn(() =>
+    Promise.resolve(undefined as string | undefined),
+  ),
   cacheSetString: jest.fn(() => Promise.resolve()),
   cacheDelete: jest.fn(() => Promise.resolve()),
 }));
@@ -32,26 +33,24 @@ jest.mock('../src/core/utils/memberData', () => ({
   registerMemberDataCleaner: jest.fn(() => jest.fn()),
 }));
 
-import {
-  cacheGetString,
-  cacheSetString,
-  cacheDelete,
-} from '../src/core/storage';
-
-const mockList = listConversations as jest.MockedFunction<
-  typeof listConversations
+const mockList = ConversationsApi.listConversations as jest.MockedFunction<
+  typeof ConversationsApi.listConversations
 >;
-const mockGet = getConversation as jest.MockedFunction<typeof getConversation>;
-const mockSearch = searchConversations as jest.MockedFunction<
-  typeof searchConversations
+const mockGet = ConversationsApi.getConversation as jest.MockedFunction<
+  typeof ConversationsApi.getConversation
 >;
-const mockCacheGet = cacheGetString as jest.MockedFunction<
-  typeof cacheGetString
+const mockSearch = ConversationsApi.searchConversations as jest.MockedFunction<
+  typeof ConversationsApi.searchConversations
 >;
-const mockCacheSet = cacheSetString as jest.MockedFunction<
-  typeof cacheSetString
+const mockCacheGet = CacheApi.cacheGetString as jest.MockedFunction<
+  typeof CacheApi.cacheGetString
 >;
-const mockCacheDelete = cacheDelete as jest.MockedFunction<typeof cacheDelete>;
+const mockCacheSet = CacheApi.cacheSetString as jest.MockedFunction<
+  typeof CacheApi.cacheSetString
+>;
+const mockCacheDelete = CacheApi.cacheDelete as jest.MockedFunction<
+  typeof CacheApi.cacheDelete
+>;
 
 type SearchPage = {items: ConversationSummary[]; next_cursor: null};
 
@@ -180,7 +179,6 @@ describe('conversationsStore', () => {
     await Promise.resolve();
     await Promise.resolve();
     expect(mockGet).toHaveBeenCalledWith('c9');
-    expect(getConversation).toHaveBeenCalledWith('c9');
   });
 
   it('conversation.read remet unread à 0', () => {
