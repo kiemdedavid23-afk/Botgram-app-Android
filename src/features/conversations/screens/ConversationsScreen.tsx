@@ -225,6 +225,8 @@ export function ConversationsScreen({
   );
 }
 
+const FOOTER_SPINNER_MARGIN = 12;
+
 const styles = StyleSheet.create({
   root: {flex: 1},
   center: {flex: 1, alignItems: 'center', justifyContent: 'center'},
@@ -246,5 +248,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  footerSpinner: {margin: FOOTER_SPINNER_MARGIN},
   searching: {position: 'absolute', right: 16, bottom: 16},
 });
