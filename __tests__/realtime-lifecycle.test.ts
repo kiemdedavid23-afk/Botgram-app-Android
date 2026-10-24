@@ -44,7 +44,7 @@ jest.mock('../src/features/auth/store/authStore', () => {
   }));
   return {
     useAuthStore: store,
-    applySignedOut: (...args: unknown[]) => mockApplySignedOut(...args),
+    applySignedOut: (reason?: string | null) => mockApplySignedOut(reason),
   };
 });
 
@@ -57,19 +57,23 @@ describe('useRealtimeLifecycle', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     subscribedHandler = null;
-    useAuthStore.setState({
-      state: 'booting',
-      member: null,
-      offline: false,
-      endReason: null,
-      upgradeLatest: null,
-      email: null,
-      pendingCode: null,
+    act(() => {
+      useAuthStore.setState({
+        state: 'booting',
+        member: null,
+        offline: false,
+        endReason: null,
+        upgradeLatest: null,
+        email: null,
+        pendingCode: null,
+      });
     });
   });
 
   it('démarre le transport quand state === signedIn', () => {
-    useAuthStore.setState({state: 'signedIn'});
+    act(() => {
+      useAuthStore.setState({state: 'signedIn'});
+    });
     act(() => {
       renderer.create(React.createElement(Harness));
     });
@@ -77,7 +81,9 @@ describe('useRealtimeLifecycle', () => {
   });
 
   it('arrête le transport pour signedOut', () => {
-    useAuthStore.setState({state: 'signedIn'});
+    act(() => {
+      useAuthStore.setState({state: 'signedIn'});
+    });
     let tree: renderer.ReactTestRenderer;
     act(() => {
       tree = renderer.create(React.createElement(Harness));
@@ -91,7 +97,9 @@ describe('useRealtimeLifecycle', () => {
   });
 
   it('session.revoked appelle applySignedOut(revoked)', () => {
-    useAuthStore.setState({state: 'signedIn'});
+    act(() => {
+      useAuthStore.setState({state: 'signedIn'});
+    });
     act(() => {
       renderer.create(React.createElement(Harness));
     });
