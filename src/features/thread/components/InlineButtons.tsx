@@ -58,4 +58,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: tm.btnPadH,
     borderRadius: tm.btnRadius,
   },
+  btnEnabled: {opacity: tm.btnOpacityEnabled},
+  btnDisabled: {opacity: tm.btnOpacityDisabled},
 });
