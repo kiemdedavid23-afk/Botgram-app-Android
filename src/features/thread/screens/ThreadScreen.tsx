@@ -130,7 +130,7 @@ export function ThreadScreen({
                   {t.emptyTitle}
                 </Text>
               </View>
-            ) : null
+            ) : undefined
           }
         />
       )}
