@@ -1,7 +1,10 @@
 /**
- * Branche le transport temps réel au cycle de vie auth (Partie 0 / L5a).
- * start() si signedIn, stop() sinon.
- * session.revoked → applySignedOut('revoked') (13.5).
+ * Cycle de vie temps réel + conversations (Partie 0 / L5b).
+ * - transport start/stop selon auth
+ * - session.revoked → applySignedOut
+ * - abonnement unique aux événements → conversationsStore
+ * - bot actif suivi hors écran (botsStore)
+ * - resync bots → botsStore.load
  */
 import {useEffect, useRef} from 'react';
 import {
@@ -9,36 +12,53 @@ import {
   type RealtimeEvent,
 } from '../core/realtime';
 import {useAuthStore, applySignedOut} from '../features/auth/store/authStore';
+import {useBotsStore} from '../features/bots/store/botsStore';
+import {useConversationsStore} from '../features/conversations/store/conversationsStore';
 import {fireAndForget} from '../core/utils/fireAndForget';
 
 export function useRealtimeLifecycle(): void {
   const authState = useAuthStore(s => s.state);
-  const unsubRevokedRef = useRef<(() => void) | null>(null);
+  const bots = useBotsStore(s => s.bots);
+  const unsubRef = useRef<(() => void) | null>(null);
 
+  // Bot actif hors écran
+  useEffect(() => {
+    if (authState !== 'signedIn') return;
+    const selected = bots.find(b => b.selected) ?? bots[0] ?? null;
+    useConversationsStore.getState().setBotId(selected?.id ?? null);
+  }, [authState, bots]);
+
+  // Transport + abonnement unique
   useEffect(() => {
     const transport = getRealtimeTransport();
 
     if (authState === 'signedIn') {
       transport.start();
-      if (!unsubRevokedRef.current) {
-        unsubRevokedRef.current = transport.subscribe((ev: RealtimeEvent) => {
+      if (!unsubRef.current) {
+        unsubRef.current = transport.subscribe((ev: RealtimeEvent) => {
           if (ev.type === 'session.revoked') {
             fireAndForget(applySignedOut('revoked'));
+            return;
           }
+          if (ev.type === 'resync' && ev.scopes.includes('bots')) {
+            fireAndForget(useBotsStore.getState().load(true));
+          }
+          useConversationsStore.getState().applyRealtimeEvent(ev);
         });
       }
     } else {
-      if (unsubRevokedRef.current) {
-        unsubRevokedRef.current();
-        unsubRevokedRef.current = null;
+      if (unsubRef.current) {
+        unsubRef.current();
+        unsubRef.current = null;
       }
       transport.stop();
+      useConversationsStore.getState().setBotId(null);
     }
 
     return () => {
-      if (unsubRevokedRef.current) {
-        unsubRevokedRef.current();
-        unsubRevokedRef.current = null;
+      if (unsubRef.current) {
+        unsubRef.current();
+        unsubRef.current = null;
       }
       transport.stop();
     };
