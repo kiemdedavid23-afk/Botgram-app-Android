@@ -11,6 +11,7 @@ export const conversationsTexts = {
   emptySearch: 'Aucun résultat',
   retry: 'Réessayer',
   offlineBanner: 'Hors ligne — lecture seule',
+  loadError: 'Erreur de chargement',
   yesterday: 'Hier',
   loading: 'Chargement…',
   weekdays: [
@@ -24,9 +25,6 @@ export const conversationsTexts = {
   ] as const,
 };
 
-/**
- * Format d'heure de liste : aujourd'hui HH:mm, hier, jour, sinon date.
- */
 export function formatConversationTime(
   ts: number | undefined,
   now = Date.now(),
@@ -34,8 +32,16 @@ export function formatConversationTime(
   if (ts === undefined || ts <= 0) return '';
   const d = new Date(ts);
   const n = new Date(now);
-  const startToday = new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime();
-  const startMsg = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const startToday = new Date(
+    n.getFullYear(),
+    n.getMonth(),
+    n.getDate(),
+  ).getTime();
+  const startMsg = new Date(
+    d.getFullYear(),
+    d.getMonth(),
+    d.getDate(),
+  ).getTime();
   const dayMs = 86400000;
   if (startMsg === startToday) {
     const h = d.getHours().toString().padStart(2, '0');
