@@ -12,7 +12,7 @@ export function sortItems(list: ConversationSummary[]): ConversationSummary[] {
 export function mergeById(
   current: ConversationSummary[],
   incoming: ConversationSummary[],
-  opts?: {fromSearch?: boolean},
+  opts?: {fromSearch?: boolean; bumpToTop?: boolean},
 ): ConversationSummary[] {
   const map = new Map(current.map(c => [c.id, c]));
   for (const item of incoming) {
