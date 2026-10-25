@@ -6,5 +6,7 @@ module.exports = {
     'node_modules/(?!(react-native|@react-native|@react-navigation|react-native-.*|@react-native-community|lucide-react-native)/)',
   ],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  moduleNameMapper: {},
+  moduleNameMapper: {
+    '^react-native-blob-util$': '<rootDir>/__mocks__/react-native-blob-util.ts',
+  },
 };
