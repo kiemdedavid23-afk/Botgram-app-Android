@@ -24,6 +24,32 @@ jobs:
       - name: npm ci
         run: npm ci
 
+      - name: Faux google-services.json (compilation seulement)
+        run: |
+          cat > android/app/google-services.json <<'EOF'
+          {
+            "project_info": {
+              "project_number": "000000000000",
+              "project_id": "botgram-ci-placeholder",
+              "storage_bucket": "botgram-ci-placeholder.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+                  "android_client_info": {
+                    "package_name": "com.botgram.dsi"
+                  }
+                },
+                "api_key": [
+                  { "current_key": "AIzaSyCIPlaceholderKeyForBuildOnly000000" }
+                ]
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
+
       - name: Setup Gradle cache
         uses: actions/cache@v4
         with:
