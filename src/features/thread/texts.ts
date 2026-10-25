@@ -60,6 +60,10 @@ export const threadTexts = {
   mediaAttach: 'Joindre',
   mediaSending: 'Envoi du média…',
   cancelSend: 'Annuler',
+  mediaResendPickAgain: 'Rechoisis le fichier pour le renvoyer',
+  mediaAlbumTypes: "Un album n'accepte que des photos et des vidéos",
+  mediaFilesPending: (n: number) =>
+    n <= 1 ? `${n} fichier` : `${n} fichiers`,
   mediaSizeKb: (n: number) => `${Math.max(1, Math.round(n / 1024))} Ko`,
   mediaSizeMb: (n: number) => `${(n / (1024 * 1024)).toFixed(1)} Mo`,
   errorCodes: {
