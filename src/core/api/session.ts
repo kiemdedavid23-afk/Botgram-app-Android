@@ -3,6 +3,7 @@
  * Single-flight refresh, refresh token écrit avant access, fin de session uniquement sur les 4 codes.
  */
 import {http, type HttpRequestOptions, type HttpResult} from './http';
+import {httpBinary, type HttpBinaryResult} from './http.binary';
 export type {HttpResult} from './http';
 import {refresh as refreshEndpoint} from './endpoints/auth';
 import {getAccessToken, getRefreshToken, saveTokenPair, clearTokens} from '../storage';
@@ -148,6 +149,57 @@ export async function authedHttp<T>(
       if (refreshed.ok) {
         const newAccess = await getAccessToken();
         return http<T>({...options, accessToken: newAccess});
+      }
+      if (refreshed.end) {
+        return {
+          ok: false,
+          error: {code: 'SESSION_ENDED', message: refreshed.end},
+          requestId: first.requestId,
+          status: 401,
+          headers: first.headers,
+        };
+      }
+    }
+  }
+
+  return first;
+}
+
+
+/** Même politique que authedHttp pour les GET binaires (attachment). */
+export async function authedHttpBinary(
+  options: Omit<HttpRequestOptions, 'body'>,
+): Promise<HttpBinaryResult> {
+  const access = await getAccessToken();
+  const first = await httpBinary({...options, accessToken: access});
+
+  const update = first.headers.get('x-app-update');
+  if (update === 'none' || update === 'optional' || update === 'required') {
+    emit({type: 'update', level: update});
+  }
+
+  if (!first.ok && first.status === 426) {
+    const latest = (first.error.details as {latest?: string} | undefined)?.latest;
+    emit({type: 'upgrade_required', latest});
+    return first;
+  }
+
+  if (!first.ok && first.status === 401) {
+    const reason = (first.error.details as {reason?: string} | undefined)?.reason;
+    if (
+      reason === 'access_expired' ||
+      reason === 'revoked' ||
+      reason === 'session_expired' ||
+      reason === 'invalid'
+    ) {
+      const current = await getAccessToken();
+      if (current && current !== access) {
+        return httpBinary({...options, accessToken: current});
+      }
+      const refreshed = await singleFlightRefresh();
+      if (refreshed.ok) {
+        const newAccess = await getAccessToken();
+        return httpBinary({...options, accessToken: newAccess});
       }
       if (refreshed.end) {
         return {
