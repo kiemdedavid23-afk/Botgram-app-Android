@@ -69,6 +69,10 @@ export const threadMetrics = {
   composerFontSize: 16,
   composerSendIconSize: 20,
   composerSendDisabledOpacity: 0.5,
+  composerSendEnabledOpacity: 1,
+  /** retry bouton — sans équivalent site */
+  retryReadyOpacity: 1,
+  retryWaitingOpacity: 0.5,
   /** seuil affiche compteur caractères */
   charCountThreshold: 3800,
   maxMessageLength: 4096,
