@@ -51,6 +51,7 @@ export function ThreadScreen({
   const storeTitle = useThreadStore(s => s.title);
   const loadOlder = useThreadStore(s => s.loadOlder);
   const send = useThreadStore(s => s.send);
+  const sendMedia = useThreadStore(s => s.sendMedia);
   const retry = useThreadStore(s => s.retry);
   const resendAsNew = useThreadStore(s => s.resendAsNew);
   const resendSameId = useThreadStore(s => s.resendSameId);
@@ -152,6 +153,7 @@ export function ThreadScreen({
         disabled={offline}
         sending={sending}
         onSend={send}
+        onSendMedia={sendMedia}
       />
     </View>
   );
