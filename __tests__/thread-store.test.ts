@@ -176,4 +176,60 @@ describe('threadStore', () => {
     const key = mockCacheSet.mock.calls[0]?.[0];
     expect(key).toContain('thread.messages.c1');
   });
+
+  it('updates sans la conversation ouverte ne déclenche aucun GET', async () => {
+    mockList.mockClear();
+    useThreadStore.setState({conversationId: 'c1', items: [msg({id: 'm1'})]});
+    useThreadStore.getState().applyRealtimeEvent({
+      type: 'updates',
+      conversations: [
+        {
+          id: 'other',
+          bot_id: 'b',
+          title: 'Other',
+        },
+      ],
+      unread: {},
+      has_more: false,
+    });
+    await Promise.resolve();
+    expect(mockList).not.toHaveBeenCalled();
+  });
+
+  it('après loadOlder, un resync fusionne sans jeter les anciens', async () => {
+    mockList
+      .mockResolvedValueOnce(
+        okResult({
+          items: [msg({id: 'new', created_at: 200})],
+          next_cursor: 'cur',
+        }),
+      )
+      .mockResolvedValueOnce(
+        okResult({
+          items: [msg({id: 'old', created_at: 50})],
+          next_cursor: null,
+        }),
+      )
+      .mockResolvedValueOnce(
+        okResult({
+          items: [msg({id: 'new2', created_at: 250})],
+          next_cursor: 'cur2',
+        }),
+      );
+    useThreadStore.setState({conversationId: 'c1', items: [], nextCursor: null});
+    await useThreadStore.getState().load(true);
+    await useThreadStore.getState().loadOlder();
+    const before = useThreadStore.getState().items.map(m => m.id);
+    expect(before).toContain('old');
+    expect(before).toContain('new');
+    useThreadStore.getState().applyRealtimeEvent({
+      type: 'resync',
+      scopes: ['conversations'],
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    const after = useThreadStore.getState().items.map(m => m.id);
+    expect(after).toContain('old');
+  });
+
 });

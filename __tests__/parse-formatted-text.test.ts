@@ -30,11 +30,45 @@ describe('parseFormattedText', () => {
     const bad = ['java', 'script:alert(1)'].join('');
     expect(isSafeLink(bad)).toBe(false);
     expect(safeHref(bad)).toBeUndefined();
+    const segs = parseFormattedText(`<a href="${bad}">x</a>`, 'HTML');
+    expect(segs.every(s => !s.href)).toBe(true);
+    expect(segs.some(s => s.text.includes('x'))).toBe(true);
+  });
+
+  it('balise inconnue + fermante ne fuite pas', () => {
     const segs = parseFormattedText(
-      `<a href="${bad}">x</a>`,
+      '<tg-spoiler>secret</tg-spoiler> fin',
       'HTML',
     );
-    expect(segs.every(s => !s.href)).toBe(true);
+    const joined = segs.map(s => s.text).join('');
+    expect(joined).toContain('secret');
+    expect(joined).toContain('fin');
+    expect(joined).not.toContain('tg-spoiler');
+    expect(joined).not.toContain('/tg-spoiler');
+  });
+
+  it('entité numérique hex', () => {
+    const segs = parseFormattedText('it&#x27;s', 'HTML');
+    expect(segs.map(s => s.text).join('')).toContain("it's");
+  });
+
+  it('MarkdownV2 : échappement underscore littéral', () => {
+    const segs = parseFormattedText('foo\\_bar\\_baz', 'MarkdownV2');
+    const joined = segs.map(s => s.text).join('');
+    expect(joined).toBe('foo_bar_baz');
+    expect(segs.every(s => !s.italic)).toBe(true);
+  });
+
+  it('MarkdownV2 : \\*littéral\\* sans gras', () => {
+    const segs = parseFormattedText('\\*littéral\\*', 'MarkdownV2');
+    const joined = segs.map(s => s.text).join('');
+    expect(joined).toBe('*littéral*');
+    expect(segs.every(s => !s.bold)).toBe(true);
+  });
+
+  it('MarkdownV2 : marqueur non fermé conservé', () => {
+    const segs = parseFormattedText('*ouvert', 'MarkdownV2');
+    expect(segs.map(s => s.text).join('')).toBe('*ouvert');
   });
 
   it('malformé ne lève pas', () => {
