@@ -38,6 +38,13 @@ export const threadTexts = {
   errorNetwork: 'Réseau indisponible',
   errorGeneric: 'Envoi impossible',
   unknownResendWarn: 'Ce message peut déjà être parti. Renvoyer consomme une unité de quota.',
+  cancel: 'Annuler',
+  confirmResend: 'Renvoyer',
+  retryTooEarly: (s: number) => `Réessayez dans ${s}s`,
+  notRetryableFailed: 'Envoi définitivement échoué',
+  notRetryableUnknown: 'Envoi incertain — utilisez Renvoyer',
+  notRetryableSending: 'Envoi encore en cours',
+  notFound: 'Message introuvable',
   errorCodes: {
     blocked: 'Destinataire bloqué',
     chat_not_found: 'Conversation introuvable',
