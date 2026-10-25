@@ -53,6 +53,18 @@ export type Message = {
   retryable?: boolean;
   retry_at?: number | null;
   client_message_id?: string | null;
+  /** Album entrant regroupé (Worker v15.5). */
+  album?: AlbumItem[] | null;
+};
+
+export type AlbumItem = {
+  id: string;
+  kind: string;
+  text?: string | null;
+  telegram_message_id?: number | null;
+  attachment?: {name?: string; mime?: string; size?: number} | null;
+  created_at?: number;
+  expires_at?: number | null;
 };
 
 /** @deprecated alias — utiliser Message */

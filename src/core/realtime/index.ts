@@ -19,6 +19,7 @@ export type {
   Message,
   MessagePayload,
   InlineButton,
+  AlbumItem,
 } from './events';
 export {parseRealtimeEvent, eventId} from './events';
 export {createRealtimeTransport} from './createRealtimeTransport';
