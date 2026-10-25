@@ -83,4 +83,13 @@ export const threadMetrics = {
   retryBtnPadH: 8,
   retryBtnRadius: 8,
   retryBtnFont: 12,
+  /** .media-photo / .media-file — MessageBubble.css */
+  mediaPhotoMaxH: 240,
+  mediaPhotoRadius: 10,
+  mediaFilePad: 10,
+  mediaFileIconSize: 28,
+  mediaAlbumGap: 2,
+  mediaAlbumCellMin: 80,
+  mediaBoxMinH: 80,
+  mediaBoxGap: 8,
 } as const;
