@@ -3,26 +3,23 @@
  */
 import React from 'react';
 import renderer, {act} from 'react-test-renderer';
+import {BackHandler} from 'react-native';
 import {BotChatsStack} from '../src/features/conversations/navigation/BotChatsStack';
 
 const mockAdd = jest.fn();
 const mockRemove = jest.fn();
 
-jest.mock('react-native', () => {
-  const ReactNative = jest.requireActual('react-native') as Record<
-    string,
-    unknown
-  >;
-  return {
-    ...ReactNative,
-    BackHandler: {
-      addEventListener: (...args: unknown[]) => {
-        mockAdd(...args);
-        return {remove: mockRemove};
-      },
+jest.mock('react-native/Libraries/Utilities/BackHandler', () => ({
+  __esModule: true,
+  default: {
+    addEventListener: (...args: unknown[]) => {
+      mockAdd(...args);
+      return {remove: mockRemove};
     },
-  };
-});
+    removeEventListener: jest.fn(),
+    exitApp: jest.fn(),
+  },
+}));
 
 jest.mock('../src/features/conversations/screens/ConversationsScreen', () => {
   const R = jest.requireActual('react') as typeof import('react');
@@ -90,9 +87,14 @@ describe('BotChatsStack BackHandler', () => {
     act(() => {
       openBtn.props.onPress();
     });
-    expect(mockAdd).toHaveBeenCalled();
-    const handler = mockAdd.mock.calls.find(
-      c => c[0] === 'hardwareBackPress',
+    // Prefer mockAdd from our factory; fall back to spy if RN re-exports differently
+    const addCalls =
+      mockAdd.mock.calls.length > 0
+        ? mockAdd.mock.calls
+        : (BackHandler.addEventListener as jest.Mock).mock?.calls ?? [];
+    expect(addCalls.length).toBeGreaterThan(0);
+    const handler = addCalls.find(
+      (c: unknown[]) => c[0] === 'hardwareBackPress',
     )?.[1] as (() => boolean) | undefined;
     expect(typeof handler).toBe('function');
     let result = false;
