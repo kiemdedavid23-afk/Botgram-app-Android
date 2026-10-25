@@ -52,6 +52,7 @@ export type Message = {
   error_code?: string | null;
   retryable?: boolean;
   retry_at?: number | null;
+  client_message_id?: string | null;
 };
 
 /** @deprecated alias — utiliser Message */
