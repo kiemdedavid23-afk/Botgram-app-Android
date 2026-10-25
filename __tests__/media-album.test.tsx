@@ -2,13 +2,13 @@ import React from 'react';
 import renderer, {act} from 'react-test-renderer';
 import {MediaAlbum} from '../src/features/thread/components/MediaAlbum';
 
-jest.mock('../src/shared/theme', () => {
-  const actual = jest.requireActual(
-    '../src/shared/theme',
-  ) as typeof import('../src/shared/theme');
+jest.mock('../src/shared/theme/ThemeProvider', () => {
+  const palette = jest.requireActual(
+    '../src/shared/theme/colors',
+  ) as typeof import('../src/shared/theme/colors');
   return {
-    ...actual,
-    useTheme: () => ({colors: actual.getColors('light')}),
+    ThemeProvider: ({children}: {children: unknown}) => children,
+    useTheme: () => ({colors: palette.getColors('light')}),
   };
 });
 
