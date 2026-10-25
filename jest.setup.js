@@ -31,3 +31,10 @@ jest.mock('@react-native-community/netinfo', () => ({
 }));
 
 jest.mock('react-native-get-random-values', () => {});
+
+jest.mock('@react-native-documents/picker', () => ({
+  pick: jest.fn(() => Promise.resolve([])),
+  types: {allFiles: 'public.item', images: 'public.image'},
+  isErrorWithCode: () => false,
+  errorCodes: {OPERATION_CANCELED: 'OPERATION_CANCELED'},
+}));
