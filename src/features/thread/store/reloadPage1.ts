@@ -3,6 +3,7 @@ import type {Message} from '../../../core/realtime/events';
 import {cacheSetString} from '../../../core/storage';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {mergeMessages} from './mergeMessages';
+import {dropLocalNetworkDupes} from './retryErrors';
 import {threadMetrics} from '../../../shared/theme/threadMetrics';
 
 const cacheKey = (id: string) => `thread.messages.${id}`;
@@ -39,7 +40,7 @@ export async function reloadPage1Merge(
   if (get().conversationId !== cid || !res.ok) return;
   const page1 = res.data.items;
   set(s => {
-    const merged = mergeMessages(s.items, page1);
+    const merged = dropLocalNetworkDupes(mergeMessages(s.items, page1));
     const toCache = merged.slice(-threadMetrics.cacheLimit);
     fireAndForget(cacheSetString(cacheKey(cid), JSON.stringify(toCache)));
     const keepCursor =

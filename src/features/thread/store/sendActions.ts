@@ -12,6 +12,7 @@ import {mergeMessages} from './mergeMessages';
 import {threadTexts} from '../texts';
 import {threadMetrics as tm} from '../../../shared/theme/threadMetrics';
 import {useConversationsStore} from '../../conversations/store/conversationsStore';
+import {applyRetryFailure, dropLocalNetworkDupes} from './retryErrors';
 
 export type ThreadSlice = {
   conversationId: string | null;
@@ -63,6 +64,8 @@ export function upsertOutgoing(
   return mergeMessages(filtered, [incoming]);
 }
 
+export {dropLocalNetworkDupes};
+
 export async function doSend(
   text: string,
   existingClientId: string | undefined,
@@ -100,11 +103,10 @@ export async function doSend(
 
   const serverMsg = {
     ...res.data.message,
-    client_message_id:
-      res.data.message.client_message_id ?? clientId,
+    client_message_id: res.data.message.client_message_id ?? clientId,
   };
   ctx.set(s => ({
-    items: upsertOutgoing(s.items, serverMsg),
+    items: dropLocalNetworkDupes(upsertOutgoing(s.items, serverMsg)),
     sending: false,
     sendError: null,
   }));
@@ -145,7 +147,18 @@ export async function doRetry(
   const res = await retryMessage(messageId);
   if (ctx.get().conversationId !== conversationId) return;
   if (!res.ok) {
-    ctx.set({sendError: mapRetryError(res.error.code)});
+    applyRetryFailure(messageId, res, ctx.set);
+    return;
+  }
+  if (res.data.retried === false) {
+    ctx.set(s => ({
+      items: upsertOutgoing(s.items, {
+        ...res.data.message,
+        status: 'sent',
+        retryable: false,
+      }),
+      sendError: null,
+    }));
     return;
   }
   ctx.set(s => ({
@@ -154,14 +167,6 @@ export async function doRetry(
   }));
 }
 
-function mapRetryError(code: string): string {
-  if (code === 'RETRY_TOO_EARLY') return threadTexts.statusQueued;
-  if (code === 'MESSAGE_NOT_RETRYABLE') return threadTexts.statusFailed;
-  if (code === 'BOT_DISCONNECTED') return threadTexts.errorBotDisconnected;
-  return threadTexts.errorGeneric;
-}
-
-/** « Renvoyer » = nouvel envoi (nouveau UUID) pour failed local / unknown. */
 export async function doResendAsNew(
   message: Message,
   ctx: SetGet,
@@ -170,7 +175,6 @@ export async function doResendAsNew(
   await doSend(message.text, undefined, ctx);
 }
 
-/** « Renvoyer » réseau = même client_message_id. */
 export async function doResendSameId(
   message: Message,
   ctx: SetGet,
@@ -183,12 +187,19 @@ export async function doMarkRead(ctx: SetGet): Promise<void> {
   const {conversationId, offline, lastReadMarked} = ctx.get();
   if (!conversationId || offline || lastReadMarked) return;
 
+  const row = useConversationsStore
+    .getState()
+    .items.find(i => i.id === conversationId);
+  if (row && (row.unread_count ?? 0) === 0) {
+    ctx.set({lastReadMarked: true});
+    return;
+  }
+
   const res = await markConversationRead(conversationId);
   if (ctx.get().conversationId !== conversationId) return;
   if (!res.ok) return;
 
   ctx.set({lastReadMarked: true});
-  // Met à jour la liste conversations une seule fois
   useConversationsStore.getState().applyRealtimeEvent({
     type: 'conversation.read',
     id: `local-read-${conversationId}`,

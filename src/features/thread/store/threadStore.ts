@@ -209,7 +209,13 @@ export const useThreadStore = create<ThreadStore>((set, get) => ({
         return;
       }
       if (ev.message) {
-        set(s => ({items: mergeMessages(s.items, [ev.message!])}));
+        const msg = ev.message;
+        set(s => ({
+          items:
+            msg.direction === 'out'
+              ? upsertOutgoing(s.items, msg)
+              : mergeMessages(s.items, [msg]),
+        }));
       }
       return;
     }
