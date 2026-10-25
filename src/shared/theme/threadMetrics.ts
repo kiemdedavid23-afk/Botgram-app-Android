@@ -92,4 +92,8 @@ export const threadMetrics = {
   mediaAlbumCellMin: 80,
   mediaBoxMinH: 80,
   mediaBoxGap: 8,
+  /** sans équivalent site — auto DL photo */
+  autoDownloadMaxBytes: 2 * 1024 * 1024,
+  mediaAlbumColumns: 2,
+
 } as const;
