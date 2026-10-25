@@ -69,6 +69,6 @@ const styles = StyleSheet.create({
   time: {
     fontSize: tm.timeSize,
     alignSelf: 'flex-end',
-    marginTop: 2,
+    marginTop: tm.timeMarginT,
   },
 });

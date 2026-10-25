@@ -1,6 +1,7 @@
 import React from 'react';
 import {Text, StyleSheet, Linking} from 'react-native';
-import {useTheme} from '../../../shared/theme';
+import {useTheme, fontWeight} from '../../../shared/theme';
+import {threadMetrics as tm} from '../../../shared/theme/threadMetrics';
 import {
   parseFormattedText,
   type TextSegment,
@@ -58,9 +59,9 @@ function Segment({
 }
 
 const styles = StyleSheet.create({
-  bold: {fontWeight: '700'},
+  bold: {fontWeight: fontWeight.bold},
   italic: {fontStyle: 'italic'},
   underline: {textDecorationLine: 'underline'},
   strike: {textDecorationLine: 'line-through'},
-  code: {fontFamily: 'monospace'},
+  code: {fontFamily: tm.codeFontFamily},
 });
