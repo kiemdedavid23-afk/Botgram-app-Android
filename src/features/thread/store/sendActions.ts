@@ -187,6 +187,7 @@ export async function doResendAsNew(
   message: Message,
   ctx: SetGet,
 ): Promise<void> {
+  if (message.kind !== 'text') return;
   if (!message.text) return;
   await doSend(message.text, undefined, ctx);
 }
@@ -195,6 +196,7 @@ export async function doResendSameId(
   message: Message,
   ctx: SetGet,
 ): Promise<void> {
+  if (message.kind !== 'text') return;
   if (!message.text || !message.client_message_id) return;
   await doSend(message.text, message.client_message_id, ctx);
 }

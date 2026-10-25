@@ -23,7 +23,11 @@ import {
   doMarkRead,
   upsertOutgoing,
 } from './sendActions';
-import {doSendMedia} from './sendMediaActions';
+import {
+  doSendMedia,
+  doResendMediaAsNew,
+  clearPendingMedia,
+} from './sendMediaActions';
 import type {PickedFile} from './sendMediaActions';
 import {reloadPage1Merge} from './reloadPage1';
 
@@ -61,6 +65,7 @@ type ThreadStore = {
   resendSameId: (message: Message) => Promise<void>;
   markRead: () => Promise<void>;
   sendMedia: (files: PickedFile[], caption: string, signal?: AbortSignal) => Promise<void>;
+  resendMedia: (message: Message) => Promise<void>;
 };
 
 

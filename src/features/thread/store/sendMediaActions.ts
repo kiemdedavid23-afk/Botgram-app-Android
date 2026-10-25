@@ -1,5 +1,5 @@
 /**
- * Envoi média / album (L6c).
+ * Envoi média / album (L6c) + map des fichiers pour « Renvoyer ».
  * FormData RN : { uri, type, name } — pas de second fetch.
  */
 import {sendMedia, sendAlbum} from '../../../core/api/endpoints/messages';
@@ -25,6 +25,26 @@ export type PickedFile = {
   size: number;
 };
 
+type PendingMedia = {
+  files: PickedFile[];
+  caption: string;
+};
+
+/** Jamais persistée — vidée au clear / changement de conversation. */
+const pendingByLocalId = new Map<string, PendingMedia>();
+
+export function clearPendingMedia(): void {
+  pendingByLocalId.clear();
+}
+
+export function getPendingMedia(localId: string): PendingMedia | undefined {
+  return pendingByLocalId.get(localId);
+}
+
+export function hasPendingMedia(localId: string): boolean {
+  return pendingByLocalId.has(localId);
+}
+
 type Slice = {
   conversationId: string | null;
   items: Message[];
@@ -45,6 +65,7 @@ export type ValidateMediaError =
   | 'body_too_large'
   | 'caption_too_long'
   | 'album_count'
+  | 'album_types'
   | 'offline';
 
 export function validateMediaSend(
@@ -63,7 +84,7 @@ export function validateMediaSend(
   }
   let total = 0;
   for (const f of files) {
-    if (!isAlbumEligibleMime(f.mime)) return 'album_count';
+    if (!isAlbumEligibleMime(f.mime)) return 'album_types';
     if (f.size > MEDIA_MAX_FILE_BYTES) return 'file_too_large';
     total += f.size;
   }
@@ -81,6 +102,8 @@ export function validateErrorText(code: ValidateMediaError): string {
       return threadTexts.mediaCaptionTooLong;
     case 'album_count':
       return threadTexts.mediaAlbumCount;
+    case 'album_types':
+      return threadTexts.mediaAlbumTypes;
     case 'offline':
       return threadTexts.errorNetwork;
   }
@@ -112,7 +135,6 @@ function optimisticMedia(
   };
 }
 
-/** Append fichier local au FormData (API RN, sans fetch). */
 function appendLocalFile(
   form: FormData,
   field: string,
@@ -140,6 +162,9 @@ export async function doSendMedia(
   }
 
   const clientId = uuidV4();
+  const localId = `local:${clientId}`;
+  pendingByLocalId.set(localId, {files, caption});
+
   const optimistic = optimisticMedia(
     conversationId,
     files,
@@ -174,6 +199,16 @@ export async function doSendMedia(
 
   if (ctx.get().conversationId !== conversationId) return;
 
+  if (signal?.aborted) {
+    pendingByLocalId.delete(localId);
+    ctx.set(s => ({
+      items: s.items.filter(m => m.id !== localId),
+      sending: false,
+      sendError: null,
+    }));
+    return;
+  }
+
   if (!res.ok) {
     const failed: Message = {
       ...optimistic,
@@ -181,6 +216,7 @@ export async function doSendMedia(
       error_code: res.status === 0 ? 'local_network' : res.error.code,
       retryable: false,
     };
+    // conserve pending pour « Renvoyer »
     ctx.set(s => ({
       items: upsertOutgoing(s.items, failed),
       sending: false,
@@ -189,6 +225,7 @@ export async function doSendMedia(
     return;
   }
 
+  pendingByLocalId.delete(localId);
   const serverMsg = {
     ...res.data.message,
     client_message_id:
@@ -199,6 +236,7 @@ export async function doSendMedia(
     sending: false,
     sendError: null,
   }));
+
 }
 
 function mapMediaSendError(code: string, status: number): string {
@@ -209,15 +247,17 @@ function mapMediaSendError(code: string, status: number): string {
   return threadTexts.errorGeneric;
 }
 
-/** Renvoyer média failed = nouvel envoi (nouveau client_message_id). */
+/** Renvoyer média failed = nouvel envoi (nouveaux fichiers en mémoire). */
 export async function doResendMediaAsNew(
   localMessage: Message,
-  files: PickedFile[],
   ctx: Ctx,
 ): Promise<void> {
-  // Retire l'ancienne bulle locale
+  const pending = pendingByLocalId.get(localMessage.id);
+  if (!pending) return;
+  pendingByLocalId.delete(localMessage.id);
   ctx.set(s => ({
     items: s.items.filter(m => m.id !== localMessage.id),
+    sendError: null,
   }));
-  await doSendMedia(files, localMessage.text ?? '', ctx);
+  await doSendMedia(pending.files, pending.caption, ctx);
 }
