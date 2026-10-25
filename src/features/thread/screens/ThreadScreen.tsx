@@ -141,12 +141,10 @@ export function ThreadScreen({
       )}
       {sendError ? (
         <Text
-          style={{
-            color: colors.danger,
-            textAlign: 'center',
-            padding: tm.composerPad,
-            fontSize: tm.retryBtnFont,
-          }}>
+          style={[
+            styles.sendError,
+            {color: colors.danger, fontSize: tm.retryBtnFont},
+          ]}>
           {sendError}
         </Text>
       ) : null}
@@ -185,4 +183,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: tm.listPadH,
   },
   older: {marginVertical: tm.olderSpinnerMargin},
+  sendError: {
+    textAlign: 'center',
+    padding: tm.composerPad,
+  },
 });
