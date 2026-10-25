@@ -1,4 +1,4 @@
-/** Textes UI français — fil de messages (L5c). */
+/** Textes UI français — fil de messages (L5c + L5d). */
 export const threadTexts = {
   offlineBanner: 'Hors ligne — lecture seule',
   emptyTitle: 'Aucun message',
@@ -19,6 +19,40 @@ export const threadTexts = {
     'Vendredi',
     'Samedi',
   ] as const,
+  // L5d
+  composerPlaceholder: 'Message',
+  send: 'Envoyer',
+  statusSending: 'Envoi…',
+  statusSent: 'Envoyé',
+  statusQueued: 'En attente — réessayez',
+  statusFailed: 'Échec',
+  statusUnknown: 'Envoi incertain',
+  statusLocalFailed: 'Non envoyé',
+  retry: 'Réessayer',
+  resend: 'Renvoyer',
+  retryIn: (s: number) => `Réessayer dans ${s}s`,
+  errorQuota: 'Quota journalier atteint',
+  errorRateLimited: 'Trop de requêtes — réessayez plus tard',
+  errorBotDisconnected: 'Bot déconnecté',
+  errorValidation: 'Message invalide',
+  errorNetwork: 'Réseau indisponible',
+  errorGeneric: 'Envoi impossible',
+  unknownResendWarn: 'Ce message peut déjà être parti. Renvoyer consomme une unité de quota.',
+  errorCodes: {
+    blocked: 'Destinataire bloqué',
+    chat_not_found: 'Conversation introuvable',
+    bad_request: 'Requête refusée',
+    forbidden: 'Interdit',
+    token_invalid: 'Jeton bot invalide',
+    rate_limited: 'Limite Telegram',
+    telegram_unavailable: 'Telegram indisponible',
+    bot_disconnected: 'Bot déconnecté',
+    parse_error: 'Erreur de mise en forme',
+    buttons_rejected: 'Boutons refusés',
+    not_forwardable: 'Non transférable',
+    message_not_found: 'Message introuvable',
+    internal_error: 'Erreur interne',
+  } as Record<string, string>,
 };
 
 export function formatMessageTime(ts: number | undefined): string {
@@ -57,5 +91,30 @@ export function kindLabel(kind: string): string {
       return threadTexts.kindCallback;
     default:
       return threadTexts.kindOther;
+  }
+}
+
+export function statusLabel(
+  status: string | undefined,
+  errorCode?: string | null,
+): string {
+  switch (status) {
+    case 'sending':
+      return threadTexts.statusSending;
+    case 'sent':
+      return threadTexts.statusSent;
+    case 'queued':
+      return threadTexts.statusQueued;
+    case 'failed':
+      if (errorCode && threadTexts.errorCodes[errorCode]) {
+        return threadTexts.errorCodes[errorCode]!;
+      }
+      return errorCode === 'local_network'
+        ? threadTexts.statusLocalFailed
+        : threadTexts.statusFailed;
+    case 'unknown':
+      return threadTexts.statusUnknown;
+    default:
+      return '';
   }
 }
