@@ -6,10 +6,16 @@ import type {Message} from '../../../core/realtime/events';
 import {FormattedText} from './FormattedText';
 import {InlineButtons} from './InlineButtons';
 import {formatMessageTime, kindLabel} from '../texts';
+import {MessageStatus} from './MessageStatus';
 
-type Props = {message: Message};
+type Props = {
+  message: Message;
+  onRetry?: (id: string) => Promise<void>;
+  onResendSame?: (m: Message) => Promise<void>;
+  onResendNew?: (m: Message) => Promise<void>;
+};
 
-export function MessageBubble({message}: Props): React.JSX.Element {
+export function MessageBubble({message, onRetry, onResendSame, onResendNew}: Props): React.JSX.Element {
   const {colors} = useTheme();
   const {width} = useWindowDimensions();
   const isOut = message.direction === 'out';
@@ -52,6 +58,14 @@ export function MessageBubble({message}: Props): React.JSX.Element {
         <Text style={[styles.time, {color: colors.textHint}]}>
           {formatMessageTime(ts)}
         </Text>
+        {isOut && onRetry && onResendSame && onResendNew ? (
+          <MessageStatus
+            message={message}
+            onRetry={onRetry}
+            onResendSame={onResendSame}
+            onResendNew={onResendNew}
+          />
+        ) : null}
       </View>
     </View>
   );
