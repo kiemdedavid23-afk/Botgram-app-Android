@@ -2,7 +2,7 @@
  * Statut message sortant + Réessayer / Renvoyer (L5d).
  */
 import React, {useEffect, useState} from 'react';
-import {View, Text, Pressable, StyleSheet} from 'react-native';
+import {View, Text, Pressable, StyleSheet, Alert} from 'react-native';
 import {
   Clock,
   Check,
@@ -53,6 +53,22 @@ function useRetryWait(message: Message): number {
   return Math.ceil((message.retry_at - now) / 1000);
 }
 
+
+function confirmUnknownResend(
+  message: Message,
+  onResendNew: (m: Message) => Promise<void>,
+): void {
+  Alert.alert(t.resend, t.unknownResendWarn, [
+    {text: t.cancel, style: 'cancel'},
+    {
+      text: t.confirmResend,
+      onPress: () => {
+        fireAndForget(onResendNew(message));
+      },
+    },
+  ]);
+}
+
 function StatusActions({
   message,
   onRetry,
@@ -86,11 +102,19 @@ function StatusActions({
           <Text style={labelStyle}>{t.resend}</Text>
         </Pressable>
       ) : null}
-      {(message.status === 'failed' &&
-        message.error_code !== 'local_network') ||
-      message.status === 'unknown' ? (
+      {message.status === 'failed' &&
+      message.error_code !== 'local_network' ? (
         <Pressable
           onPress={() => fireAndForget(onResendNew(message))}
+          style={btnStyle}>
+          <Text style={labelStyle}>{t.resend}</Text>
+        </Pressable>
+      ) : null}
+      {message.status === 'unknown' ? (
+        <Pressable
+          onPress={() => {
+            confirmUnknownResend(message, onResendNew);
+          }}
           style={btnStyle}>
           <Text style={labelStyle}>{t.resend}</Text>
         </Pressable>
