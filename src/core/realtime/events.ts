@@ -26,12 +26,19 @@ export type ConversationSummary = {
   last_message_text?: string | null;
 };
 
-export type {
+import type {
   InlineButton,
   Message,
   MessagePayload,
   AlbumItem,
 } from './messageTypes';
+
+export type {
+  InlineButton,
+  Message,
+  MessagePayload,
+  AlbumItem,
+};
 
 export type HelloEvent = {
   type: 'hello';
