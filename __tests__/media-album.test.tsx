@@ -2,10 +2,22 @@ import React from 'react';
 import renderer, {act} from 'react-test-renderer';
 import {MediaAlbum} from '../src/features/thread/components/MediaAlbum';
 
+jest.mock('../src/shared/theme', () => {
+  const actual = jest.requireActual(
+    '../src/shared/theme',
+  ) as typeof import('../src/shared/theme');
+  return {
+    ...actual,
+    useTheme: () => ({colors: actual.getColors('light')}),
+  };
+});
+
 jest.mock('../src/features/thread/components/MediaPhoto', () => ({
   MediaPhoto: ({messageId}: {messageId: string}) => {
     const R = jest.requireActual('react') as typeof import('react');
-    const RN = jest.requireActual('react-native') as typeof import('react-native');
+    const RN = jest.requireActual(
+      'react-native',
+    ) as typeof import('react-native');
     return R.createElement(RN.Text, {testID: `photo-${messageId}`}, messageId);
   },
 }));
@@ -13,7 +25,9 @@ jest.mock('../src/features/thread/components/MediaPhoto', () => ({
 jest.mock('../src/features/thread/components/MediaFile', () => ({
   MediaFile: ({messageId}: {messageId: string}) => {
     const R = jest.requireActual('react') as typeof import('react');
-    const RN = jest.requireActual('react-native') as typeof import('react-native');
+    const RN = jest.requireActual(
+      'react-native',
+    ) as typeof import('react-native');
     return R.createElement(RN.Text, {testID: `file-${messageId}`}, messageId);
   },
 }));
