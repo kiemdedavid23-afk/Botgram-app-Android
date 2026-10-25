@@ -1,5 +1,6 @@
-/** Mock fs-only — jamais de réseau. */
+/** Mock fs-only + actionViewIntent — jamais de réseau. */
 const store = new Map<string, string>();
+const dirsCreated = new Set<string>();
 
 const fs = {
   dirs: {
@@ -7,10 +8,13 @@ const fs = {
     CacheDir: '/mock/cache',
   },
   exists: jest.fn(async (path: string) => {
-    if (path.endsWith('botgram-media')) return true;
+    if (dirsCreated.has(path)) return true;
+    if (path.endsWith('botgram-media')) return dirsCreated.has(path);
     return store.has(path);
   }),
-  mkdir: jest.fn(async () => undefined),
+  mkdir: jest.fn(async (path: string) => {
+    dirsCreated.add(path);
+  }),
   writeFile: jest.fn(async (path: string, data: string) => {
     store.set(path, data);
   }),
@@ -21,6 +25,7 @@ const fs = {
   }),
   unlink: jest.fn(async (path: string) => {
     store.delete(path);
+    dirsCreated.delete(path);
   }),
   stat: jest.fn(async (path: string) => ({
     size: (store.get(path) ?? '').length,
@@ -33,10 +38,16 @@ const fs = {
   }),
 };
 
-const ReactNativeBlobUtil = {fs};
+const ReactNativeBlobUtil = {
+  fs,
+  android: {
+    actionViewIntent: jest.fn(async () => undefined),
+  },
+};
 
 export default ReactNativeBlobUtil;
 
 export function __resetMediaMockStore(): void {
   store.clear();
+  dirsCreated.clear();
 }
