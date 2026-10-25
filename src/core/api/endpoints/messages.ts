@@ -1,8 +1,9 @@
 /**
- * Messages (API.md) — list / send / retry / read.
+ * Messages (API.md) — list / send / retry / read / attachment.
  * Type Message unique (core/realtime/events).
  */
 import {authedHttp, type HttpResult} from '../session';
+import {httpBinary, type HttpBinaryResult} from '../http';
 import type {Message} from '../../realtime/events';
 
 export type {Message};
@@ -26,7 +27,6 @@ export async function listMessages(
   });
 }
 
-/** POST /conversations/:id/messages — texte brut uniquement (L5d). */
 export async function sendMessage(
   conversationId: string,
   body: {text: string; client_message_id: string},
@@ -41,7 +41,6 @@ export async function sendMessage(
   });
 }
 
-/** POST /messages/:id/retry — sans corps. */
 export async function retryMessage(
   messageId: string,
 ): Promise<HttpResult<{message: Message; retried: boolean}>> {
@@ -51,12 +50,29 @@ export async function retryMessage(
   });
 }
 
-/** POST /conversations/:id/read */
 export async function markConversationRead(
   conversationId: string,
 ): Promise<HttpResult<{unread_count: number}>> {
   return authedHttp<{unread_count: number}>({
     method: 'POST',
     path: `/conversations/${conversationId}/read`,
+  });
+}
+
+/**
+ * GET /messages/:id/attachment — binaire via httpBinary (R1).
+ * accessToken fourni par l'appelant (session) ; jamais dans l'URL.
+ */
+export async function fetchAttachment(
+  messageId: string,
+  accessToken: string | null,
+  signal?: AbortSignal,
+): Promise<HttpBinaryResult> {
+  return httpBinary({
+    method: 'GET',
+    path: `/messages/${messageId}/attachment`,
+    accessToken,
+    signal,
+    timeoutMs: 120_000,
   });
 }
