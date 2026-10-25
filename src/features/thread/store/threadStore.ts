@@ -23,6 +23,8 @@ import {
   doMarkRead,
   upsertOutgoing,
 } from './sendActions';
+import {doSendMedia} from './sendMediaActions';
+import type {PickedFile} from './sendMediaActions';
 import {reloadPage1Merge} from './reloadPage1';
 
 const CACHE_PREFIX = 'thread.messages.';
@@ -58,6 +60,7 @@ type ThreadStore = {
   resendAsNew: (message: Message) => Promise<void>;
   resendSameId: (message: Message) => Promise<void>;
   markRead: () => Promise<void>;
+  sendMedia: (files: PickedFile[], caption: string, signal?: AbortSignal) => Promise<void>;
 };
 
 
@@ -250,6 +253,10 @@ export const useThreadStore = create<ThreadStore>((set, get) => ({
 
   async markRead() {
     await doMarkRead({get, set});
+  },
+
+  async sendMedia(files, caption, signal) {
+    await doSendMedia(files, caption, {get, set}, signal);
   },
 
   clear() {
