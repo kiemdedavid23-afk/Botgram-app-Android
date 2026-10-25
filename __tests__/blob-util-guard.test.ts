@@ -1,5 +1,5 @@
 /**
- * Garde R1 / usage restreint react-native-blob-util + un seul fetch.
+ * Garde R1 / usage restreint react-native-blob-util + un seul fetch global.
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -11,6 +11,10 @@ const ALLOWED_BLOB = path.normalize(
 const ALLOWED_FETCH = path.normalize(
   path.join(ROOT, 'core', 'api', 'http.ts'),
 );
+
+/** Formes de fetch global interdites hors http.ts. */
+const FORBIDDEN_FETCH =
+  /(?:(?<![.\w])fetch\s*\(|globalThis\.fetch\s*\(|global\.fetch\s*\(|window\.fetch\s*\()/g;
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of fs.readdirSync(dir)) {
@@ -51,13 +55,11 @@ describe('react-native-blob-util usage guard', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('un seul fetch( hors NetInfo dans src/', () => {
+  it('un seul fetch global hors NetInfo dans src/', () => {
     const hits: string[] = [];
     for (const file of files) {
       const text = fs.readFileSync(file, 'utf8');
-      if (file.includes('NetInfo') || file.includes('netinfo')) continue;
-      // NetInfo.fetch() et méthodes .fetch ne sont pas le fetch global (R1)
-      const matches = text.match(/(?<![.\w])fetch\s*\(/g);
+      const matches = text.match(FORBIDDEN_FETCH);
       if (!matches) continue;
       if (path.normalize(file) !== ALLOWED_FETCH) {
         hits.push(
@@ -68,5 +70,20 @@ describe('react-native-blob-util usage guard', () => {
       }
     }
     expect(hits).toEqual([]);
+  });
+
+  it('détecte globalThis.fetch, global.fetch, window.fetch', () => {
+    const samples = [
+      'globalThis.fetch(url)',
+      'global.fetch(url)',
+      'window.fetch(url)',
+      'fetch(url)',
+    ];
+    for (const s of samples) {
+      expect(s.match(FORBIDDEN_FETCH)).not.toBeNull();
+    }
+    // NetInfo reste autorisé
+    expect('NetInfo.fetch()'.match(FORBIDDEN_FETCH)).toBeNull();
+    expect('net.fetch()'.match(FORBIDDEN_FETCH)).toBeNull();
   });
 });
