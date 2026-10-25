@@ -52,7 +52,18 @@ export async function httpBinary(
       headers: response.headers,
     };
   }
-  const buf = await response.arrayBuffer();
+  let buf: ArrayBuffer;
+  try {
+    buf = await response.arrayBuffer();
+  } catch {
+    return {
+      ok: false,
+      error: {code: 'network_error', message: 'Erreur réseau'},
+      requestId,
+      status: 0,
+      headers: response.headers,
+    };
+  }
   if (buf.byteLength > ATTACHMENT_MAX_BYTES) {
     return {
       ok: false,

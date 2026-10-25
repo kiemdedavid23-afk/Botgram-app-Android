@@ -167,7 +167,18 @@ export async function http<T>(
   const raw = await executeFetch(options);
   if (!raw.ok) return raw;
   const {response, requestId} = raw;
-  const text = await response.text();
+  let text: string;
+  try {
+    text = await response.text();
+  } catch {
+    return {
+      ok: false,
+      error: {code: 'network_error', message: 'Erreur réseau'},
+      requestId,
+      status: 0,
+      headers: response.headers,
+    };
+  }
   const isEmpty =
     text.length === 0 || response.headers.get('content-length') === '0';
 
