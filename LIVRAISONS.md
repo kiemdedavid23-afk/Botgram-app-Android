@@ -1,39 +1,42 @@
-# LIVRAISONS — Botgram App
+# LIVRAISONS — Botgram App (cumulatif)
 
-## L5d — Envoi, statuts, Réessayer, marquer lu
+## Dépendance blob-util
+- `react-native-blob-util@0.25.1` exact ; fs + `android.actionViewIntent` uniquement dans `mediaFiles.ts`
+- Impact android/ : FileProvider fusionné par autolinking ; aucune permission storage ajoutée
 
-### Créés
-| Chemin | Rôle |
-|--------|------|
-| `src/core/utils/uuid.ts` | UUID v4 |
-| `src/features/thread/store/sendActions.ts` | send / retry / resend / markRead |
-| `src/features/thread/store/reloadPage1.ts` | fusion page 1 |
-| `src/features/thread/components/ComposerBar.tsx` | barre de saisie |
-| `src/features/thread/components/MessageStatus.tsx` | statuts + actions |
-| `__tests__/thread-send.test.ts` | tests L5d |
+## Correction session / R9 / L6b partiel
+1. `authedHttpBinary` — même refresh 401 / 426 / fin de session que `authedHttp`
+2. `http.ts` ≤ 300 + `executeFetch` unique ; `http.binary.ts` sans second `fetch`
+3. `openMediaFile` via `actionViewIntent`
+4. Album : tous les éléments (grille, métrique colonnes)
+5. Auto-DL photo ≤ 2 Mo ; inflight partagé ; AbortSignal au démontage
+6. `registerMediaStorageCleaner` retourne la promesse ; `clearAll` supprime le dossier
 
-### Modifiés
-| Chemin | Raison |
-|--------|--------|
-| `src/core/api/endpoints/messages.ts` | sendMessage, retryMessage, markConversationRead |
-| `src/core/realtime/events.ts` | client_message_id |
-| `src/features/thread/store/threadStore.ts` | wire L5d |
-| `src/features/thread/screens/ThreadScreen.tsx` | composer + handlers |
-| `src/features/thread/components/MessageBubble.tsx` | MessageStatus |
-| `src/features/thread/texts.ts` | libellés L5d |
-| `src/shared/theme/threadMetrics.ts` | composer / retry |
-
-### Métriques composer (valeur → clé → source)
-| valeur | clé | source |
-|--------|-----|--------|
-| 8 | composerPad / composerGap | ConversationPage.css .composer |
-| 40 | composerInputMinH / sendSize | .composer__input / send |
-| 20 | composerInputRadius | border-radius |
-| 3800 | charCountThreshold | UX compteur |
-| 4096 | maxMessageLength | API |
-
-### Non fait
-parse_mode, buttons, reply, médias, file hors ligne, PATCH/DELETE message.
+### Écarts
+- Pas de chiffrement disque médias (étape 6 / 13.11)
+- Pas de L6c/L6d
 
 ### Preuves CI
-*(Coller sorties typecheck / lint / jest.)*
+*(Coller typecheck / lint / jest.)*
+
+
+## Correction CI (journal)
+
+### 3 faux positifs `fetch` (guard R1)
+Avant : le test matchait `\bfetch\(` → capturait aussi `NetInfo.fetch()`.
+
+| Fichier | Ligne | Contenu réel |
+|---------|-------|--------------|
+| `src/features/auth/store/authStore.ts` | ~80 | `NetInfo.fetch()` |
+| `src/features/thread/components/MediaFile.tsx` | ~43 | `NetInfo.fetch()` |
+| `src/features/thread/components/MediaPhoto.tsx` | ~77 | `NetInfo.fetch()` |
+
+Après : regex `(?<![.\w])fetch\s*\(` — seul le `fetch(` global de `http.ts` compte. **Aucun** appel HTTP hors `http.ts`.
+
+### Autres
+1. MediaPhoto : `bootstrap` / `runDownload` en `useCallback`, deps complètes
+2. `http.ts` / `http.binary.ts` : try/catch autour de `text()` / `arrayBuffer()` → `network_error`
+3. media-album : `await act(async () => create(...))`
+
+### Preuves CI
+*(Coller typecheck / lint / jest.)*
