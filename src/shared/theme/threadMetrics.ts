@@ -18,14 +18,16 @@ export const threadMetrics = {
   bubbleRadius: 14,
   /** .message__time */
   timeSize: 11,
+  /** .message__time margin-top */
+  timeMarginT: 2,
   /** .conversation-header */
   headerHeight: 56,
   headerGap: 6,
   headerPadL: 2,
   headerPadR: 6,
-  avatarSize: 40,
   headerInfoGap: 10,
   headerHitSlop: 8,
+  avatarSize: 40,
   titleSize: 16,
   daySepPadV: 8,
   daySepFont: 12,
@@ -36,12 +38,23 @@ export const threadMetrics = {
   btnGap: 4,
   btnFont: 13,
   btnMarginT: 4,
-  /** bouton callback_data grisé — MessageBubble.css disabled feel */
+  /** bouton callback_data grisé */
   btnOpacityEnabled: 1,
   btnOpacityDisabled: 0.55,
   /** non-texte libellé */
   kindLabelSize: 13,
   offlinePad: 8,
+  /** cache local max messages (M4) */
   cacheLimit: 50,
+  /** taille de page GET /messages */
+  pageSize: 50,
   olderSpinnerMargin: 8,
+  /** code — MessageBubble.css .message__code */
+  codeFontFamily: 'monospace',
+  /**
+   * FlatList inverted — maintainVisibleContentPosition
+   * (évite le saut quand le membre a remonté)
+   */
+  mvcMinIndex: 0,
+  mvcAutoscrollThreshold: 10,
 } as const;
