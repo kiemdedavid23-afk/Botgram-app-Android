@@ -51,6 +51,8 @@ export const threadTexts = {
   mediaTooLarge: 'Fichier trop volumineux (max. 20 Mo)',
   mediaOffline: 'Média indisponible hors ligne',
   mediaOpenDoc: 'Ouvrir',
+  mediaDownload: (label: string) => `Télécharger (${label})`,
+  mediaNoHandler: 'Aucune application pour ouvrir ce fichier',
   mediaSizeKb: (n: number) => `${Math.max(1, Math.round(n / 1024))} Ko`,
   mediaSizeMb: (n: number) => `${(n / (1024 * 1024)).toFixed(1)} Mo`,
   errorCodes: {
