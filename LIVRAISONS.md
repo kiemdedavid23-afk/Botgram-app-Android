@@ -1,59 +1,39 @@
 # LIVRAISONS — Botgram App
 
-## Partie 0 + L5a + L5b (audit réserves 2026-10-24)
+## L5d — Envoi, statuts, Réessayer, marquer lu
 
-### Partie 0
-| Fichier | Rôle |
-|---------|------|
-| `src/app/useRealtimeLifecycle.ts` | start/stop transport ; session.revoked ; **abonnement unique** events → store ; bot actif ; resync bots |
-| `src/app/App.tsx` | monte le hook |
-| `__tests__/realtime-lifecycle.test.ts` | start/stop / revoked |
+### Créés
+| Chemin | Rôle |
+|--------|------|
+| `src/core/utils/uuid.ts` | UUID v4 |
+| `src/features/thread/store/sendActions.ts` | send / retry / resend / markRead |
+| `src/features/thread/store/reloadPage1.ts` | fusion page 1 |
+| `src/features/thread/components/ComposerBar.tsx` | barre de saisie |
+| `src/features/thread/components/MessageStatus.tsx` | statuts + actions |
+| `__tests__/thread-send.test.ts` | tests L5d |
 
-### L5a (rappel)
-`src/core/realtime/*`, `src/core/api/endpoints/realtime.ts`, tests transport.
+### Modifiés
+| Chemin | Raison |
+|--------|--------|
+| `src/core/api/endpoints/messages.ts` | sendMessage, retryMessage, markConversationRead |
+| `src/core/realtime/events.ts` | client_message_id |
+| `src/features/thread/store/threadStore.ts` | wire L5d |
+| `src/features/thread/screens/ThreadScreen.tsx` | composer + handlers |
+| `src/features/thread/components/MessageBubble.tsx` | MessageStatus |
+| `src/features/thread/texts.ts` | libellés L5d |
+| `src/shared/theme/threadMetrics.ts` | composer / retry |
 
-### L5b
-| Fichier | Rôle |
-|---------|------|
-| `src/core/api/endpoints/conversations.ts` | list / get / search |
-| `src/core/utils/stripPreview.ts` | aperçu sans balises |
-| `src/features/conversations/store/*` | store, merge, filters, applyEvent |
-| `src/features/conversations/screens/ConversationsScreen.tsx` | écran découpé |
-| `src/features/conversations/components/*` | Row, FoldersBar, Body |
-| `src/features/conversations/hooks/useConversationSearch.ts` | debounce 300 ms |
-| `src/shared/theme/conversationsMetrics.ts` | métriques + sources CSS |
-| `src/shared/components/Avatar.tsx`, `SearchBar.tsx` | partagés |
-| `src/app/dev/ShellSwitcher.tsx` | onglet chats + badge |
-
-### Réserves corrigées
-1. Abonnement temps réel **niveau app** (useRealtimeLifecycle) ; setBotId hors écran ; message.new hors écran → unreadTotal.
-2. resync `bots` → `botsStore.load(true)` via le même abonnement (R3).
-3. Courses : après chaque await, contrôle `botId` / `searchQuery`.
-4. Cache : toutes les clés `conversations.page1.*` effacées au clear (13.5).
-5. Valeurs dures → conversationsMetrics / texts.loadError.
-6. R9 : écran découpé ; store ≤ 300 lignes.
-7. bumpToTop retiré ; pas de fichier parasite `&`.
-8. offline seulement si status === 0 ; removed décompte unreadTotal.
-
-### Nouvelles métriques (valeur → clé → source)
+### Métriques composer (valeur → clé → source)
 | valeur | clé | source |
 |--------|-----|--------|
-| 6 | folderTabGap | ConversationsPage.css .folder-tab gap |
-| 5 | folderCountPadH | .folder-tab__count padding |
-| 6 | badgePadH | .chat-item__badge |
-| 16 | searchingOffset | position indicateur |
-| 14 | pinIconSize | icône épingle liste |
-| 8 | rowGap / searchRowGap | gaps ligne / SearchBar |
-| 4 | titleRowGap | gap titre |
-| 12 | footerSpinnerMargin | pied de liste |
+| 8 | composerPad / composerGap | ConversationPage.css .composer |
+| 40 | composerInputMinH / sendSize | .composer__input / send |
+| 20 | composerInputRadius | border-radius |
+| 3800 | charCountThreshold | UX compteur |
+| 4096 | maxMessageLength | API |
 
 ### Non fait
-L5c (fil), archives, FAB, swipe, POST read, BotShell hors __DEV__.
+parse_mode, buttons, reply, médias, file hors ligne, PATCH/DELETE message.
 
-### Preuves CI (à coller)
-
-```
-npm run typecheck
-npm run lint
-npm test -- --ci --coverage=false
-```
+### Preuves CI
+*(Coller sorties typecheck / lint / jest.)*
