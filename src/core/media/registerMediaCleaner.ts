@@ -1,7 +1,5 @@
-
 import {registerMemberDataCleaner} from '../utils/memberData';
 import {getMediaStorage} from './MediaStorage';
-import {fireAndForget} from '../utils/fireAndForget';
 
 let done = false;
 
@@ -9,7 +7,5 @@ let done = false;
 export function registerMediaStorageCleaner(): void {
   if (done) return;
   done = true;
-  registerMemberDataCleaner(() => {
-    fireAndForget(getMediaStorage().clearAll());
-  });
+  registerMemberDataCleaner(() => getMediaStorage().clearAll());
 }
