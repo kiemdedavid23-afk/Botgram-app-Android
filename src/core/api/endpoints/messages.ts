@@ -1,9 +1,9 @@
 /**
  * Messages (API.md) — list / send / retry / read / attachment.
- * Type Message unique (core/realtime/events).
  */
 import {authedHttp, type HttpResult} from '../session';
-import {httpBinary, type HttpBinaryResult} from '../http';
+import {authedHttpBinary} from '../session';
+import type {HttpBinaryResult} from '../http.binary';
 import type {Message} from '../../realtime/events';
 
 export type {Message};
@@ -59,19 +59,14 @@ export async function markConversationRead(
   });
 }
 
-/**
- * GET /messages/:id/attachment — binaire via httpBinary (R1).
- * accessToken fourni par l'appelant (session) ; jamais dans l'URL.
- */
+/** GET /messages/:id/attachment — via authedHttpBinary (refresh 401). */
 export async function fetchAttachment(
   messageId: string,
-  accessToken: string | null,
   signal?: AbortSignal,
 ): Promise<HttpBinaryResult> {
-  return httpBinary({
+  return authedHttpBinary({
     method: 'GET',
     path: `/messages/${messageId}/attachment`,
-    accessToken,
     signal,
     timeoutMs: 120_000,
   });
