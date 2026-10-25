@@ -1,6 +1,15 @@
 import type {Message} from '../../../core/realtime/events';
 import {threadTexts} from '../texts';
 
+/** details unknown → objet plain ou undefined (pas de cast). */
+export function asDetails(
+  d: unknown,
+): Record<string, unknown> | undefined {
+  if (d === null || d === undefined) return undefined;
+  if (typeof d !== 'object' || Array.isArray(d)) return undefined;
+  return d as Record<string, unknown>;
+}
+
 export type RetryFailRes = {
   ok: false;
   status: number;
@@ -103,8 +112,12 @@ export function dropLocalNetworkDupes(
       return true;
     }
     const localTs = m.created_at ?? 0;
+    // Ignore les sortants trop anciens par rapport à now
     return !serverOut.some(s => {
       const sTs = s.created_at ?? s.sent_at ?? 0;
+      if (now - sTs > LOCAL_DEDUP_MS && now - localTs > LOCAL_DEDUP_MS) {
+        return false;
+      }
       return (
         (s.text ?? '') === (m.text ?? '') &&
         Math.abs(sTs - localTs) <= LOCAL_DEDUP_MS

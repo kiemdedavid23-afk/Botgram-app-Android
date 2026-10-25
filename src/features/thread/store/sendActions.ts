@@ -12,7 +12,11 @@ import {mergeMessages} from './mergeMessages';
 import {threadTexts} from '../texts';
 import {threadMetrics as tm} from '../../../shared/theme/threadMetrics';
 import {useConversationsStore} from '../../conversations/store/conversationsStore';
-import {applyRetryFailure, dropLocalNetworkDupes} from './retryErrors';
+import {
+  applyRetryFailure,
+  dropLocalNetworkDupes,
+  asDetails,
+} from './retryErrors';
 
 export type ThreadSlice = {
   conversationId: string | null;
@@ -147,7 +151,19 @@ export async function doRetry(
   const res = await retryMessage(messageId);
   if (ctx.get().conversationId !== conversationId) return;
   if (!res.ok) {
-    applyRetryFailure(messageId, res, ctx.set);
+    applyRetryFailure(
+      messageId,
+      {
+        ok: false,
+        status: res.status,
+        error: {
+          code: res.error.code,
+          message: res.error.message,
+          details: asDetails(res.error.details),
+        },
+      },
+      ctx.set,
+    );
     return;
   }
   if (res.data.retried === false) {
