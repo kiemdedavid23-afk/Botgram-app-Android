@@ -246,3 +246,131 @@ export async function http<T>(options: HttpRequestOptions): Promise<HttpResult<T
     }
   }
 }
+
+
+/** Limite M7 / Worker attachment (~20 Mo). */
+export const ATTACHMENT_MAX_BYTES = 20 * 1024 * 1024;
+
+export type HttpBinarySuccess = {
+  ok: true;
+  data: ArrayBuffer;
+  status: number;
+  headers: Headers;
+  requestId: string | null;
+};
+
+export type HttpBinaryResult = HttpBinarySuccess | HttpFailure;
+
+/**
+ * GET binaire (même fetch R1). Pour GET /messages/:id/attachment.
+ * Refuse si Content-Length > ATTACHMENT_MAX_BYTES.
+ */
+export async function httpBinary(
+  options: Omit<HttpRequestOptions, 'body'>,
+): Promise<HttpBinaryResult> {
+  if (options.signal?.aborted) {
+    return {
+      ok: false,
+      error: {code: 'aborted', message: 'Requête annulée'},
+      requestId: null,
+      status: 0,
+      headers: new Headers(),
+    };
+  }
+  const url = buildUrl(options.path);
+  const headers = baseHeaders({...options, body: undefined});
+  const controller = new AbortController();
+  const timeout = options.timeoutMs ?? 60000;
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const onCallerAbort = () => controller.abort();
+  if (options.signal) {
+    options.signal.addEventListener('abort', onCallerAbort);
+  }
+  let response: Response | undefined;
+  try {
+    response = await fetch(url, {
+      method: options.method ?? 'GET',
+      headers,
+      credentials: 'omit',
+      signal: controller.signal,
+    });
+    const requestId = response.headers.get('x-request-id');
+    const cl = response.headers.get('content-length');
+    if (cl !== null) {
+      const n = Number(cl);
+      if (!Number.isNaN(n) && n > ATTACHMENT_MAX_BYTES) {
+        return {
+          ok: false,
+          error: {
+            code: 'PAYLOAD_TOO_LARGE',
+            message: 'Fichier trop volumineux',
+          },
+          requestId,
+          status: 413,
+          headers: response.headers,
+        };
+      }
+    }
+    if (response.status < 200 || response.status >= 300) {
+      return {
+        ok: false,
+        error: {
+          code: statusToErrorCode(response.status),
+          message: `Erreur HTTP ${response.status}`,
+        },
+        requestId,
+        status: response.status,
+        headers: response.headers,
+      };
+    }
+    const buf = await response.arrayBuffer();
+    if (buf.byteLength > ATTACHMENT_MAX_BYTES) {
+      return {
+        ok: false,
+        error: {
+          code: 'PAYLOAD_TOO_LARGE',
+          message: 'Fichier trop volumineux',
+        },
+        requestId,
+        status: 413,
+        headers: response.headers,
+      };
+    }
+    return {
+      ok: true,
+      data: buf,
+      status: response.status,
+      headers: response.headers,
+      requestId,
+    };
+  } catch (err) {
+    const isAbort =
+      err instanceof Error &&
+      (err.name === 'AbortError' || controller.signal.aborted);
+    const code = isAbort
+      ? options.signal?.aborted
+        ? 'aborted'
+        : 'timeout'
+      : 'network_error';
+    return {
+      ok: false,
+      error: {
+        code,
+        message:
+          code === 'timeout'
+            ? 'Délai dépassé'
+            : code === 'aborted'
+              ? 'Requête annulée'
+              : 'Erreur réseau',
+      },
+      requestId: null,
+      status: 0,
+      headers: response?.headers ?? new Headers(),
+    };
+  } finally {
+    clearTimeout(timeoutId);
+    if (options.signal) {
+      options.signal.removeEventListener('abort', onCallerAbort);
+    }
+  }
+}
