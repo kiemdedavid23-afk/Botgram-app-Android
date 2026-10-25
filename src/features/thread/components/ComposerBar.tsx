@@ -10,7 +10,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import {Send, Paperclip} from 'lucide-react-native';
+import {Send, Paperclip, X} from 'lucide-react-native';
 import {pick, types, isErrorWithCode, errorCodes} from '@react-native-documents/picker';
 import {useTheme} from '../../../shared/theme';
 import {threadMetrics as tm} from '../../../shared/theme/threadMetrics';
@@ -111,7 +111,7 @@ export function ComposerBar({
       {pending.length > 0 ? (
         <View style={styles.pending}>
           <Text style={{color: colors.textSecondary, fontSize: tm.retryBtnFont}}>
-            {pending.length} fichier{pending.length > 1 ? 's' : ''}
+            {t.mediaFilesPending(pending.length)}
           </Text>
           <Pressable onPress={() => setPending([])}>
             <Text style={{color: colors.accent, fontSize: tm.retryBtnFont}}>
@@ -135,9 +135,7 @@ export function ComposerBar({
         <TextInput
           value={text}
           onChangeText={setText}
-          placeholder={
-            pending.length > 0 ? t.composerPlaceholder : t.composerPlaceholder
-          }
+          placeholder={t.composerPlaceholder}
           placeholderTextColor={colors.textHint}
           editable={!disabled}
           multiline
@@ -156,9 +154,19 @@ export function ComposerBar({
           ]}
         />
         {sending ? (
-          <Pressable onPress={cancel} style={styles.iconBtn}>
+          <View style={styles.sendingRow}>
             <ActivityIndicator color={colors.accent} />
-          </Pressable>
+            <Pressable
+              onPress={cancel}
+              accessibilityLabel={t.cancelSend}
+              style={styles.iconBtn}>
+              <X
+                size={tm.composerSendIconSize}
+                color={colors.danger}
+                strokeWidth={2}
+              />
+            </Pressable>
+          </View>
         ) : (
           <Pressable
             onPress={submit}

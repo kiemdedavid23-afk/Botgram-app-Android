@@ -1,48 +1,41 @@
 /**
- * Statut message sortant + Réessayer / Renvoyer (L5d).
+ * Statut d'envoi + Réessayer / Renvoyer (texte ou média).
  */
 import React, {useEffect, useState} from 'react';
 import {View, Text, Pressable, StyleSheet, Alert} from 'react-native';
-import {
-  Clock,
-  Check,
-  AlertCircle,
-  HelpCircle,
-  Loader,
-} from 'lucide-react-native';
 import {useTheme} from '../../../shared/theme';
 import {threadMetrics as tm} from '../../../shared/theme/threadMetrics';
-import {statusLabel, threadTexts as t} from '../texts';
+import {threadTexts as t} from '../texts';
 import type {Message} from '../../../core/realtime/events';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
+import {hasPendingMedia} from '../store/sendMediaActions';
 
 type Props = {
   message: Message;
-  onRetry: (id: string) => Promise<void>;
+  onRetry: (m: Message) => Promise<void>;
   onResendSame: (m: Message) => Promise<void>;
   onResendNew: (m: Message) => Promise<void>;
+  onResendMedia: (m: Message) => Promise<void>;
 };
 
-export function MessageStatus(props: Props): React.JSX.Element | null {
-  const {message} = props;
-  const {colors} = useTheme();
-  const status = message.status;
-  const waitS = useRetryWait(message);
-
-  if (message.direction !== 'out' || !status) return null;
-  const Icon = iconFor(status);
-  return (
-    <View style={styles.row}>
-      <Icon size={tm.statusIconSize} color={colors.textHint} strokeWidth={2} />
-      <Text style={{color: colors.textHint, fontSize: tm.retryBtnFont}}>
-        {statusLabel(status, message.error_code)}
-      </Text>
-      <StatusActions {...props} waitS={waitS} />
-    </View>
-  );
+function statusLabel(status: string | undefined): string {
+  switch (status) {
+    case 'sending':
+      return t.statusSending;
+    case 'queued':
+      return t.statusQueued;
+    case 'sent':
+      return t.statusSent;
+    case 'failed':
+      return t.statusFailed;
+    case 'unknown':
+      return t.statusUnknown;
+    default:
+      return '';
+  }
 }
 
-function useRetryWait(message: Message): number {
+function useRetryCountdown(message: Message): number {
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     if (!message.retryable || !message.retry_at) return undefined;
@@ -52,7 +45,6 @@ function useRetryWait(message: Message): number {
   if (!message.retry_at || message.retry_at <= now) return 0;
   return Math.ceil((message.retry_at - now) / 1000);
 }
-
 
 function confirmUnknownResend(
   message: Message,
@@ -69,24 +61,38 @@ function confirmUnknownResend(
   ]);
 }
 
-function StatusActions({
+export function MessageStatus({
   message,
   onRetry,
   onResendSame,
   onResendNew,
-  waitS,
-}: Props & {waitS: number}): React.JSX.Element {
+  onResendMedia,
+}: Props): React.JSX.Element | null {
   const {colors} = useTheme();
-  const btnStyle = [styles.btn, {backgroundColor: colors.accentSoft}];
+  const waitS = useRetryCountdown(message);
   const labelStyle = {color: colors.accent, fontSize: tm.retryBtnFont};
+  const isText = message.kind === 'text';
+  const isMediaFailed =
+    !isText &&
+    message.direction === 'out' &&
+    message.status === 'failed';
+  const canResendMedia =
+    isMediaFailed && hasPendingMedia(message.id);
+
+  if (message.direction !== 'out') return null;
+  if (!message.status || message.status === 'received') return null;
+
   return (
-    <>
-      {message.retryable ? (
+    <View style={styles.row}>
+      <Text style={{color: colors.textHint, fontSize: tm.retryBtnFont}}>
+        {statusLabel(message.status)}
+      </Text>
+      {isText && message.retryable ? (
         <Pressable
+          onPress={() => fireAndForget(onRetry(message))}
           disabled={waitS > 0}
-          onPress={() => fireAndForget(onRetry(message.id))}
           style={[
-            btnStyle,
+            styles.btn,
             waitS > 0 ? styles.retryWaiting : styles.retryReady,
           ]}>
           <Text style={labelStyle}>
@@ -94,48 +100,49 @@ function StatusActions({
           </Text>
         </Pressable>
       ) : null}
-      {message.status === 'failed' &&
+      {isText &&
+      message.status === 'failed' &&
+      !message.retryable &&
       message.error_code === 'local_network' ? (
         <Pressable
           onPress={() => fireAndForget(onResendSame(message))}
-          style={btnStyle}>
+          style={styles.btn}>
           <Text style={labelStyle}>{t.resend}</Text>
         </Pressable>
       ) : null}
-      {message.status === 'failed' &&
-      message.error_code !== 'local_network' ? (
-        <Pressable
-          onPress={() => fireAndForget(onResendNew(message))}
-          style={btnStyle}>
-          <Text style={labelStyle}>{t.resend}</Text>
-        </Pressable>
-      ) : null}
-      {message.status === 'unknown' ? (
+      {isText && message.status === 'unknown' ? (
         <Pressable
           onPress={() => {
             confirmUnknownResend(message, onResendNew);
           }}
-          style={btnStyle}>
+          style={styles.btn}>
           <Text style={labelStyle}>{t.resend}</Text>
         </Pressable>
       ) : null}
-    </>
+      {isText &&
+      message.status === 'failed' &&
+      !message.retryable &&
+      message.error_code !== 'local_network' ? (
+        <Pressable
+          onPress={() => fireAndForget(onResendNew(message))}
+          style={styles.btn}>
+          <Text style={labelStyle}>{t.resend}</Text>
+        </Pressable>
+      ) : null}
+      {canResendMedia ? (
+        <Pressable
+          onPress={() => fireAndForget(onResendMedia(message))}
+          style={styles.btn}>
+          <Text style={labelStyle}>{t.resend}</Text>
+        </Pressable>
+      ) : null}
+      {isMediaFailed && !canResendMedia ? (
+        <Text style={{color: colors.textHint, fontSize: tm.retryBtnFont}}>
+          {t.mediaResendPickAgain}
+        </Text>
+      ) : null}
+    </View>
   );
-}
-
-function iconFor(status: string) {
-  switch (status) {
-    case 'sending':
-      return Loader;
-    case 'sent':
-      return Check;
-    case 'queued':
-      return Clock;
-    case 'unknown':
-      return HelpCircle;
-    default:
-      return AlertCircle;
-  }
 }
 
 const styles = StyleSheet.create({
@@ -143,8 +150,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: tm.statusGap,
-    marginTop: tm.timeMarginT,
-    flexWrap: 'wrap',
+    marginTop: tm.statusMarginT,
   },
   btn: {
     paddingVertical: tm.retryBtnPadV,

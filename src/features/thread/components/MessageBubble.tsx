@@ -16,9 +16,10 @@ type Props = {
   onRetry?: (id: string) => Promise<void>;
   onResendSame?: (m: Message) => Promise<void>;
   onResendNew?: (m: Message) => Promise<void>;
+  onResendMedia?: (m: Message) => Promise<void>;
 };
 
-export function MessageBubble({message, onRetry, onResendSame, onResendNew}: Props): React.JSX.Element {
+export function MessageBubble({message, onRetry, onResendSame, onResendNew, onResendMedia}: Props): React.JSX.Element {
   const {colors} = useTheme();
   const {width} = useWindowDimensions();
   const isOut = message.direction === 'out';
@@ -96,12 +97,13 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew}: Pro
         <Text style={[styles.time, {color: colors.textHint}]}>
           {formatMessageTime(ts)}
         </Text>
-        {isOut && onRetry && onResendSame && onResendNew ? (
+        {isOut && onRetry && onResendSame && onResendNew && onResendMedia ? (
           <MessageStatus
             message={message}
             onRetry={onRetry}
             onResendSame={onResendSame}
             onResendNew={onResendNew}
+            onResendMedia={onResendMedia}
           />
         ) : null}
       </View>
