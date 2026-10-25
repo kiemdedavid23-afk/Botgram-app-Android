@@ -2,12 +2,14 @@
  * Pile listes conversations + fil (L5c).
  * Utilisable hors __DEV__ (module features, pas app/dev).
  */
-import React, {useState, useCallback} from 'react';
-import {View, StyleSheet} from 'react-native';
+import React, {useState, useCallback, useEffect} from 'react';
+import {View, StyleSheet, BackHandler} from 'react-native';
 import {ConversationsScreen} from '../screens/ConversationsScreen';
 import {ThreadScreen} from '../../thread/screens/ThreadScreen';
-import {useConversationsStore} from '../store/conversationsStore';
-import {conversationTitle} from '../store/conversationsStore';
+import {
+  useConversationsStore,
+  conversationTitle,
+} from '../store/conversationsStore';
 
 type OpenConv = {
   id: string;
@@ -17,7 +19,6 @@ type OpenConv = {
 };
 
 type Props = {
-  /** Contenu sous la pile (ex. BotBottomNav). */
   footer?: React.ReactNode;
 };
 
@@ -37,6 +38,17 @@ export function BotChatsStack({footer}: Props): React.JSX.Element {
     },
     [items],
   );
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      setOpen(null);
+      return true;
+    });
+    return () => {
+      sub.remove();
+    };
+  }, [open]);
 
   if (open) {
     return (
