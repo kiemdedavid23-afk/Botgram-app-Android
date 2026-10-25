@@ -57,4 +57,26 @@ export const threadMetrics = {
    */
   mvcMinIndex: 0,
   mvcAutoscrollThreshold: 10,
+  /** .composer — ConversationPage.css */
+  composerPad: 8,
+  composerGap: 8,
+  composerInputMinH: 40,
+  composerInputMaxH: 120,
+  composerInputPadV: 10,
+  composerInputPadH: 12,
+  composerInputRadius: 20,
+  composerSendSize: 40,
+  composerFontSize: 16,
+  composerSendIconSize: 20,
+  composerSendDisabledOpacity: 0.5,
+  /** seuil affiche compteur caractères */
+  charCountThreshold: 3800,
+  maxMessageLength: 4096,
+  /** statut / retry */
+  statusIconSize: 14,
+  statusGap: 4,
+  retryBtnPadV: 4,
+  retryBtnPadH: 8,
+  retryBtnRadius: 8,
+  retryBtnFont: 12,
 } as const;
