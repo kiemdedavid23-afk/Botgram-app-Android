@@ -89,12 +89,7 @@ export function MediaPhoto({messageId, caption}: Props): React.JSX.Element {
         <Pressable onPress={() => setFull(true)}>
           <Image
             source={{uri}}
-            style={{
-              width: '100%',
-              maxHeight: tm.mediaPhotoMaxH,
-              height: tm.mediaPhotoMaxH,
-              borderRadius: tm.mediaPhotoRadius,
-            }}
+            style={styles.photo}
             resizeMode="cover"
           />
         </Pressable>
@@ -127,6 +122,12 @@ export function MediaPhoto({messageId, caption}: Props): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
+  photo: {
+    width: '100%' as const,
+    maxHeight: tm.mediaPhotoMaxH,
+    height: tm.mediaPhotoMaxH,
+    borderRadius: tm.mediaPhotoRadius,
+  },
   box: {
     minHeight: tm.mediaBoxMinH,
     alignItems: 'center',
