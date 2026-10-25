@@ -9,6 +9,7 @@ import {formatMessageTime, kindLabel} from '../texts';
 import {MessageStatus} from './MessageStatus';
 import {MediaPhoto} from './MediaPhoto';
 import {MediaFile} from './MediaFile';
+import {MediaAlbum} from './MediaAlbum';
 
 type Props = {
   message: Message;
@@ -45,6 +46,7 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew}: Pro
         {message.kind === 'photo' ? (
           <MediaPhoto
             messageId={message.id}
+            size={message.attachment?.size}
             caption={caption}
           />
         ) : null}
@@ -57,28 +59,11 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew}: Pro
           />
         ) : null}
         {message.kind === 'album' && message.album && message.album.length > 0 ? (
-          <View style={{gap: tm.mediaAlbumGap}}>
-            {message.album.slice(0, 4).map(item =>
-              item.kind === 'photo' || (item.attachment?.mime ?? '').startsWith('image/') ? (
-                <MediaPhoto key={item.id} messageId={item.id} />
-              ) : (
-                <MediaFile
-                  key={item.id}
-                  messageId={item.id}
-                  name={item.attachment?.name}
-                  size={item.attachment?.size}
-                  mime={item.attachment?.mime}
-                />
-              ),
-            )}
-            {caption ? (
-              <FormattedText
-                text={caption}
-                parseMode={message.parse_mode}
-                color={textColor}
-              />
-            ) : null}
-          </View>
+          <MediaAlbum
+            items={message.album}
+            caption={caption}
+            parseMode={message.parse_mode}
+          />
         ) : null}
         {!isText &&
         message.kind !== 'photo' &&
