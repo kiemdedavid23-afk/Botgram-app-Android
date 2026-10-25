@@ -1,0 +1,38 @@
+# Vérification compile native (blob-util + RN 0.88). Manuel uniquement.
+name: Android debug build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  assemble-debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: npm ci
+        run: npm ci
+
+      - name: Setup Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            android/.gradle
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+
+      - name: assembleDebug
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
