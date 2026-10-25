@@ -81,9 +81,9 @@ export function ComposerBar({
         accessibilityLabel={t.send}
         style={[
           styles.send,
+          canSend ? styles.sendEnabled : styles.sendDisabled,
           {
             backgroundColor: canSend ? colors.accent : colors.bgTertiary,
-            opacity: canSend ? 1 : tm.composerSendDisabledOpacity,
           },
         ]}>
         <Send
@@ -119,4 +119,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  sendEnabled: {opacity: tm.composerSendEnabledOpacity},
+  sendDisabled: {opacity: tm.composerSendDisabledOpacity},
 });

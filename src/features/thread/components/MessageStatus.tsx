@@ -69,7 +69,10 @@ function StatusActions({
         <Pressable
           disabled={waitS > 0}
           onPress={() => fireAndForget(onRetry(message.id))}
-          style={[btnStyle, {opacity: waitS > 0 ? 0.5 : 1}]}>
+          style={[
+            btnStyle,
+            waitS > 0 ? styles.retryWaiting : styles.retryReady,
+          ]}>
           <Text style={labelStyle}>
             {waitS > 0 ? t.retryIn(waitS) : t.retry}
           </Text>
@@ -124,4 +127,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: tm.retryBtnPadH,
     borderRadius: tm.retryBtnRadius,
   },
+  retryReady: {opacity: tm.retryReadyOpacity},
+  retryWaiting: {opacity: tm.retryWaitingOpacity},
 });
