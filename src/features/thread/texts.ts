@@ -53,6 +53,13 @@ export const threadTexts = {
   mediaOpenDoc: 'Ouvrir',
   mediaDownload: (label: string) => `Télécharger (${label})`,
   mediaNoHandler: 'Aucune application pour ouvrir ce fichier',
+  mediaFileTooLarge: 'Fichier trop volumineux (max. 10 Mo)',
+  mediaBodyTooLarge: 'Total trop volumineux (max. 10 Mo)',
+  mediaCaptionTooLong: 'Légende trop longue (max. 1024 caractères)',
+  mediaAlbumCount: 'Album : 2 à 10 photos ou vidéos',
+  mediaAttach: 'Joindre',
+  mediaSending: 'Envoi du média…',
+  cancelSend: 'Annuler',
   mediaSizeKb: (n: number) => `${Math.max(1, Math.round(n / 1024))} Ko`,
   mediaSizeMb: (n: number) => `${(n / (1024 * 1024)).toFixed(1)} Mo`,
   errorCodes: {
