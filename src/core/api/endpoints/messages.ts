@@ -71,3 +71,33 @@ export async function fetchAttachment(
     timeoutMs: 120_000,
   });
 }
+
+/** POST /conversations/:id/media — multipart (R1 via authedHttp + FormData). */
+export async function sendMedia(
+  conversationId: string,
+  form: FormData,
+  signal?: AbortSignal,
+): Promise<HttpResult<{message: Message}>> {
+  return authedHttp<{message: Message}>({
+    method: 'POST',
+    path: `/conversations/${conversationId}/media`,
+    body: form,
+    timeoutMs: 120_000,
+    signal,
+  });
+}
+
+/** POST /conversations/:id/album — multipart multi-fichiers. */
+export async function sendAlbum(
+  conversationId: string,
+  form: FormData,
+  signal?: AbortSignal,
+): Promise<HttpResult<{message: Message}>> {
+  return authedHttp<{message: Message}>({
+    method: 'POST',
+    path: `/conversations/${conversationId}/album`,
+    body: form,
+    timeoutMs: 120_000,
+    signal,
+  });
+}
