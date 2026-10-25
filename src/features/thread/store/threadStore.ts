@@ -43,6 +43,55 @@ type ThreadStore = {
   clear: () => void;
 };
 
+
+/** Recharge page 1 et fusionne sans jeter les pages plus anciennes. */
+async function reloadPage1Merge(
+  get: () => {
+    conversationId: string | null;
+    items: Message[];
+    nextCursor: string | null;
+  },
+  set: (
+    partial:
+      | Partial<{
+          items: Message[];
+          nextCursor: string | null;
+          offline: boolean;
+          error: string | null;
+        }>
+      | ((s: {
+          items: Message[];
+          nextCursor: string | null;
+        }) => Partial<{
+          items: Message[];
+          nextCursor: string | null;
+          offline: boolean;
+          error: string | null;
+        }>),
+  ) => void,
+): Promise<void> {
+  const cid = get().conversationId;
+  if (!cid) return;
+  const res = await listMessages(cid, {limit: threadMetrics.pageSize});
+  if (get().conversationId !== cid || !res.ok) return;
+  const page1 = res.data.items;
+  set(s => {
+    const merged = mergeMessages(s.items, page1);
+    const toCache = merged.slice(-threadMetrics.cacheLimit);
+    fireAndForget(cacheSetString(cacheKey(cid), JSON.stringify(toCache)));
+    const keepCursor =
+      s.nextCursor !== null && s.items.length > page1.length
+        ? s.nextCursor
+        : res.data.next_cursor;
+    return {
+      items: merged,
+      nextCursor: keepCursor,
+      offline: false,
+      error: null,
+    };
+  });
+}
+
 export const useThreadStore = create<ThreadStore>((set, get) => ({
   conversationId: null,
   title: '',
@@ -102,7 +151,7 @@ export const useThreadStore = create<ThreadStore>((set, get) => ({
       }
     }
 
-    const res = await listMessages(cid, {limit: threadMetrics.cacheLimit});
+    const res = await listMessages(cid, {limit: threadMetrics.pageSize});
     if (get().conversationId !== cid) return;
     if (!res.ok) {
       set({
@@ -133,7 +182,7 @@ export const useThreadStore = create<ThreadStore>((set, get) => ({
     if (!cid || !nextCursor || loadingOlder) return;
     set({loadingOlder: true});
     const res = await listMessages(cid, {
-      limit: threadMetrics.cacheLimit,
+      limit: threadMetrics.pageSize,
       cursor: nextCursor,
     });
     if (get().conversationId !== cid) {
@@ -160,7 +209,7 @@ export const useThreadStore = create<ThreadStore>((set, get) => ({
       if (ev.message) {
         set(s => ({items: mergeMessages(s.items, [ev.message!])}));
       } else {
-        fireAndForget(get().load(true));
+        fireAndForget(reloadPage1Merge(get, set));
       }
       return;
     }
@@ -179,11 +228,15 @@ export const useThreadStore = create<ThreadStore>((set, get) => ({
       return;
     }
 
-    if (ev.type === 'updates' || ev.type === 'resync') {
-      if (ev.type === 'resync' && !ev.scopes.includes('conversations')) {
-        return;
-      }
-      fireAndForget(get().load(true));
+    if (ev.type === 'updates') {
+      const hit = ev.conversations.some(c => c.id === cid);
+      if (!hit) return;
+      fireAndForget(reloadPage1Merge(get, set));
+      return;
+    }
+
+    if (ev.type === 'resync' && ev.scopes.includes('conversations')) {
+      fireAndForget(reloadPage1Merge(get, set));
     }
   },
 
