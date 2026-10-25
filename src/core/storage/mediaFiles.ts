@@ -1,27 +1,24 @@
 /**
  * SEUL import de react-native-blob-util dans le dépôt.
- * Usage fs uniquement — jamais .fetch / .config / download / upload (R1).
+ * Usage fs (+ actionViewIntent Android) — jamais .fetch / .config / download.
  */
 import ReactNativeBlobUtil from 'react-native-blob-util';
 
 const fs = ReactNativeBlobUtil.fs;
 
-/** Répertoire privé app pour les médias (sandbox). */
 export function mediaRootDir(): string {
   return `${fs.dirs.DocumentDir}/botgram-media`;
 }
 
 export async function ensureMediaRoot(): Promise<string> {
   const root = mediaRootDir();
-  const exists = await fs.exists(root);
-  if (!exists) {
+  if (!(await fs.exists(root))) {
     await fs.mkdir(root);
   }
   return root;
 }
 
 export function mediaFilePath(messageId: string): string {
-  // id dans le nom uniquement ; pas de jeton, pas de chemin utilisateur
   const safe = messageId.replace(/[^a-zA-Z0-9._-]/g, '_');
   return `${mediaRootDir()}/${safe}`;
 }
@@ -74,11 +71,38 @@ export async function mediaTotalSize(): Promise<number> {
   return total;
 }
 
+/** Supprime tous les fichiers puis le dossier. */
 export async function mediaClearAll(): Promise<void> {
   const root = mediaRootDir();
   if (!(await fs.exists(root))) return;
   const entries = await fs.ls(root);
   for (const name of entries) {
     await fs.unlink(`${root}/${name}`);
+  }
+  try {
+    await fs.unlink(root);
+  } catch {
+    // dossier déjà vide / retiré
+  }
+}
+
+/**
+ * Ouvre le fichier local avec une app externe (Android).
+ * Pas de HTTP.
+ */
+export async function openMediaFile(
+  messageId: string,
+  mime?: string | null,
+): Promise<{ok: true} | {ok: false; code: string}> {
+  const path = mediaFilePath(messageId);
+  if (!(await fs.exists(path))) {
+    return {ok: false, code: 'not_found'};
+  }
+  const type = mime && mime.length > 0 ? mime : 'application/octet-stream';
+  try {
+    await ReactNativeBlobUtil.android.actionViewIntent(path, type);
+    return {ok: true};
+  } catch {
+    return {ok: false, code: 'no_handler'};
   }
 }
