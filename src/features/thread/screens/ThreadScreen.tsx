@@ -2,7 +2,7 @@
  * Fil de messages — lecture seule (L5c).
  * FlatList inversée : index 0 = plus récent (bas de l'écran).
  */
-import React, {useCallback, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useMemo} from 'react';
 import {
   View,
   FlatList,
@@ -49,28 +49,15 @@ export function ThreadScreen({
   const offline = useThreadStore(s => s.offline);
   const storeTitle = useThreadStore(s => s.title);
   const loadOlder = useThreadStore(s => s.loadOlder);
-  const nearBottomRef = useRef(true);
-  const listRef = useRef<FlatList<Row>>(null);
-  const [opened, setOpened] = useState(false);
 
   React.useEffect(() => {
     open({conversationId, title, photoUrl, initials});
-    setOpened(true);
     return () => {
       close();
     };
   }, [conversationId, title, photoUrl, initials, open, close]);
 
-  // Liste inversée : data[0] = plus récent
   const rows = useMemo(() => buildInvertedRows(items), [items]);
-
-  const onScroll = useCallback(
-    (e: {nativeEvent: {contentOffset: {y: number}}}) => {
-      // inverted : offset proche de 0 = bas (messages récents)
-      nearBottomRef.current = e.nativeEvent.contentOffset.y < 80;
-    },
-    [],
-  );
 
   const renderItem = useCallback(({item}: {item: Row}) => {
     if (item.type === 'day') {
@@ -106,13 +93,14 @@ export function ThreadScreen({
         </View>
       ) : (
         <FlatList
-          ref={listRef}
           data={rows}
           inverted
           keyExtractor={r => (r.type === 'day' ? r.key : r.message.id)}
           renderItem={renderItem}
-          onScroll={onScroll}
-          scrollEventThrottle={32}
+          maintainVisibleContentPosition={{
+            minIndexForVisible: tm.mvcMinIndex,
+            autoscrollToTopThreshold: tm.mvcAutoscrollThreshold,
+          }}
           onEndReached={() => {
             fireAndForget(loadOlder());
           }}
@@ -124,7 +112,7 @@ export function ThreadScreen({
             ) : undefined
           }
           ListEmptyComponent={
-            opened && !loading ? (
+            !loading ? (
               <View style={styles.center}>
                 <Text style={{color: colors.textSecondary}}>
                   {t.emptyTitle}
@@ -138,10 +126,8 @@ export function ThreadScreen({
   );
 }
 
-/** Construit des lignes inversées (index 0 = plus récent). */
 function buildInvertedRows(items: Message[]): Row[] {
   if (items.length === 0) return [];
-  // items déjà triés asc — on produit rows asc puis on inverse
   const asc: Row[] = [];
   let lastDay = '';
   for (const m of items) {
