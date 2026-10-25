@@ -1,7 +1,7 @@
 /**
- * Photo dans une bulle — auto DL si size ≤ 2 Mo, sinon bouton.
+ * Photo dans une bulle — auto DL si size <= 2 Mo, sinon bouton.
  */
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState, useCallback} from 'react';
 import {
   View,
   Image,
@@ -41,6 +41,59 @@ export function MediaPhoto({
   const [needTap, setNeedTap] = useState(false);
   const alive = useRef(true);
 
+  const runDownload = useCallback(
+    async (signal?: AbortSignal) => {
+      if (alive.current) {
+        setLoading(true);
+        setError(null);
+        setNeedTap(false);
+      }
+      const net = await NetInfo.fetch();
+      if (net.isConnected === false) {
+        if (alive.current) {
+          setError(t.mediaOffline);
+          setLoading(false);
+        }
+        return;
+      }
+      const res = await loadAttachmentToStorage(messageId, signal);
+      if (!alive.current) return;
+      setLoading(false);
+      if (!res.ok) {
+        setError(
+          res.code === 'PAYLOAD_TOO_LARGE'
+            ? t.mediaTooLarge
+            : t.mediaLoadError,
+        );
+        return;
+      }
+      setUri(`file://${res.path}`);
+    },
+    [messageId],
+  );
+
+  const bootstrap = useCallback(
+    async (signal: AbortSignal) => {
+      const storage = getMediaStorage();
+      if (await storage.exists(messageId)) {
+        if (alive.current) {
+          setUri(`file://${storage.localPath(messageId)}`);
+        }
+        return;
+      }
+      const auto =
+        size === null ||
+        size === undefined ||
+        size <= tm.autoDownloadMaxBytes;
+      if (!auto) {
+        if (alive.current) setNeedTap(true);
+        return;
+      }
+      await runDownload(signal);
+    },
+    [messageId, size, runDownload],
+  );
+
   useEffect(() => {
     alive.current = true;
     const controller = new AbortController();
@@ -49,50 +102,7 @@ export function MediaPhoto({
       alive.current = false;
       controller.abort();
     };
-  }, [messageId, size]);
-
-  async function bootstrap(signal: AbortSignal): Promise<void> {
-    const storage = getMediaStorage();
-    if (await storage.exists(messageId)) {
-      if (alive.current) setUri(`file://${storage.localPath(messageId)}`);
-      return;
-    }
-    const auto =
-      size === null ||
-      size === undefined ||
-      size <= tm.autoDownloadMaxBytes;
-    if (!auto) {
-      if (alive.current) setNeedTap(true);
-      return;
-    }
-    await runDownload(signal);
-  }
-
-  async function runDownload(signal?: AbortSignal): Promise<void> {
-    if (alive.current) {
-      setLoading(true);
-      setError(null);
-      setNeedTap(false);
-    }
-    const net = await NetInfo.fetch();
-    if (net.isConnected === false) {
-      if (alive.current) {
-        setError(t.mediaOffline);
-        setLoading(false);
-      }
-      return;
-    }
-    const res = await loadAttachmentToStorage(messageId, signal);
-    if (!alive.current) return;
-    setLoading(false);
-    if (!res.ok) {
-      setError(
-        res.code === 'PAYLOAD_TOO_LARGE' ? t.mediaTooLarge : t.mediaLoadError,
-      );
-      return;
-    }
-    setUri(`file://${res.path}`);
-  }
+  }, [bootstrap]);
 
   const sizeLabel =
     size && size >= 1024 * 1024
