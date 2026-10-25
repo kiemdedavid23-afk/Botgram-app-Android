@@ -15,6 +15,15 @@ import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {mergeMessages, sortMessagesAsc} from './mergeMessages';
 import {threadTexts} from '../texts';
 import {threadMetrics} from '../../../shared/theme/threadMetrics';
+import {
+  doSend,
+  doRetry,
+  doResendAsNew,
+  doResendSameId,
+  doMarkRead,
+  upsertOutgoing,
+} from './sendActions';
+import {reloadPage1Merge} from './reloadPage1';
 
 const CACHE_PREFIX = 'thread.messages.';
 const cacheKey = (id: string) => `${CACHE_PREFIX}${id}`;
@@ -41,56 +50,16 @@ type ThreadStore = {
   loadOlder: () => Promise<void>;
   applyRealtimeEvent: (ev: RealtimeEvent) => void;
   clear: () => void;
+  sending: boolean;
+  sendError: string | null;
+  lastReadMarked: boolean;
+  send: (text: string) => Promise<void>;
+  retry: (messageId: string) => Promise<void>;
+  resendAsNew: (message: Message) => Promise<void>;
+  resendSameId: (message: Message) => Promise<void>;
+  markRead: () => Promise<void>;
 };
 
-
-/** Recharge page 1 et fusionne sans jeter les pages plus anciennes. */
-async function reloadPage1Merge(
-  get: () => {
-    conversationId: string | null;
-    items: Message[];
-    nextCursor: string | null;
-  },
-  set: (
-    partial:
-      | Partial<{
-          items: Message[];
-          nextCursor: string | null;
-          offline: boolean;
-          error: string | null;
-        }>
-      | ((s: {
-          items: Message[];
-          nextCursor: string | null;
-        }) => Partial<{
-          items: Message[];
-          nextCursor: string | null;
-          offline: boolean;
-          error: string | null;
-        }>),
-  ) => void,
-): Promise<void> {
-  const cid = get().conversationId;
-  if (!cid) return;
-  const res = await listMessages(cid, {limit: threadMetrics.pageSize});
-  if (get().conversationId !== cid || !res.ok) return;
-  const page1 = res.data.items;
-  set(s => {
-    const merged = mergeMessages(s.items, page1);
-    const toCache = merged.slice(-threadMetrics.cacheLimit);
-    fireAndForget(cacheSetString(cacheKey(cid), JSON.stringify(toCache)));
-    const keepCursor =
-      s.nextCursor !== null && s.items.length > page1.length
-        ? s.nextCursor
-        : res.data.next_cursor;
-    return {
-      items: merged,
-      nextCursor: keepCursor,
-      offline: false,
-      error: null,
-    };
-  });
-}
 
 export const useThreadStore = create<ThreadStore>((set, get) => ({
   conversationId: null,
@@ -103,6 +72,9 @@ export const useThreadStore = create<ThreadStore>((set, get) => ({
   loadingOlder: false,
   error: null,
   offline: false,
+  sending: false,
+  sendError: null,
+  lastReadMarked: false,
 
   open({conversationId, title, photoUrl, initials}) {
     set({
@@ -114,8 +86,12 @@ export const useThreadStore = create<ThreadStore>((set, get) => ({
       nextCursor: null,
       error: null,
       offline: false,
+      sending: false,
+      sendError: null,
+      lastReadMarked: false,
     });
     fireAndForget(get().load(true));
+    fireAndForget(get().markRead());
   },
 
   close() {
@@ -207,7 +183,17 @@ export const useThreadStore = create<ThreadStore>((set, get) => ({
     if (ev.type === 'message.new') {
       if (ev.conversation_id !== cid) return;
       if (ev.message) {
-        set(s => ({items: mergeMessages(s.items, [ev.message!])}));
+        const msg = ev.message;
+        set(s => ({
+          items:
+            msg.direction === 'out'
+              ? upsertOutgoing(s.items, msg)
+              : mergeMessages(s.items, [msg]),
+        }));
+        if (msg.direction === 'in') {
+          set({lastReadMarked: false});
+          fireAndForget(get().markRead());
+        }
       } else {
         fireAndForget(reloadPage1Merge(get, set));
       }
@@ -240,6 +226,26 @@ export const useThreadStore = create<ThreadStore>((set, get) => ({
     }
   },
 
+  async send(text: string) {
+    await doSend(text, undefined, {get, set});
+  },
+
+  async retry(messageId: string) {
+    await doRetry(messageId, {get, set});
+  },
+
+  async resendAsNew(message: Message) {
+    await doResendAsNew(message, {get, set});
+  },
+
+  async resendSameId(message: Message) {
+    await doResendSameId(message, {get, set});
+  },
+
+  async markRead() {
+    await doMarkRead({get, set});
+  },
+
   clear() {
     fireAndForget(cacheDeleteByPrefix(CACHE_PREFIX));
     set({
@@ -253,6 +259,9 @@ export const useThreadStore = create<ThreadStore>((set, get) => ({
       loadingOlder: false,
       error: null,
       offline: false,
+      sending: false,
+      sendError: null,
+      lastReadMarked: false,
     });
   },
 }));
