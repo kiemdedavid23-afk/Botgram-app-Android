@@ -56,7 +56,8 @@ describe('react-native-blob-util usage guard', () => {
     for (const file of files) {
       const text = fs.readFileSync(file, 'utf8');
       if (file.includes('NetInfo') || file.includes('netinfo')) continue;
-      const matches = text.match(/\bfetch\s*\(/g);
+      // NetInfo.fetch() et méthodes .fetch ne sont pas le fetch global (R1)
+      const matches = text.match(/(?<![.\w])fetch\s*\(/g);
       if (!matches) continue;
       if (path.normalize(file) !== ALLOWED_FETCH) {
         hits.push(

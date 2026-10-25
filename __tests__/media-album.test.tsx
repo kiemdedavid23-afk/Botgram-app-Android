@@ -1,5 +1,5 @@
 import React from 'react';
-import renderer from 'react-test-renderer';
+import renderer, {act} from 'react-test-renderer';
 import {MediaAlbum} from '../src/features/thread/components/MediaAlbum';
 
 jest.mock('../src/features/thread/components/MediaPhoto', () => ({
@@ -19,15 +19,16 @@ jest.mock('../src/features/thread/components/MediaFile', () => ({
 }));
 
 describe('MediaAlbum', () => {
-  it('rend 10 éléments', () => {
+  it('rend 10 éléments', async () => {
     const items = Array.from({length: 10}, (_, i) => ({
       id: `a${i}`,
       kind: 'photo',
       attachment: {name: `p${i}.jpg`, mime: 'image/jpeg', size: 100},
     }));
-    const tree = renderer.create(
-      React.createElement(MediaAlbum, {items}),
-    );
+    let tree!: renderer.ReactTestRenderer;
+    await act(async () => {
+      tree = renderer.create(React.createElement(MediaAlbum, {items}));
+    });
     for (let i = 0; i < 10; i += 1) {
       expect(tree.root.findByProps({testID: `photo-a${i}`})).toBeTruthy();
     }
