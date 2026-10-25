@@ -1,0 +1,24 @@
+name: Show RN 0.88 template deps
+
+on:
+  workflow_dispatch:
+
+jobs:
+  show:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+
+      - name: Template RN 0.88 (devDependencies et dependencies)
+        run: |
+          npm view @react-native-community/template@0.88.0 devDependencies dependencies --json || true
+          echo "-----"
+          npm view @react-native-community/template dist-tags --json || true
+
+      - name: Versions de react-native 0.88
+        run: |
+          npm view react-native@0.88.0 peerDependencies peerDependenciesMeta --json || true
+          npm view @react-native-community/cli dist-tags --json || true
