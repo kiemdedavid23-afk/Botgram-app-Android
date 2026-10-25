@@ -1,6 +1,6 @@
 /**
- * Fil de messages — lecture seule (L5c).
- * FlatList inversée : index 0 = plus récent (bas de l'écran).
+ * Fil de messages — lecture + envoi (L5c + L5d).
+ * FlatList inversée : index 0 = plus récent.
  */
 import React, {useCallback, useMemo} from 'react';
 import {
@@ -17,6 +17,7 @@ import {messageTimestamp} from '../store/mergeMessages';
 import {MessageBubble} from '../components/MessageBubble';
 import {DaySeparator} from '../components/DaySeparator';
 import {ThreadHeader} from '../components/ThreadHeader';
+import {ComposerBar} from '../components/ComposerBar';
 import {threadTexts as t} from '../texts';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 import type {Message} from '../../../core/realtime/events';
@@ -49,6 +50,12 @@ export function ThreadScreen({
   const offline = useThreadStore(s => s.offline);
   const storeTitle = useThreadStore(s => s.title);
   const loadOlder = useThreadStore(s => s.loadOlder);
+  const send = useThreadStore(s => s.send);
+  const retry = useThreadStore(s => s.retry);
+  const resendAsNew = useThreadStore(s => s.resendAsNew);
+  const resendSameId = useThreadStore(s => s.resendSameId);
+  const sending = useThreadStore(s => s.sending);
+  const sendError = useThreadStore(s => s.sendError);
 
   React.useEffect(() => {
     open({conversationId, title, photoUrl, initials});
@@ -59,12 +66,22 @@ export function ThreadScreen({
 
   const rows = useMemo(() => buildInvertedRows(items), [items]);
 
-  const renderItem = useCallback(({item}: {item: Row}) => {
-    if (item.type === 'day') {
-      return <DaySeparator timestamp={item.ts} />;
-    }
-    return <MessageBubble message={item.message} />;
-  }, []);
+  const renderItem = useCallback(
+    ({item}: {item: Row}) => {
+      if (item.type === 'day') {
+        return <DaySeparator timestamp={item.ts} />;
+      }
+      return (
+        <MessageBubble
+          message={item.message}
+          onRetry={retry}
+          onResendSame={resendSameId}
+          onResendNew={resendAsNew}
+        />
+      );
+    },
+    [retry, resendSameId, resendAsNew],
+  );
 
   const headerTitle = storeTitle || title || '';
 
@@ -122,6 +139,22 @@ export function ThreadScreen({
           }
         />
       )}
+      {sendError ? (
+        <Text
+          style={{
+            color: colors.danger,
+            textAlign: 'center',
+            padding: tm.composerPad,
+            fontSize: tm.retryBtnFont,
+          }}>
+          {sendError}
+        </Text>
+      ) : null}
+      <ComposerBar
+        disabled={offline}
+        sending={sending}
+        onSend={send}
+      />
     </View>
   );
 }
