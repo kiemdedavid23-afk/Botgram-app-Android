@@ -7,6 +7,8 @@ import {FormattedText} from './FormattedText';
 import {InlineButtons} from './InlineButtons';
 import {formatMessageTime, kindLabel} from '../texts';
 import {MessageStatus} from './MessageStatus';
+import {MediaPhoto} from './MediaPhoto';
+import {MediaFile} from './MediaFile';
 
 type Props = {
   message: Message;
@@ -40,12 +42,63 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew}: Pro
             borderRadius: tm.bubbleRadius,
           },
         ]}>
-        {!isText ? (
+        {message.kind === 'photo' ? (
+          <MediaPhoto
+            messageId={message.id}
+            caption={caption}
+          />
+        ) : null}
+        {message.kind === 'document' ? (
+          <MediaFile
+            messageId={message.id}
+            name={message.attachment?.name}
+            size={message.attachment?.size}
+            mime={message.attachment?.mime}
+          />
+        ) : null}
+        {message.kind === 'album' && message.album && message.album.length > 0 ? (
+          <View style={{gap: tm.mediaAlbumGap}}>
+            {message.album.slice(0, 4).map(item =>
+              item.kind === 'photo' || (item.attachment?.mime ?? '').startsWith('image/') ? (
+                <MediaPhoto key={item.id} messageId={item.id} />
+              ) : (
+                <MediaFile
+                  key={item.id}
+                  messageId={item.id}
+                  name={item.attachment?.name}
+                  size={item.attachment?.size}
+                  mime={item.attachment?.mime}
+                />
+              ),
+            )}
+            {caption ? (
+              <FormattedText
+                text={caption}
+                parseMode={message.parse_mode}
+                color={textColor}
+              />
+            ) : null}
+          </View>
+        ) : null}
+        {!isText &&
+        message.kind !== 'photo' &&
+        message.kind !== 'document' &&
+        message.kind !== 'album' ? (
           <Text style={{color: textColor, fontSize: tm.kindLabelSize}}>
             {kindLabel(message.kind)}
           </Text>
         ) : null}
-        {caption ? (
+        {isText && caption ? (
+          <FormattedText
+            text={caption}
+            parseMode={message.parse_mode}
+            color={textColor}
+          />
+        ) : null}
+        {!isText &&
+        message.kind !== 'photo' &&
+        message.kind !== 'album' &&
+        caption ? (
           <FormattedText
             text={caption}
             parseMode={message.parse_mode}
