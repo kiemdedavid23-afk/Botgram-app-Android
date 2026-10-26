@@ -29,6 +29,7 @@ import {
   clearPendingMedia,
 } from './sendMediaActions';
 import type {PickedFile} from './sendMediaActions';
+import {doDeleteOutgoing} from './messageActions';
 import {reloadPage1Merge} from './reloadPage1';
 
 const CACHE_PREFIX = 'thread.messages.';
@@ -66,8 +67,8 @@ type ThreadStore = {
   markRead: () => Promise<void>;
   sendMedia: (files: PickedFile[], caption: string, signal?: AbortSignal) => Promise<void>;
   resendMedia: (message: Message) => Promise<void>;
+  deleteOutgoing: (message: Message) => Promise<void>;
 };
-
 
 export const useThreadStore = create<ThreadStore>((set, get) => ({
   conversationId: null,
@@ -267,6 +268,10 @@ export const useThreadStore = create<ThreadStore>((set, get) => ({
 
   async resendMedia(message: Message) {
     await doResendMediaAsNew(message, {get, set});
+  },
+
+  async deleteOutgoing(message: Message) {
+    await doDeleteOutgoing(message, {get, set});
   },
 
   clear() {
