@@ -2,7 +2,6 @@ import {kindFromMime} from '../src/features/thread/mediaLimits';
 import {
   validateMediaSend as validate,
   doSendMedia,
-  doResendMediaAsNew,
   hasPendingMedia,
   clearPendingMedia,
 } from '../src/features/thread/store/sendMediaActions';
@@ -32,11 +31,11 @@ jest.mock('../src/core/utils/memberData', () => ({
   registerMemberDataCleaner: jest.fn(() => jest.fn()),
 }));
 
-let uuidSeq = 0;
+let mockUuidSeq = 0;
 jest.mock('../src/core/utils/uuid', () => ({
   uuidV4: () => {
-    uuidSeq += 1;
-    return `media-uuid-${uuidSeq}`;
+    mockUuidSeq += 1;
+    return `media-uuid-${mockUuidSeq}`;
   },
 }));
 
@@ -139,7 +138,7 @@ describe('validateMediaSend', () => {
 describe('doSendMedia / renvoi / annulation', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    uuidSeq = 0;
+    mockUuidSeq = 0;
     clearPendingMedia();
     useThreadStore.setState({
       conversationId: 'c1',
