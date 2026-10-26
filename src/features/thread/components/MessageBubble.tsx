@@ -13,7 +13,7 @@ import {MediaAlbum} from './MediaAlbum';
 
 type Props = {
   message: Message;
-  onRetry?: (id: string) => Promise<void>;
+  onRetry?: (m: Message) => Promise<void>;
   onResendSame?: (m: Message) => Promise<void>;
   onResendNew?: (m: Message) => Promise<void>;
   onResendMedia?: (m: Message) => Promise<void>;

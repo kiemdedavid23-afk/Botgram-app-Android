@@ -237,4 +237,9 @@ const styles = StyleSheet.create({
   },
   sendEnabled: {opacity: tm.composerSendEnabledOpacity},
   sendDisabled: {opacity: tm.composerSendDisabledOpacity},
+  sendingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tm.composerSendingGap,
+  },
 });
