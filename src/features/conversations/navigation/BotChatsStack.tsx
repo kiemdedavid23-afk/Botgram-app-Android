@@ -20,9 +20,14 @@ type OpenConv = {
 
 type Props = {
   footer?: React.ReactNode;
+  /** Passé à la barre de marque de la liste des conversations. */
+  headerRight?: React.ReactNode;
 };
 
-export function BotChatsStack({footer}: Props): React.JSX.Element {
+export function BotChatsStack({
+  footer,
+  headerRight,
+}: Props): React.JSX.Element {
   const [open, setOpen] = useState<OpenConv | null>(null);
   const items = useConversationsStore(s => s.items);
 
@@ -66,7 +71,10 @@ export function BotChatsStack({footer}: Props): React.JSX.Element {
 
   return (
     <View style={styles.root}>
-      <ConversationsScreen onOpenConversation={onOpenConversation} />
+      <ConversationsScreen
+        onOpenConversation={onOpenConversation}
+        headerRight={headerRight}
+      />
       {footer}
     </View>
   );
