@@ -5,7 +5,6 @@
 import {
   doPinConversation,
   doDeleteConversation,
-  removeConversationLocally,
 } from './conversationActions';
 import {create} from 'zustand';
 import {
