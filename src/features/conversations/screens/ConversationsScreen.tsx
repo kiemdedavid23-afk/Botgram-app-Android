@@ -42,6 +42,8 @@ export function ConversationsScreen({
   const setFolder = useConversationsStore(s => s.setFolder);
   const items = useConversationsStore(s => s.items);
   const filtered = useConversationsStore(selectFilteredItems);
+  const pinConversation = useConversationsStore(s => s.pinConversation);
+  const deleteConversation = useConversationsStore(s => s.deleteConversation);
   const counts = useMemo(() => folderCounts(items), [items]);
   const {searchQuery, searching, onSearchChange, clearSearch} =
     useConversationSearch();
@@ -68,6 +70,8 @@ export function ConversationsScreen({
       />
       <FoldersBar folder={folder} counts={counts} onSelect={setFolder} />
       <ConversationsBody
+        onPin={pinConversation}
+        onDelete={deleteConversation}
         filtered={filtered}
         loading={loading}
         loadingMore={loadingMore}
