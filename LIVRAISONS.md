@@ -64,3 +64,73 @@ npm run lint
 npm test -- --ci --coverage=false
 ```
 *(Coller sorties réelles, fin incluse.)*
+
+
+## L6d — Actions (livraison 1)
+
+### Créés
+- `src/features/thread/store/messageActions.ts` (`removeMessageLocally`, `doDeleteOutgoing`)
+- `src/features/conversations/store/conversationActions.ts` (pin/delete/sort)
+- `__tests__/message-actions.test.ts`
+- `__tests__/conversation-actions.test.ts`
+- `PROPOSITIONS-6BIS.md` (étude seule)
+
+### Modifiés
+- `src/core/api/endpoints/messages.ts` — `deleteMessage`
+- `src/core/api/endpoints/conversations.ts` — `pinConversation`, `deleteConversation`
+- stores thread + conversations, MessageBubble, ConversationRow, ConversationsBody/Screen, texts
+
+### Écarts
+- Pas d’ActionSheet natif : `Alert` multi-boutons (long press)
+- Retour navigation après delete conversation : le parent doit réagir à l’absence en liste (pas de pop forcé si stack externe)
+
+### Preuves CI
+```
+npm run typecheck
+npm run lint
+npm test -- --ci --coverage=false
+```
+*(Coller sorties réelles.)*
+
+
+## 6bis-a — Lot de preuve archive (op-sqlite + SQLCipher)
+
+### Dépendance
+| Package | Version | Notes |
+|---------|---------|--------|
+| `@op-engineering/op-sqlite` | **18.2.5** (exacte) | `package.json` → `"op-sqlite": { "sqlcipher": true }` |
+
+### Créés
+- `src/core/archive/ArchiveStore.ts` — interface
+- `src/core/archive/opSqliteArchiveStore.ts` — seul import op-sqlite
+- `src/core/archive/registerArchiveCleaner.ts` — 13.5
+- `src/core/archive/index.ts`
+- `__mocks__/op-sqlite.ts` (faux, déclaré)
+- `__tests__/archive-store.test.ts`
+- `__tests__/op-sqlite-guard.test.ts`
+
+### Modifiés
+- `package.json` — dépendance + config sqlcipher
+- `src/core/storage/secureStorage.ts` — `getOrCreateArchiveKey`
+- `src/core/storage/index.ts`
+- `src/app/App.tsx` — bind + cleaner
+- `jest.config.js` — moduleNameMapper
+
+### Impact android/
+- **Autolinking** op-sqlite ; build natif lit `package.json` → `op-sqlite.sqlcipher: true` → flags `OP_SQLITE_USE_SQLCIPHER` / SQLCipher sources dans le module.
+- **Aucun fichier sous `android/` modifié manuellement** dans ce lot (pas de settings.gradle / app/build.gradle touché).
+- `android:allowBackup="false"` **déjà présent** (AndroidManifest app) — vérifié.
+- Le propriétaire régénère le lock et lance le workflow Android debug pour valider SQLCipher + RN 0.88 / newArch.
+
+### Écarts / limites
+- Jest utilise un **faux** ArchiveStore/op-sqlite (pas de SQLCipher en CI pure JS).
+- `clearAll` 6bis-a : `DELETE FROM archive_proof` seulement ; tables métier en 6bis-b+.
+- Document ouvert via `actionViewIntent` : hors périmètre 6bis-a (6bis-d).
+
+### Preuves CI
+```
+npm run typecheck
+npm run lint
+npm test -- --ci --coverage=false
+```
+*(Coller sorties réelles après `npm install @op-engineering/op-sqlite@18.2.5 --save-exact`.)*
