@@ -23,6 +23,8 @@ type Props = {
   onRetry: () => void;
   onLoadMore: () => void;
   onOpen?: (id: string) => void;
+  onPin?: (id: string, pinned: boolean) => Promise<void>;
+  onDelete?: (id: string) => Promise<boolean>;
 };
 
 export function ConversationsBody({
@@ -35,6 +37,8 @@ export function ConversationsBody({
   onRetry,
   onLoadMore,
   onOpen,
+  onPin,
+  onDelete,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
   const hideBadge = searchQuery.trim().length >= 1;
@@ -46,9 +50,11 @@ export function ConversationsBody({
         densityPad={densityPad}
         hideBadge={hideBadge}
         onPress={() => onOpen?.(item.id)}
+        onPin={onPin}
+        onDelete={onDelete}
       />
     ),
-    [densityPad, hideBadge, onOpen],
+    [densityPad, hideBadge, onOpen, onPin, onDelete],
   );
 
   if (loading && filtered.length === 0) {

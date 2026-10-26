@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, Text, Pressable, StyleSheet} from 'react-native';
+import {View, Text, Pressable, StyleSheet, Alert} from 'react-native';
 import {Pin} from 'lucide-react-native';
 import {useTheme, fontWeight} from '../../../shared/theme';
 import {Avatar} from '../../../shared/components/Avatar';
@@ -8,12 +8,16 @@ import {stripPreview} from '../../../core/utils/stripPreview';
 import {formatConversationTime} from '../texts';
 import {conversationTitle} from '../store/conversationsStore';
 import type {ConversationSummary} from '../../../core/api/endpoints/conversations';
+import {conversationsTexts as ct} from '../texts';
+import {fireAndForget} from '../../../core/utils/fireAndForget';
 
 type Props = {
   item: ConversationSummary;
   densityPad: number;
   hideBadge: boolean;
   onPress?: () => void;
+  onPin?: (id: string, pinned: boolean) => Promise<void>;
+  onDelete?: (id: string) => Promise<boolean>;
 };
 
 export function ConversationRow({
@@ -21,6 +25,8 @@ export function ConversationRow({
   densityPad,
   hideBadge,
   onPress,
+  onPin,
+  onDelete,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
   const title = conversationTitle(item);
@@ -32,6 +38,43 @@ export function ConversationRow({
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={() => {
+        const pinned = !!item.pinned;
+        const buttons: {
+          text: string;
+          style?: 'cancel' | 'destructive';
+          onPress?: () => void;
+        }[] = [
+          {
+            text: pinned ? ct.unpinAction : ct.pinAction,
+            onPress: () => {
+              if (onPin) fireAndForget(onPin(item.id, !pinned));
+            },
+          },
+          {
+            text: ct.deleteConversation,
+            style: 'destructive',
+            onPress: () => {
+              Alert.alert(
+                ct.deleteConversationConfirmTitle,
+                ct.deleteConversationConfirmBody,
+                [
+                  {text: ct.cancel, style: 'cancel'},
+                  {
+                    text: ct.deleteConversationConfirm2,
+                    style: 'destructive',
+                    onPress: () => {
+                      if (onDelete) fireAndForget(onDelete(item.id));
+                    },
+                  },
+                ],
+              );
+            },
+          },
+          {text: ct.cancel, style: 'cancel'},
+        ];
+        Alert.alert(conversationTitle(item), undefined, buttons);
+      }}
       style={({pressed}) => [
         styles.item,
         {
