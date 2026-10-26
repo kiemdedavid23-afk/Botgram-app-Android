@@ -55,6 +55,7 @@ export function ThreadScreen({
   const retry = useThreadStore(s => s.retry);
   const resendAsNew = useThreadStore(s => s.resendAsNew);
   const resendMedia = useThreadStore(s => s.resendMedia);
+  const deleteOutgoing = useThreadStore(s => s.deleteOutgoing);
   const resendSameId = useThreadStore(s => s.resendSameId);
   const sending = useThreadStore(s => s.sending);
   const sendError = useThreadStore(s => s.sendError);
@@ -85,10 +86,11 @@ export function ThreadScreen({
           onResendSame={resendSameId}
           onResendNew={resendAsNew}
           onResendMedia={resendMedia}
+          onDelete={deleteOutgoing}
         />
       );
     },
-    [onRetryMsg, resendSameId, resendAsNew, resendMedia],
+    [onRetryMsg, resendSameId, resendAsNew, resendMedia, deleteOutgoing],
   );
 
   const headerTitle = storeTitle || title || '';
