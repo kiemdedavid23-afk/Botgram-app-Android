@@ -67,6 +67,8 @@ export function MemberProfileScreen({
             displayName={member.display_name}
             status={member.status}
             emailVerified={member.email_verified}
+            organization={member.organization}
+            role={member.role}
           />
         </Animated.View>
         <ProfileSections
