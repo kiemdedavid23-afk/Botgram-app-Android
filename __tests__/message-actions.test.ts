@@ -1,6 +1,11 @@
-import {doDeleteOutgoing, removeMessageLocally} from '../src/features/thread/store/messageActions';
+import {
+  doDeleteOutgoing,
+  removeMessageLocally,
+} from '../src/features/thread/store/messageActions';
 import * as MessagesApi from '../src/core/api/endpoints/messages';
 import type {Message} from '../src/core/realtime/events';
+import type {ThreadSlice} from '../src/features/thread/store/sendActions';
+
 jest.mock('../src/core/api/endpoints/messages', () => ({
   deleteMessage: jest.fn(),
   listMessages: jest.fn(),
@@ -29,42 +34,40 @@ function msg(partial: Partial<Message>): Message {
 }
 
 describe('doDeleteOutgoing', () => {
-  let items: Message[];
-  let sendError: string | null;
+  let state: ThreadSlice;
+
   const ctx = {
-    get: () => ({
-      conversationId: 'c1',
-      items,
-      offline: false,
-      sending: false,
-      sendError,
-      lastReadMarked: false,
-    }),
+    get: (): ThreadSlice => state,
     set: (
       p:
-        | Partial<{items: Message[]; sendError: string | null}>
-        | ((s: {items: Message[]; sendError: string | null}) => Partial<{
-            items: Message[];
-            sendError: string | null;
-          }>),
+        | Partial<ThreadSlice>
+        | ((s: ThreadSlice) => Partial<ThreadSlice>),
     ) => {
-      const next = typeof p === 'function' ? p({items, sendError}) : p;
-      if (next.items) items = next.items;
-      if (next.sendError !== undefined) sendError = next.sendError;
+      const next = typeof p === 'function' ? p(state) : p;
+      state = {...state, ...next};
     },
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    items = [msg({})];
-    sendError = null;
+    state = {
+      conversationId: 'c1',
+      items: [msg({})],
+      offline: false,
+      sending: false,
+      sendError: null,
+      lastReadMarked: false,
+    };
   });
 
   it('local: retire sans réseau', async () => {
-    items = [msg({id: 'local:abc', status: 'failed'})];
-    await doDeleteOutgoing(items[0]!, ctx);
+    state = {
+      ...state,
+      items: [msg({id: 'local:abc', status: 'failed'})],
+    };
+    await doDeleteOutgoing(state.items[0]!, ctx);
     expect(mockDelete).not.toHaveBeenCalled();
-    expect(items).toHaveLength(0);
+    expect(state.items).toHaveLength(0);
   });
 
   it('sent supprimé côté serveur', async () => {
@@ -75,9 +78,9 @@ describe('doDeleteOutgoing', () => {
       requestId: null,
       headers: new Headers(),
     });
-    await doDeleteOutgoing(items[0]!, ctx);
+    await doDeleteOutgoing(state.items[0]!, ctx);
     expect(mockDelete).toHaveBeenCalledWith('m1');
-    expect(items).toHaveLength(0);
+    expect(state.items).toHaveLength(0);
   });
 
   it('MESSAGE_TOO_OLD laisse le message', async () => {
@@ -88,9 +91,9 @@ describe('doDeleteOutgoing', () => {
       requestId: null,
       headers: new Headers(),
     });
-    await doDeleteOutgoing(items[0]!, ctx);
-    expect(items).toHaveLength(1);
-    expect(sendError).toBeTruthy();
+    await doDeleteOutgoing(state.items[0]!, ctx);
+    expect(state.items).toHaveLength(1);
+    expect(state.sendError).toBeTruthy();
   });
 
   it('MESSAGE_NOT_DELETABLE', async () => {
@@ -102,7 +105,7 @@ describe('doDeleteOutgoing', () => {
       headers: new Headers(),
     });
     await doDeleteOutgoing(msg({status: 'unknown'}), ctx);
-    expect(items).toHaveLength(1);
+    expect(state.items).toHaveLength(1);
   });
 
   it('entrant non supprimé', async () => {
