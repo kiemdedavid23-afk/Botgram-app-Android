@@ -1,11 +1,24 @@
 /**
  * Navigation racine — booting / auth / shell / upgrade.
- * Espace bot (BotSpace) accessible depuis le tableau de bord.
+ * Espace membre : en-tête avatar + menu ⋮ (Tableau de bord / Profil / Gestion).
+ * Espace bot (BotSpace) : depuis le tableau de bord ou la feuille de bascule.
  * ShellSwitcher uniquement sous __DEV__.
  */
-import React, {useEffect, useState} from 'react';
-import {View, ActivityIndicator, Text, StyleSheet} from 'react-native';
-import {NavigationContainer, DefaultTheme, DarkTheme} from '@react-navigation/native';
+import React, {useCallback, useEffect, useState} from 'react';
+import {
+  View,
+  ActivityIndicator,
+  Text,
+  StyleSheet,
+  BackHandler,
+} from 'react-native';
+import {
+  NavigationContainer,
+  DefaultTheme,
+  DarkTheme,
+  useFocusEffect,
+} from '@react-navigation/native';
+import {LayoutDashboard, UserRound, Settings} from 'lucide-react-native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {useTheme, space, fontSize, fontWeight, radii, rootNavigatorMetrics as rm} from '../shared/theme';
@@ -19,11 +32,14 @@ import {AccountDisabledScreen} from '../features/auth/screens/AccountDisabledScr
 import {UpgradeScreen} from '../features/auth/screens/UpgradeScreen';
 import {authColors} from '../shared/theme/authColors';
 import {BrandBar} from '../shared/components/BrandBar';
-import {BottomNav, type MemberTabId} from '../shared/components/BottomNav';
+import {HeaderAvatarButton} from '../shared/components/HeaderAvatarButton';
+import {
+  HeaderMenu,
+  type HeaderMenuItem,
+} from '../shared/components/HeaderMenu';
 import {DashboardScreen} from '../features/dashboard/screens/DashboardScreen';
 import {AddBotScreen} from '../features/bots/screens/AddBotScreen';
 import {MemberProfileScreen} from '../features/member';
-import {MemberSettingsScreen} from '../features/settings';
 import {GestionScreen} from '../features/gestion';
 import {BotProfileScreen} from '../features/botprofile';
 import {
@@ -36,6 +52,7 @@ import {
 } from '../features/associate/AssociateStackScreens';
 import type {VerifyResult} from '../features/associate';
 import {BotSpaceScreen} from './BotSpaceScreen';
+import {ContextSwitcher} from './ContextSwitcher';
 
 function Booting(): React.JSX.Element {
   const {colors} = useTheme();
@@ -99,7 +116,6 @@ function AuthFlow(): React.JSX.Element {
 export type MemberStackParamList = {
   Tabs: undefined;
   AddBot: undefined;
-  Gestion: undefined;
   BotProfile: undefined;
   BotSpace: undefined;
   AssociateIntro: undefined;
@@ -112,18 +128,61 @@ export type MemberStackParamList = {
 
 const MemberStack = createNativeStackNavigator<MemberStackParamList>();
 
+type MemberSection = 'dashboard' | 'member' | 'gestion';
+
+const MEMBER_MENU: ReadonlyArray<HeaderMenuItem<MemberSection>> = [
+  {id: 'dashboard', label: 'Tableau de bord', Icon: LayoutDashboard},
+  {id: 'member', label: 'Profil', Icon: UserRound},
+  {id: 'gestion', label: 'Gestion', Icon: Settings},
+];
+
 function MemberTabs({
   navigation,
 }: {
-  navigation: {navigate: (name: 'AddBot' | 'Gestion' | 'BotProfile' | 'BotSpace') => void};
+  navigation: {navigate: (name: 'AddBot' | 'BotSpace') => void};
 }): React.JSX.Element {
   const {colors} = useTheme();
-  const [tab, setTab] = useState<MemberTabId>('dashboard');
+  const [section, setSection] = useState<MemberSection>('dashboard');
+  const [switcherOpen, setSwitcherOpen] = useState(false);
   const offline = useAuthStore(s => s.offline);
+  const member = useAuthStore(s => s.member);
+
+  // Retour Android : Profil / Gestion → Tableau de bord.
+  // Actif seulement quand cet écran est au premier plan.
+  useFocusEffect(
+    useCallback(() => {
+      if (section === 'dashboard') {
+        return undefined;
+      }
+      const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+        setSection('dashboard');
+        return true;
+      });
+      return () => {
+        sub.remove();
+      };
+    }, [section]),
+  );
 
   return (
     <View style={[styles.flex, {backgroundColor: colors.bgSecondary}]}>
-      <BrandBar title="Botgram" />
+      <BrandBar
+        title="Botgram"
+        right={
+          <View style={styles.headerRight}>
+            <HeaderAvatarButton
+              title={member?.display_name ?? ''}
+              open={switcherOpen}
+              onPress={() => setSwitcherOpen(true)}
+            />
+            <HeaderMenu
+              items={MEMBER_MENU}
+              activeId={section}
+              onSelect={setSection}
+            />
+          </View>
+        }
+      />
       {offline ? (
         <View style={[styles.banner, {backgroundColor: colors.bgTertiary}]}>
           <Text style={[styles.bannerText, {color: colors.textSecondary}]}>
@@ -131,21 +190,26 @@ function MemberTabs({
           </Text>
         </View>
       ) : null}
-      {tab === 'dashboard' ? (
+      {section === 'dashboard' ? (
         <DashboardScreen
           onAddBot={() => navigation.navigate('AddBot')}
           onOpenBot={() => navigation.navigate('BotSpace')}
         />
-      ) : tab === 'settings' ? (
-        <MemberSettingsScreen
-          onGoProfile={() => setTab('member')}
-          onGoGestion={() => navigation.navigate('Gestion')}
-          onGoBotProfile={() => navigation.navigate('BotProfile')}
-        />
+      ) : section === 'member' ? (
+        <MemberProfileScreen onGoDashboard={() => setSection('dashboard')} />
       ) : (
-        <MemberProfileScreen onGoDashboard={() => setTab('dashboard')} />
+        <GestionScreen />
       )}
-      <BottomNav activeTab={tab} onTabPress={setTab} />
+      <ContextSwitcher
+        context="member"
+        visible={switcherOpen}
+        onClose={() => setSwitcherOpen(false)}
+        onSelectMember={() => setSwitcherOpen(false)}
+        onBotSelected={() => {
+          setSwitcherOpen(false);
+          navigation.navigate('BotSpace');
+        }}
+      />
     </View>
   );
 }
@@ -155,7 +219,6 @@ function MemberShell(): React.JSX.Element {
     <MemberStack.Navigator screenOptions={{headerShown: false}}>
       <MemberStack.Screen name="Tabs" component={MemberTabs} />
       <MemberStack.Screen name="AddBot" component={AddBotScreenWrapper} />
-      <MemberStack.Screen name="Gestion" component={GestionScreen} />
       <MemberStack.Screen name="BotProfile" component={BotProfileScreenWrapper} />
       <MemberStack.Screen name="BotSpace" component={BotSpaceScreenWrapper} />
       <MemberStack.Screen
@@ -269,6 +332,12 @@ const styles = StyleSheet.create({
   flex: {flex: 1},
   // centrage booting (ActivityIndicator)
   flexCenter: {flex: 1, justifyContent: 'center', alignItems: 'center'},
+  // avatar + menu ⋮ à droite de la barre de marque
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.xs,
+  },
   // padding 12 — bandeau hors-ligne / fin de session (proche sheet section padding 0 14 6, Design tokens §5)
   banner: {padding: rm.bannerPadding},
   bannerText: {textAlign: 'center'},

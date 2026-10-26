@@ -1,14 +1,15 @@
 /**
  * Espace bot (release) — Échanges / Contacts / Paramètres / Profil.
- * Ouvert depuis le tableau de bord après sélection d'un bot.
+ * Ouvert depuis le tableau de bord ou la feuille de bascule de l'en-tête.
  * Échanges : BotChatsStack (liste + fil). Les autres onglets restent des
  * écrans provisoires jusqu'à leur implémentation.
- * Retour : bouton « Tableau de bord » (onglets provisoires) ou retour Android.
+ * Retour à l'espace membre : photo de l'en-tête → membre, ou retour Android.
  */
 import React, {useEffect, useState} from 'react';
-import {View, Text, Pressable, StyleSheet, BackHandler} from 'react-native';
-import {ArrowLeft} from 'lucide-react-native';
-import {useTheme, fontSize, fontWeight, space} from '../shared/theme';
+import {View, StyleSheet, BackHandler} from 'react-native';
+import {useTheme} from '../shared/theme';
+import {BrandBar} from '../shared/components/BrandBar';
+import {HeaderAvatarButton} from '../shared/components/HeaderAvatarButton';
 import {
   BotBottomNav,
   type BotTabId,
@@ -17,6 +18,7 @@ import {EmptyScreen} from '../shared/components/EmptyScreen';
 import {BotChatsStack} from '../features/conversations/navigation/BotChatsStack';
 import {useConversationsStore} from '../features/conversations/store/conversationsStore';
 import {useBotsStore} from '../features/bots/store/botsStore';
+import {ContextSwitcher} from './ContextSwitcher';
 
 type Props = {
   onExit: () => void;
@@ -31,6 +33,7 @@ const TAB_TITLES: Record<Exclude<BotTabId, 'chats'>, string> = {
 export function BotSpaceScreen({onExit}: Props): React.JSX.Element {
   const {colors} = useTheme();
   const [tab, setTab] = useState<BotTabId>('chats');
+  const [switcherOpen, setSwitcherOpen] = useState(false);
   const unreadBadge = useConversationsStore(s => s.unreadTotal);
   const bots = useBotsStore(s => s.bots);
   const selected = bots.find(b => b.selected) ?? bots[0];
@@ -51,6 +54,14 @@ export function BotSpaceScreen({onExit}: Props): React.JSX.Element {
     };
   }, [tab]);
 
+  const headerRight = (
+    <HeaderAvatarButton
+      title={botName}
+      open={switcherOpen}
+      onPress={() => setSwitcherOpen(true)}
+    />
+  );
+
   const nav = (
     <BotBottomNav
       activeTab={tab}
@@ -61,43 +72,38 @@ export function BotSpaceScreen({onExit}: Props): React.JSX.Element {
     />
   );
 
+  const switcher = (
+    <ContextSwitcher
+      context="bot"
+      visible={switcherOpen}
+      onClose={() => setSwitcherOpen(false)}
+      onSelectMember={() => {
+        setSwitcherOpen(false);
+        onExit();
+      }}
+      onBotSelected={() => setSwitcherOpen(false)}
+    />
+  );
+
   if (tab === 'chats') {
     return (
       <View style={[styles.root, {backgroundColor: colors.bgPrimary}]}>
-        <BotChatsStack footer={nav} />
+        <BotChatsStack footer={nav} headerRight={headerRight} />
+        {switcher}
       </View>
     );
   }
 
   return (
     <View style={[styles.root, {backgroundColor: colors.bgSecondary}]}>
-      <Pressable
-        accessibilityRole="button"
-        onPress={onExit}
-        hitSlop={space.iconButtonPadding}
-        style={styles.exit}>
-        <ArrowLeft size={20} color={colors.accent} />
-        <Text style={[styles.exitText, {color: colors.accent}]}>
-          Tableau de bord
-        </Text>
-      </Pressable>
+      <BrandBar title="Botgram" right={headerRight} />
       <EmptyScreen title={TAB_TITLES[tab]} subtitle="Bientôt disponible" />
       {nav}
+      {switcher}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: {flex: 1},
-  exit: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.iconButtonPadding,
-    paddingHorizontal: space.brandBarPaddingRight,
-    paddingVertical: space.iconButtonPadding,
-  },
-  exitText: {
-    fontSize: fontSize.listName,
-    fontWeight: fontWeight.semibold,
-  },
 });
