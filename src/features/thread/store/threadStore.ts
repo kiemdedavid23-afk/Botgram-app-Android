@@ -85,6 +85,7 @@ export const useThreadStore = create<ThreadStore>((set, get) => ({
   lastReadMarked: false,
 
   open({conversationId, title, photoUrl, initials}) {
+    clearPendingMedia();
     set({
       conversationId,
       title: title ?? '',
@@ -264,7 +265,12 @@ export const useThreadStore = create<ThreadStore>((set, get) => ({
     await doSendMedia(files, caption, {get, set}, signal);
   },
 
+  async resendMedia(message: Message) {
+    await doResendMediaAsNew(message, {get, set});
+  },
+
   clear() {
+    clearPendingMedia();
     fireAndForget(cacheDeleteByPrefix(CACHE_PREFIX));
     set({
       conversationId: null,
