@@ -110,3 +110,35 @@ export function memberInitial(displayName: string | null | undefined): string {
   if (!n) return '?';
   return n.charAt(0).toUpperCase();
 }
+
+/**
+ * Initiales (2 lettres max) — même règle que l'avatar de l'en-tête (Avatar.tsx) :
+ * première lettre des deux premiers mots, sinon les deux premières lettres.
+ */
+export function memberInitials(displayName: string | null | undefined): string {
+  const n = (displayName ?? '').trim();
+  if (!n) return '?';
+  const parts = n.split(/\s+/);
+  const first = parts[0] ?? '';
+  const second = parts[1] ?? '';
+  if (second) {
+    return `${first.charAt(0)}${second.charAt(0)}`.toUpperCase();
+  }
+  return n.slice(0, 2).toUpperCase();
+}
+
+const ROLE_LABELS: Record<string, string> = {
+  member: 'Membre',
+};
+
+/** Libellé du rôle (pastille du héros) ; vide si le rôle est absent. */
+export function roleLabel(role: string | null | undefined): string {
+  const r = (role ?? '').trim();
+  if (!r) return '';
+  return ROLE_LABELS[r] ?? r.charAt(0).toUpperCase() + r.slice(1);
+}
+
+/** Usage « boutique » → icône boutique sur la ligne Usage. */
+export function isShopUsage(usage: string | null | undefined): boolean {
+  return (usage ?? '').toLowerCase().includes('boutique');
+}
