@@ -2,6 +2,11 @@
  * Store conversations par bot actif (L5b).
  * Fusion par id, événements realtime, cache page 1 chiffré.
  */
+import {
+  doPinConversation,
+  doDeleteConversation,
+  removeConversationLocally,
+} from './conversationActions';
 import {create} from 'zustand';
 import {
   listConversations,
@@ -50,6 +55,8 @@ type ConversationsStore = {
   search: (q: string) => Promise<void>;
   clearSearch: () => void;
   applyRealtimeEvent: (ev: RealtimeEvent) => void;
+  pinConversation: (id: string, pinned: boolean) => Promise<void>;
+  deleteConversation: (id: string) => Promise<boolean>;
   clear: () => void;
 };
 
@@ -214,6 +221,14 @@ export const useConversationsStore = create<ConversationsStore>((set, get) => ({
       set,
       load: (force?: boolean) => get().load(force),
     });
+  },
+
+  async pinConversation(id, pinned) {
+    await doPinConversation(id, pinned, {get, set});
+  },
+
+  async deleteConversation(id) {
+    return doDeleteConversation(id, {get, set});
   },
 
   clear() {
