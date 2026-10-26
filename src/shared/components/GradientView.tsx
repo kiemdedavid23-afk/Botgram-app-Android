@@ -2,6 +2,8 @@
  * Composant de dégradé réutilisable basé sur react-native-svg.
  * Angle CSS : 0° = vers le haut, 90° = vers la droite, 180° = vers le bas.
  * Formule centrée : x1 = 50 - 50·sinθ, y1 = 50 + 50·cosθ, x2 = 50 + 50·sinθ, y2 = 50 - 50·cosθ.
+ * Le SVG reçoit des dimensions explicites (et une clé) dès que la taille est
+ * mesurée : sinon il peut rester peint à une ancienne taille après un relayout.
  * Pour rectangles non carrés : onLayout + gradientUnits="userSpaceOnUse" + L = |w·sinθ| + |h·cosθ|.
  */
 import React, {useId, useState} from 'react';
@@ -82,7 +84,11 @@ export function GradientView({
 
   return (
     <View style={[styles.root, style]} onLayout={onLayout}>
-      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
+      <Svg
+        key={size ? `${size.w}x${size.h}` : 'init'}
+        width={size ? size.w : '100%'}
+        height={size ? size.h : '100%'}
+        style={StyleSheet.absoluteFill}>
         <Defs>
           <LinearGradient id={id} {...gradientProps}>
             {colors.map((c, i) => (
@@ -94,7 +100,11 @@ export function GradientView({
             ))}
           </LinearGradient>
         </Defs>
-        <Rect width="100%" height="100%" fill={`url(#${id})`} />
+        <Rect
+          width={size ? size.w : '100%'}
+          height={size ? size.h : '100%'}
+          fill={`url(#${id})`}
+        />
       </Svg>
       {children}
     </View>
