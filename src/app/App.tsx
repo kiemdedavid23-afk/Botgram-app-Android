@@ -4,6 +4,11 @@ import {ThemeProvider, useTheme} from '../shared/theme';
 import {RootNavigator} from './RootNavigator';
 import {useRealtimeLifecycle} from './useRealtimeLifecycle';
 import {registerMediaStorageCleaner} from '../core/media/registerMediaCleaner';
+import {
+  bindArchiveStore,
+  createOpSqliteArchiveStore,
+  registerArchiveStoreCleaner,
+} from '../core/archive';
 
 function AppStatusBar(): React.JSX.Element {
   const {mode} = useTheme();
@@ -18,6 +23,9 @@ function AppInner(): React.JSX.Element {
   useRealtimeLifecycle();
   React.useEffect(() => {
     registerMediaStorageCleaner();
+    bindArchiveStore(createOpSqliteArchiveStore());
+    registerArchiveStoreCleaner();
+    // open lazy on first use; optional warm-up
   }, []);
   return (
     <>
