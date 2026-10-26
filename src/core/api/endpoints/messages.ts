@@ -101,3 +101,13 @@ export async function sendAlbum(
     signal,
   });
 }
+
+/** DELETE /messages/:id — suppression message sortant. */
+export async function deleteMessage(
+  messageId: string,
+): Promise<HttpResult<{deleted: boolean; telegram?: boolean}>> {
+  return authedHttp<{deleted: boolean; telegram?: boolean}>({
+    method: 'DELETE',
+    path: `/messages/${messageId}`,
+  });
+}

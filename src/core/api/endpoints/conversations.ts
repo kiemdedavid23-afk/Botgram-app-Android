@@ -59,3 +59,26 @@ export async function searchConversations(
     path: `/bots/${botId}/search/conversations?${params.toString()}`,
   });
 }
+
+/** POST /conversations/:id/pin — épinglage local. */
+export async function pinConversation(
+  id: string,
+  pinned: boolean,
+): Promise<HttpResult<{conversation: ConversationSummary}>> {
+  return authedHttp<{conversation: ConversationSummary}>({
+    method: 'POST',
+    path: `/conversations/${id}/pin`,
+    body: {pinned},
+  });
+}
+
+/** DELETE /conversations/:id — suppression locale Botgram. */
+export async function deleteConversation(
+  id: string,
+): Promise<HttpResult<{deleted: boolean}>> {
+  return authedHttp<{deleted: boolean}>({
+    method: 'DELETE',
+    path: `/conversations/${id}`,
+    body: {confirm: true},
+  });
+}
