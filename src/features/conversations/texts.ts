@@ -23,6 +23,16 @@ export const conversationsTexts = {
     'Vendredi',
     'Samedi',
   ] as const,
+  pinAction: 'Épingler',
+  unpinAction: 'Désépingler',
+  deleteConversation: 'Supprimer la conversation',
+  deleteConversationConfirmTitle: 'Supprimer la conversation ?',
+  deleteConversationConfirmBody:
+    'Supprime la conversation et ses messages de Botgram (pas de Telegram) sur cet appareil.',
+  deleteConversationConfirm2: 'Confirmer la suppression définitive',
+  cancel: 'Annuler',
+  errorNetwork: 'Erreur réseau',
+  errorGeneric: 'Une erreur est survenue',
 };
 
 export function formatConversationTime(
@@ -57,15 +67,4 @@ export function formatConversationTime(
   const dd = d.getDate().toString().padStart(2, '0');
   const mm = (d.getMonth() + 1).toString().padStart(2, '0');
   return `${dd}/${mm}/${d.getFullYear()}`;
-,
-  pinAction: 'Épingler',
-  unpinAction: 'Désépingler',
-  deleteConversation: 'Supprimer la conversation',
-  deleteConversationConfirmTitle: 'Supprimer la conversation ?',
-  deleteConversationConfirmBody:
-    'Supprime la conversation et ses messages de Botgram (pas de Telegram) sur cet appareil.',
-  deleteConversationConfirm2: 'Confirmer la suppression définitive',
-  cancel: 'Annuler',
-  errorNetwork: 'Erreur réseau',
-  errorGeneric: 'Une erreur est survenue',
-};
+}
