@@ -1,5 +1,6 @@
 /**
  * Navigation racine — booting / auth / shell / upgrade.
+ * Espace bot (BotSpace) accessible depuis le tableau de bord.
  * ShellSwitcher uniquement sous __DEV__.
  */
 import React, {useEffect, useState} from 'react';
@@ -34,6 +35,7 @@ import {
   AssociateDoneWrapper,
 } from '../features/associate/AssociateStackScreens';
 import type {VerifyResult} from '../features/associate';
+import {BotSpaceScreen} from './BotSpaceScreen';
 
 function Booting(): React.JSX.Element {
   const {colors} = useTheme();
@@ -99,6 +101,7 @@ export type MemberStackParamList = {
   AddBot: undefined;
   Gestion: undefined;
   BotProfile: undefined;
+  BotSpace: undefined;
   AssociateIntro: undefined;
   AssociateReady: undefined;
   AssociateToken: undefined;
@@ -112,7 +115,7 @@ const MemberStack = createNativeStackNavigator<MemberStackParamList>();
 function MemberTabs({
   navigation,
 }: {
-  navigation: {navigate: (name: 'AddBot' | 'Gestion' | 'BotProfile') => void};
+  navigation: {navigate: (name: 'AddBot' | 'Gestion' | 'BotProfile' | 'BotSpace') => void};
 }): React.JSX.Element {
   const {colors} = useTheme();
   const [tab, setTab] = useState<MemberTabId>('dashboard');
@@ -129,7 +132,10 @@ function MemberTabs({
         </View>
       ) : null}
       {tab === 'dashboard' ? (
-        <DashboardScreen onAddBot={() => navigation.navigate('AddBot')} />
+        <DashboardScreen
+          onAddBot={() => navigation.navigate('AddBot')}
+          onOpenBot={() => navigation.navigate('BotSpace')}
+        />
       ) : tab === 'settings' ? (
         <MemberSettingsScreen
           onGoProfile={() => setTab('member')}
@@ -150,7 +156,8 @@ function MemberShell(): React.JSX.Element {
       <MemberStack.Screen name="Tabs" component={MemberTabs} />
       <MemberStack.Screen name="AddBot" component={AddBotScreenWrapper} />
       <MemberStack.Screen name="Gestion" component={GestionScreen} />
-<MemberStack.Screen name="BotProfile" component={BotProfileScreenWrapper} />
+      <MemberStack.Screen name="BotProfile" component={BotProfileScreenWrapper} />
+      <MemberStack.Screen name="BotSpace" component={BotSpaceScreenWrapper} />
       <MemberStack.Screen
         name="AssociateIntro"
         component={AssociateIntroWrapper}
@@ -187,6 +194,14 @@ function BotProfileScreenWrapper({
   return (
     <BotProfileScreen onAddBot={() => navigation.navigate('AddBot')} />
   );
+}
+
+function BotSpaceScreenWrapper({
+  navigation,
+}: {
+  navigation: {goBack: () => void};
+}): React.JSX.Element {
+  return <BotSpaceScreen onExit={() => navigation.goBack()} />;
 }
 
 function AddBotScreenWrapper({
