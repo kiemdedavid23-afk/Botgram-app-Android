@@ -24,9 +24,14 @@ import {useReducedMotion} from '../../../shared/hooks/useReducedMotion';
 
 type Props = {
   onAddBot: () => void;
+  /** Ouvre l'espace bot une fois le bot sélectionné avec succès. */
+  onOpenBot?: () => void;
 };
 
-export function DashboardScreen({onAddBot}: Props): React.JSX.Element {
+export function DashboardScreen({
+  onAddBot,
+  onOpenBot,
+}: Props): React.JSX.Element {
   const {colors} = useTheme();
   const member = useAuthStore(s => s.member);
   const bots = useBotsStore(s => s.bots);
@@ -117,7 +122,13 @@ export function DashboardScreen({onAddBot}: Props): React.JSX.Element {
               bot={bot}
               busy={!!busy[`select:${bot.id}`]}
               onPress={() => {
-                fireAndForget(selectBot(bot.id));
+                fireAndForget(
+                  selectBot(bot.id).then(res => {
+                    if (res.ok) {
+                      onOpenBot?.();
+                    }
+                  }),
+                );
               }}
             />
           ))}
