@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, Text, StyleSheet, useWindowDimensions} from 'react-native';
+import {View, Text, StyleSheet, useWindowDimensions, Pressable, Alert} from 'react-native';
 import {useTheme} from '../../../shared/theme';
 import {threadMetrics as tm} from '../../../shared/theme/threadMetrics';
 import type {Message} from '../../../core/realtime/events';
@@ -10,6 +10,8 @@ import {MessageStatus} from './MessageStatus';
 import {MediaPhoto} from './MediaPhoto';
 import {MediaFile} from './MediaFile';
 import {MediaAlbum} from './MediaAlbum';
+import {fireAndForget} from '../../../core/utils/fireAndForget';
+import {threadTexts as t} from '../texts';
 
 type Props = {
   message: Message;
@@ -17,9 +19,10 @@ type Props = {
   onResendSame?: (m: Message) => Promise<void>;
   onResendNew?: (m: Message) => Promise<void>;
   onResendMedia?: (m: Message) => Promise<void>;
+  onDelete?: (m: Message) => Promise<void>;
 };
 
-export function MessageBubble({message, onRetry, onResendSame, onResendNew, onResendMedia}: Props): React.JSX.Element {
+export function MessageBubble({message, onRetry, onResendSame, onResendNew, onResendMedia, onDelete}: Props): React.JSX.Element {
   const {colors} = useTheme();
   const {width} = useWindowDimensions();
   const isOut = message.direction === 'out';
@@ -29,8 +32,23 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
   const isText = message.kind === 'text' || !message.kind;
   const caption = message.text;
 
+  const confirmDelete = () => {
+    if (!onDelete || !isOut) return;
+    Alert.alert(t.deleteMessageConfirmTitle, t.deleteMessageConfirmBody, [
+      {text: t.cancel, style: 'cancel'},
+      {
+        text: t.deleteMessage,
+        style: 'destructive',
+        onPress: () => {
+          fireAndForget(onDelete(message));
+        },
+      },
+    ]);
+  };
+
   return (
-    <View
+    <Pressable
+      onLongPress={isOut ? confirmDelete : undefined}
       style={[
         styles.row,
         isOut ? styles.out : styles.in,
@@ -107,7 +125,7 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
           />
         ) : null}
       </View>
-    </View>
+    </Pressable>
   );
 }
 
