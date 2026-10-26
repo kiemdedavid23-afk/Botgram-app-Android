@@ -13,6 +13,7 @@ export type TokenPair = {
 
 const ACCESS_KEY = 'access_token';
 const REFRESH_KEY = 'refresh_token';
+const ARCHIVE_KEY_KEY = 'botgram.archive.db.key';
 const MMKV_KEY_KEY = 'mmkv_encryption_key';
 
 async function setPassword(key: string, value: string): Promise<void> {
@@ -79,6 +80,32 @@ function generateRandomKey(_byteLength: number): string {
   crypto.getRandomValues(arr);
   let out = '';
   for (let i = 0; i < 16; i += 1) {
+    out += alphabet[arr[i]! % alphabet.length];
+  }
+  return out;
+}
+
+/**
+ * Clé d'encryption SQLCipher (archive) — Keychain only (13.11 / 13.2).
+ * Générée une fois ; distincte de la clé MMKV.
+ */
+export async function getOrCreateArchiveKey(): Promise<string> {
+  const existing = await getPassword(ARCHIVE_KEY_KEY);
+  if (existing !== null && existing.length >= 32) {
+    return existing;
+  }
+  const generated = generateArchiveKey();
+  await setPassword(ARCHIVE_KEY_KEY, generated);
+  return generated;
+}
+
+function generateArchiveKey(): string {
+  const alphabet =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const arr = new Uint8Array(48);
+  crypto.getRandomValues(arr);
+  let out = '';
+  for (let i = 0; i < arr.length; i += 1) {
     out += alphabet[arr[i]! % alphabet.length];
   }
   return out;

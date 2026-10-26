@@ -4,6 +4,7 @@ export {
   getRefreshToken,
   clearTokens,
   getOrCreateMmkvKey,
+  getOrCreateArchiveKey,
   type TokenPair,
 } from './secureStorage';
 
