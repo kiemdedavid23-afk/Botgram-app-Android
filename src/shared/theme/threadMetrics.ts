@@ -95,5 +95,9 @@ export const threadMetrics = {
   /** sans équivalent site — auto DL photo */
   autoDownloadMaxBytes: 2 * 1024 * 1024,
   mediaAlbumColumns: 2,
+  /** ComposerBar envoi en cours — sans équivalent site */
+  composerSendingGap: 8,
+  /** MessageStatus row margin-top — MessageBubble.css */
+  statusMarginT: 4,
 
 } as const;
