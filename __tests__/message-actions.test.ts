@@ -1,7 +1,6 @@
 import {doDeleteOutgoing, removeMessageLocally} from '../src/features/thread/store/messageActions';
 import * as MessagesApi from '../src/core/api/endpoints/messages';
 import type {Message} from '../src/core/realtime/events';
-import type {HttpResult} from '../src/core/api/http';
 
 jest.mock('../src/core/api/endpoints/messages', () => ({
   deleteMessage: jest.fn(),
