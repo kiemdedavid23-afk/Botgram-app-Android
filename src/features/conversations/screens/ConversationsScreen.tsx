@@ -2,7 +2,7 @@
  * Liste des conversations — onglet Échanges (L5b).
  * Abonnement realtime et setBotId : niveau app (useRealtimeLifecycle).
  */
-import React, {useMemo} from 'react';
+import React, {useMemo, type ReactNode} from 'react';
 import {View, Text, StyleSheet, ActivityIndicator} from 'react-native';
 import {useTheme, fontSize} from '../../../shared/theme';
 import {BrandBar} from '../../../shared/components/BrandBar';
@@ -21,10 +21,13 @@ import {fireAndForget} from '../../../core/utils/fireAndForget';
 
 type Props = {
   onOpenConversation?: (id: string) => void;
+  /** Contenu à droite de la barre de marque (avatar de bascule). */
+  headerRight?: ReactNode;
 };
 
 export function ConversationsScreen({
   onOpenConversation,
+  headerRight,
 }: Props): React.JSX.Element {
   const {colors, appearance} = useTheme();
   const densityPad =
@@ -50,7 +53,7 @@ export function ConversationsScreen({
 
   return (
     <View style={[styles.root, {backgroundColor: colors.bgPrimary}]}>
-      <BrandBar title={t.title} />
+      <BrandBar title={t.title} right={headerRight} />
       {offline ? (
         <View style={[styles.offline, {backgroundColor: colors.bgTertiary}]}>
           <Text
