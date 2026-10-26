@@ -68,6 +68,11 @@ export function ThreadScreen({
 
   const rows = useMemo(() => buildInvertedRows(items), [items]);
 
+  const onRetryMsg = useCallback(
+    (m: Message) => retry(m.id),
+    [retry],
+  );
+
   const renderItem = useCallback(
     ({item}: {item: Row}) => {
       if (item.type === 'day') {
@@ -76,14 +81,14 @@ export function ThreadScreen({
       return (
         <MessageBubble
           message={item.message}
-          onRetry={retry}
+          onRetry={onRetryMsg}
           onResendSame={resendSameId}
           onResendNew={resendAsNew}
           onResendMedia={resendMedia}
         />
       );
     },
-    [retry, resendSameId, resendAsNew],
+    [onRetryMsg, resendSameId, resendAsNew, resendMedia],
   );
 
   const headerTitle = storeTitle || title || '';
