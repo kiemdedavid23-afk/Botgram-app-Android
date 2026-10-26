@@ -6,6 +6,7 @@
 import React, {useEffect, useRef} from 'react';
 import {View, Text, StyleSheet, Animated} from 'react-native';
 import Svg, {Defs, RadialGradient, Stop, Circle} from 'react-native-svg';
+import {Building2, User, BadgeCheck} from 'lucide-react-native';
 import {
   useTheme,
   memberProfileMetrics as m,
@@ -13,24 +14,35 @@ import {
 } from '../../../shared/theme';
 import {GradientView} from '../../../shared/components/GradientView';
 import {useReducedMotion} from '../../../shared/hooks/useReducedMotion';
-import {memberInitial, statusLabel, statusTone} from '../utils/format';
+import {
+  memberInitials,
+  roleLabel,
+  statusLabel,
+  statusTone,
+} from '../utils/format';
 import {texts} from '../texts';
 
 type Props = {
   displayName: string;
   status: string;
   emailVerified: boolean;
+  organization?: string | null;
+  role?: string | null;
 };
 
 export function ProfileHero({
   displayName,
   status,
   emailVerified,
+  organization,
+  role,
 }: Props): React.JSX.Element {
   const {colors, mode} = useTheme();
   const reduce = useReducedMotion();
   const tone = statusTone(status);
-  const initial = memberInitial(displayName);
+  const initial = memberInitials(displayName);
+  const roleText = roleLabel(role);
+  const chipIconSize = m.chipFont + 2;
 
   const floatA = useRef(new Animated.Value(0)).current;
   const floatB = useRef(new Animated.Value(0)).current;
@@ -146,7 +158,33 @@ export function ProfileHero({
         {displayName || '—'}
       </Text>
 
+      {organization ? (
+        <View style={styles.org}>
+          <Building2 size={m.orgSize + 2} color={colors.heroText} />
+          <Text
+            numberOfLines={1}
+            style={[styles.orgText, {color: colors.heroText}]}>
+            {organization}
+          </Text>
+        </View>
+      ) : null}
+
       <View style={styles.chips}>
+        {roleText ? (
+          <View
+            style={[
+              styles.chip,
+              {
+                backgroundColor: colors.heroChipBg,
+                borderColor: colors.heroChipBorder,
+              },
+            ]}>
+            <User size={chipIconSize} color={colors.heroText} />
+            <Text style={[styles.chipText, {color: colors.heroText}]}>
+              {roleText}
+            </Text>
+          </View>
+        ) : null}
         <View
           style={[
             styles.chip,
@@ -169,6 +207,7 @@ export function ProfileHero({
                 borderColor: colors.heroChipBorder,
               },
             ]}>
+            <BadgeCheck size={chipIconSize} color={colors.heroText} />
             <Text style={[styles.chipText, {color: colors.heroText}]}>
               {texts.verifiedChip}
             </Text>
@@ -221,6 +260,19 @@ const styles = StyleSheet.create({
     fontWeight: m.nameWeight,
     letterSpacing: -0.5,
     textAlign: 'center',
+  },
+  org: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: m.orgMarginTop,
+    maxWidth: '100%',
+  },
+  orgText: {
+    fontSize: m.orgSize,
+    fontWeight: '600',
+    flexShrink: 1,
   },
   chips: {
     flexDirection: 'row',

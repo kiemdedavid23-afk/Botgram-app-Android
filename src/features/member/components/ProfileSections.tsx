@@ -7,6 +7,7 @@ import {
   User,
   Building2,
   Briefcase,
+  Store,
   Globe,
   Phone,
   Mail,
@@ -25,6 +26,7 @@ import type {Bot} from '../../../core/api/endpoints/bots';
 import {
   countryLabel,
   formatPhone,
+  isShopUsage,
   memberSince,
   statusLabel,
   statusTone,
@@ -105,7 +107,7 @@ export function ProfileSections({
           />
           <Divider />
           <ProfileRow
-            icon={<Briefcase />}
+            icon={isShopUsage(member.usage) ? <Store /> : <Briefcase />}
             label={texts.labelUsage}
             value={usageLabel(member.usage) || texts.emptyValue}
           />
@@ -149,7 +151,7 @@ export function ProfileSections({
                       },
                     ]}>
                     {member.email_verified
-                      ? texts.emailVerified
+                      ? texts.emailVerifiedBadge
                       : texts.emailNotVerified}
                   </Text>
                 </View>

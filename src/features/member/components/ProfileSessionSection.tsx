@@ -1,5 +1,7 @@
 /**
- * Section Session profil - Se deconnecter / Supprimer.
+ * Section Session profil — Se déconnecter / Supprimer le compte.
+ * Même habillage que les lignes du profil : pastille d'icône arrondie,
+ * séparateur en retrait. « Supprimer » reste en rouge.
  */
 import React from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
@@ -29,28 +31,37 @@ export function ProfileSessionSection({
       <View
         style={[
           styles.card,
-          {backgroundColor: colors.bgPrimary},
+          {
+            backgroundColor: colors.bgPrimary,
+            borderColor: colors.borderSoft,
+          },
           getShadow('sm', mode),
         ]}>
         <Pressable
+          accessibilityRole="button"
           onPress={onLogout}
           style={({pressed}) => [
             styles.action,
             pressed && {backgroundColor: colors.bgSecondary},
           ]}>
-          <LogOut size={18} color={colors.danger} />
-          <Text style={[styles.actionText, {color: colors.danger}]}>
+          <View style={[styles.icon, {backgroundColor: colors.accentSoft}]}>
+            <LogOut size={18} color={colors.accent} />
+          </View>
+          <Text style={[styles.actionText, {color: colors.textPrimary}]}>
             {texts.logout}
           </Text>
         </Pressable>
-        <View style={[styles.sep, {backgroundColor: colors.borderSoft}]} />
+        <View style={[styles.sep, {backgroundColor: colors.bgSecondary}]} />
         <Pressable
+          accessibilityRole="button"
           onPress={onDelete}
           style={({pressed}) => [
             styles.action,
             pressed && {backgroundColor: colors.bgSecondary},
           ]}>
-          <Trash2 size={18} color={colors.danger} />
+          <View style={[styles.icon, {backgroundColor: colors.rowIconDangerBg}]}>
+            <Trash2 size={18} color={colors.danger} />
+          </View>
           <Text style={[styles.actionText, {color: colors.danger}]}>
             {texts.deleteAccount}
           </Text>
@@ -69,14 +80,21 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     paddingHorizontal: m.sectionTitlePadH,
   },
-  card: {borderRadius: m.cardRadius, overflow: 'hidden'},
+  card: {borderRadius: m.cardRadius, borderWidth: 1, overflow: 'hidden'},
   action: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: m.rowGap,
     paddingVertical: m.rowPadV,
     paddingHorizontal: m.rowPadH,
   },
-  actionText: {fontSize: 15, fontWeight: '600'},
-  sep: {height: 1, marginLeft: m.rowPadH},
+  icon: {
+    width: m.rowIcon,
+    height: m.rowIcon,
+    borderRadius: m.rowIconRadius,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionText: {fontSize: m.rowValSize, fontWeight: '600'},
+  sep: {height: 1, marginHorizontal: 16},
 });
