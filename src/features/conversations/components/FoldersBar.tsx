@@ -17,6 +17,7 @@ const FOLDERS: Array<{id: FolderId; label: string}> = [
   {id: 'personal', label: t.folderPersonal},
   {id: 'work', label: t.folderWork},
   {id: 'unread', label: t.folderUnread},
+  {id: 'archive', label: t.folderArchive},
 ];
 
 export function FoldersBar({folder, counts, onSelect}: Props): React.JSX.Element {

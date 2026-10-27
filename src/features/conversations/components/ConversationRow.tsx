@@ -20,6 +20,11 @@ type Props = {
   onPressAvatar?: () => void;
   onPin?: (id: string, pinned: boolean) => Promise<void>;
   onDelete?: (id: string) => Promise<boolean>;
+  onArchive?: (id: string) => void;
+  onUnarchive?: (id: string) => void;
+  archived?: boolean;
+  /** Action préférée (réglage Discussions) — mise en avant dans le menu. */
+  swipeAction?: 'archive' | 'folder' | 'pin';
 };
 
 export function ConversationRow({
@@ -30,6 +35,10 @@ export function ConversationRow({
   onPressAvatar,
   onPin,
   onDelete,
+  onArchive,
+  onUnarchive,
+  archived = false,
+  swipeAction = 'folder',
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
   const title = conversationTitle(item);
@@ -43,39 +52,59 @@ export function ConversationRow({
       onPress={onPress}
       onLongPress={() => {
         const pinned = !!item.pinned;
-        const buttons: {
+        type Btn = {
           text: string;
           style?: 'cancel' | 'destructive';
           onPress?: () => void;
-        }[] = [
-          {
-            text: pinned ? ct.unpinAction : ct.pinAction,
-            onPress: () => {
-              if (onPin) fireAndForget(onPin(item.id, !pinned));
-            },
+        };
+        const pinBtn: Btn = {
+          text: pinned ? ct.unpinAction : ct.pinAction,
+          onPress: () => {
+            if (onPin) fireAndForget(onPin(item.id, !pinned));
           },
-          {
-            text: ct.deleteConversation,
-            style: 'destructive',
-            onPress: () => {
-              Alert.alert(
-                ct.deleteConversationConfirmTitle,
-                ct.deleteConversationConfirmBody,
-                [
-                  {text: ct.cancel, style: 'cancel'},
-                  {
-                    text: ct.deleteConversationConfirm2,
-                    style: 'destructive',
-                    onPress: () => {
-                      if (onDelete) fireAndForget(onDelete(item.id));
-                    },
+        };
+        const archiveBtn: Btn = archived
+          ? {
+              text: ct.unarchiveAction,
+              onPress: () => onUnarchive?.(item.id),
+            }
+          : {
+              text: ct.archiveAction,
+              onPress: () => onArchive?.(item.id),
+            };
+        const deleteBtn: Btn = {
+          text: ct.deleteConversation,
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              ct.deleteConversationConfirmTitle,
+              ct.deleteConversationConfirmBody,
+              [
+                {text: ct.cancel, style: 'cancel'},
+                {
+                  text: ct.deleteConversationConfirm2,
+                  style: 'destructive',
+                  onPress: () => {
+                    if (onDelete) fireAndForget(onDelete(item.id));
                   },
-                ],
-              );
-            },
+                },
+              ],
+            );
           },
-          {text: ct.cancel, style: 'cancel'},
-        ];
+        };
+        const cancelBtn: Btn = {text: ct.cancel, style: 'cancel'};
+        // Ordre : action préférée (swipe) en premier, puis le reste.
+        const preferred =
+          swipeAction === 'pin'
+            ? pinBtn
+            : swipeAction === 'archive'
+              ? archiveBtn
+              : archiveBtn;
+        const rest: Btn[] = [];
+        for (const b of [pinBtn, archiveBtn, deleteBtn]) {
+          if (b.text !== preferred.text) rest.push(b);
+        }
+        const buttons = [preferred, ...rest, cancelBtn];
         Alert.alert(conversationTitle(item), undefined, buttons);
       }}
       style={({pressed}) => [
@@ -86,22 +115,25 @@ export function ConversationRow({
           backgroundColor: pressed ? colors.bgTertiary : 'transparent',
         },
       ]}>
-      <Pressable
-        onPress={e => {
-          // Empêche l'ouverture du fil : photo seule → profil.
-          e?.stopPropagation?.();
-          onPressAvatar?.();
-        }}
-        hitSlop={8}
-        accessibilityRole="button"
-        accessibilityLabel={title}
-        style={styles.avatarPress}>
+      {onPressAvatar ? (
+        <Pressable
+          onPress={onPressAvatar}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={title}>
+          <Avatar
+            photoUrl={item.photo_url}
+            initials={item.initials}
+            title={title}
+          />
+        </Pressable>
+      ) : (
         <Avatar
           photoUrl={item.photo_url}
           initials={item.initials}
           title={title}
         />
-      </Pressable>
+      )}
       <View style={styles.content}>
         <View style={styles.row}>
           <View style={styles.titleRow}>
@@ -162,9 +194,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: cm.itemGap,
-  },
-  avatarPress: {
-    // Zone tactile dédiée à la photo (le parent ouvre le fil).
   },
   content: {flex: 1, minWidth: 0, gap: cm.contentGap},
   row: {

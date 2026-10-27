@@ -27,6 +27,10 @@ type Props = {
   onOpenProfile?: (id: string) => void;
   onPin?: (id: string, pinned: boolean) => Promise<void>;
   onDelete?: (id: string) => Promise<boolean>;
+  onArchive?: (id: string) => void;
+  onUnarchive?: (id: string) => void;
+  isArchived?: (id: string) => boolean;
+  swipeAction?: 'archive' | 'folder' | 'pin';
 };
 
 export function ConversationsBody({
@@ -42,6 +46,10 @@ export function ConversationsBody({
   onOpenProfile,
   onPin,
   onDelete,
+  onArchive,
+  onUnarchive,
+  isArchived,
+  swipeAction,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
   const hideBadge = searchQuery.trim().length >= 1;
@@ -56,9 +64,24 @@ export function ConversationsBody({
         onPressAvatar={() => onOpenProfile?.(item.id)}
         onPin={onPin}
         onDelete={onDelete}
+        onArchive={onArchive}
+        onUnarchive={onUnarchive}
+        archived={isArchived?.(item.id) ?? false}
+        swipeAction={swipeAction}
       />
     ),
-    [densityPad, hideBadge, onOpen, onOpenProfile, onPin, onDelete],
+    [
+      densityPad,
+      hideBadge,
+      onOpen,
+      onOpenProfile,
+      onPin,
+      onDelete,
+      onArchive,
+      onUnarchive,
+      isArchived,
+      swipeAction,
+    ],
   );
 
   if (loading && filtered.length === 0) {
