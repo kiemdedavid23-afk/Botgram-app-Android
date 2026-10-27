@@ -1,36 +1,25 @@
 /**
- * Onglet Infos — état + resync avec garde brouillon.
+ * Onglet Infos (lecture seule) — état + actualisation depuis Telegram.
  */
-import React, {useState} from 'react';
-import {View, Text, Pressable, StyleSheet} from 'react-native';
+import React from 'react';
+import {View, Text, Pressable, StyleSheet, ActivityIndicator} from 'react-native';
 import {useTheme, botProfileMetrics as m} from '../../../shared/theme';
 import type {BotProfile} from '../../../core/api/endpoints/botProfile.types';
-import {hasChanges} from '../utils/diff';
 import {texts} from '../texts';
-import {ConfirmDialog} from '../../gestion/components/ConfirmDialog';
 
 type Props = {
   profile: BotProfile;
-  saved: BotProfile | null;
-  draft: BotProfile | null;
+  loading: boolean;
   onResync: () => void;
 };
 
 export function InfoSection({
   profile,
-  saved,
-  draft,
+  loading,
   onResync,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
-  const [confirm, setConfirm] = useState(false);
-  const dirty = hasChanges(saved, draft);
   const when = new Date(profile.synced_at).toLocaleString('fr-FR');
-
-  const askResync = () => {
-    if (dirty) setConfirm(true);
-    else onResync();
-  };
 
   return (
     <View style={styles.stack}>
@@ -47,22 +36,17 @@ export function InfoSection({
         <Text style={[styles.v, {color: colors.textPrimary}]}>{when}</Text>
       </View>
       <Pressable
-        onPress={askResync}
+        onPress={onResync}
+        disabled={loading}
         style={[styles.btn, {backgroundColor: colors.accent}]}>
-        <Text style={[styles.btnText, {color: colors.white}]}>
-          {texts.infoResync}
-        </Text>
+        {loading ? (
+          <ActivityIndicator color={colors.white} />
+        ) : (
+          <Text style={[styles.btnText, {color: colors.white}]}>
+            {texts.infoResync}
+          </Text>
+        )}
       </Pressable>
-      <ConfirmDialog
-        visible={confirm}
-        title={texts.resyncConfirmTitle}
-        body={texts.resyncConfirmBody}
-        onCancel={() => setConfirm(false)}
-        onConfirm={() => {
-          setConfirm(false);
-          onResync();
-        }}
-      />
     </View>
   );
 }
