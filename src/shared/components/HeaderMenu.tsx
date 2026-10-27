@@ -23,7 +23,8 @@ export type HeaderMenuItem<Id extends string> = {
 
 type Props<Id extends string> = {
   items: ReadonlyArray<HeaderMenuItem<Id>>;
-  activeId: Id;
+  /** Entrée surlignée ; null = aucune. */
+  activeId?: Id | null;
   onSelect: (id: Id) => void;
 };
 
