@@ -9,7 +9,6 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import {useTheme} from '../../../shared/theme';
 import {threadMetrics as tm} from '../../../shared/theme/threadMetrics';
@@ -21,7 +20,10 @@ import {ThreadHeader, useThreadHeaderHeight} from '../components/ThreadHeader';
 import {ThreadMenu} from '../components/ThreadMenu';
 import {useConversationsStore} from '../../conversations/store/conversationsStore';
 import {useArchiveStore} from '../../conversations/store/archiveStore';
-import {conversationsTexts as ct} from '../../conversations/texts';
+import {
+  confirmDeleteConversation,
+  conversationSubtitle,
+} from '../../conversations/components/conversationMenu';
 import {ComposerBar} from '../components/ComposerBar';
 import {threadTexts as t} from '../texts';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
@@ -128,24 +130,13 @@ export function ThreadScreen({
   }, [archived, archiveConv, unarchiveConv, conversationId, onBack]);
 
   const onDeleteConversation = useCallback(() => {
-    Alert.alert(
-      ct.deleteConversationConfirmTitle,
-      ct.deleteConversationConfirmBody,
-      [
-        {text: ct.cancel, style: 'cancel'},
-        {
-          text: ct.deleteConversationConfirm2,
-          style: 'destructive',
-          onPress: () => {
-            fireAndForget(
-              deleteConversation(conversationId).then(ok => {
-                if (ok) onBack();
-              }),
-            );
-          },
-        },
-      ],
-    );
+    confirmDeleteConversation(() => {
+      fireAndForget(
+        deleteConversation(conversationId).then(ok => {
+          if (ok) onBack();
+        }),
+      );
+    });
   }, [deleteConversation, conversationId, onBack]);
 
   return (
@@ -225,23 +216,6 @@ export function ThreadScreen({
       />
     </View>
   );
-}
-
-function conversationSubtitle(
-  c: {chat_type?: string; username?: string | null} | undefined,
-): string | null {
-  if (!c) return null;
-  if (c.username) return `@${c.username}`;
-  switch (c.chat_type) {
-    case 'private':
-      return t.chatPrivate;
-    case 'group':
-      return t.chatGroup;
-    case 'channel':
-      return t.chatChannel;
-    default:
-      return null;
-  }
 }
 
 function buildInvertedRows(items: Message[]): Row[] {
