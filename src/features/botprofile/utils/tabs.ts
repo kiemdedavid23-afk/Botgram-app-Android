@@ -37,7 +37,7 @@ export const PROFILE_TABS: {
     label: texts.tabLanguages,
     Icon: Languages,
     title: 'Langues',
-    hint: 'Ajoutez des langues pour traduire le profil de votre bot.',
+    hint: 'Les langues dans lesquelles le profil de votre bot est traduit.',
   },
   {
     id: 'commands',
