@@ -46,3 +46,26 @@ jest.mock('@react-native-clipboard/clipboard', () => ({
     getString: jest.fn(() => Promise.resolve('')),
   },
 }));
+
+// lucide-react-native est publié en ESM (.mjs) : Jest ne le transforme pas.
+// Les icônes sont purement visuelles, on les remplace par des composants vides.
+jest.mock('lucide-react-native', () => {
+  const cache = {};
+  return new Proxy(
+    {__esModule: true},
+    {
+      get: (target, key) => {
+        if (key === '__esModule') {
+          return true;
+        }
+        if (typeof key !== 'string') {
+          return undefined;
+        }
+        if (!cache[key]) {
+          cache[key] = () => null;
+        }
+        return cache[key];
+      },
+    },
+  );
+});
