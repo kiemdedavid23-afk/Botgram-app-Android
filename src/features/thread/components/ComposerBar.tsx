@@ -36,7 +36,8 @@ export function ComposerBar({
   onSend,
   onSendMedia,
 }: Props): React.JSX.Element {
-  const {colors} = useTheme();
+  const {colors, appearance} = useTheme();
+  const sendWithEnter = appearance.sendWithEnter;
   const [text, setText] = useState('');
   const [pending, setPending] = useState<PickedFile[]>([]);
   const abortRef = useRef<AbortController | null>(null);
@@ -138,7 +139,10 @@ export function ComposerBar({
           placeholder={t.composerPlaceholder}
           placeholderTextColor={colors.textHint}
           editable={!disabled}
-          multiline
+          multiline={!sendWithEnter}
+          blurOnSubmit={sendWithEnter}
+          returnKeyType={sendWithEnter ? 'send' : 'default'}
+          onSubmitEditing={sendWithEnter ? submit : undefined}
           maxLength={
             pending.length > 0
               ? MEDIA_CAPTION_MAX + 1
