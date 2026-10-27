@@ -16,6 +16,8 @@ type Props = {
   densityPad: number;
   hideBadge: boolean;
   onPress?: () => void;
+  /** Appui sur la photo uniquement → profil contact. */
+  onPressAvatar?: () => void;
   onPin?: (id: string, pinned: boolean) => Promise<void>;
   onDelete?: (id: string) => Promise<boolean>;
 };
@@ -25,6 +27,7 @@ export function ConversationRow({
   densityPad,
   hideBadge,
   onPress,
+  onPressAvatar,
   onPin,
   onDelete,
 }: Props): React.JSX.Element {
@@ -83,11 +86,22 @@ export function ConversationRow({
           backgroundColor: pressed ? colors.bgTertiary : 'transparent',
         },
       ]}>
-      <Avatar
-        photoUrl={item.photo_url}
-        initials={item.initials}
-        title={title}
-      />
+      <Pressable
+        onPress={e => {
+          // Empêche l'ouverture du fil : photo seule → profil.
+          e?.stopPropagation?.();
+          onPressAvatar?.();
+        }}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        style={styles.avatarPress}>
+        <Avatar
+          photoUrl={item.photo_url}
+          initials={item.initials}
+          title={title}
+        />
+      </Pressable>
       <View style={styles.content}>
         <View style={styles.row}>
           <View style={styles.titleRow}>
@@ -148,6 +162,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: cm.itemGap,
+  },
+  avatarPress: {
+    // Zone tactile dédiée à la photo (le parent ouvre le fil).
   },
   content: {flex: 1, minWidth: 0, gap: cm.contentGap},
   row: {

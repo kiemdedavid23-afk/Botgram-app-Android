@@ -23,6 +23,8 @@ type Props = {
   onRetry: () => void;
   onLoadMore: () => void;
   onOpen?: (id: string) => void;
+  /** Photo de profil → écran contact. */
+  onOpenProfile?: (id: string) => void;
   onPin?: (id: string, pinned: boolean) => Promise<void>;
   onDelete?: (id: string) => Promise<boolean>;
 };
@@ -37,6 +39,7 @@ export function ConversationsBody({
   onRetry,
   onLoadMore,
   onOpen,
+  onOpenProfile,
   onPin,
   onDelete,
 }: Props): React.JSX.Element {
@@ -50,11 +53,12 @@ export function ConversationsBody({
         densityPad={densityPad}
         hideBadge={hideBadge}
         onPress={() => onOpen?.(item.id)}
+        onPressAvatar={() => onOpenProfile?.(item.id)}
         onPin={onPin}
         onDelete={onDelete}
       />
     ),
-    [densityPad, hideBadge, onOpen, onPin, onDelete],
+    [densityPad, hideBadge, onOpen, onOpenProfile, onPin, onDelete],
   );
 
   if (loading && filtered.length === 0) {
