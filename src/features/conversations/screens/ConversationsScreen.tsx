@@ -3,6 +3,7 @@
  * Abonnement realtime et setBotId : niveau app (useRealtimeLifecycle).
  */
 import React, {useMemo, type ReactNode} from 'react';
+import {useShallow} from 'zustand/react/shallow';
 import {View, Text, StyleSheet, ActivityIndicator} from 'react-native';
 import {useTheme, fontSize} from '../../../shared/theme';
 import {BrandBar} from '../../../shared/components/BrandBar';
@@ -44,7 +45,9 @@ export function ConversationsScreen({
   const folder = useConversationsStore(s => s.folder);
   const setFolder = useConversationsStore(s => s.setFolder);
   const items = useConversationsStore(s => s.items);
-  const filtered = useConversationsStore(selectFilteredItems);
+  // useShallow : le sélecteur renvoie un nouveau tableau (filter) pour les
+  // dossiers Personnel / Travail / Non lus ; sans lui, boucle de rendu infinie.
+  const filtered = useConversationsStore(useShallow(selectFilteredItems));
   const pinConversation = useConversationsStore(s => s.pinConversation);
   const deleteConversation = useConversationsStore(s => s.deleteConversation);
   const counts = useMemo(() => folderCounts(items), [items]);
