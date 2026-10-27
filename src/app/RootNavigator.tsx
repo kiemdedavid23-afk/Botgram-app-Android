@@ -41,7 +41,6 @@ import {DashboardScreen} from '../features/dashboard/screens/DashboardScreen';
 import {AddBotScreen} from '../features/bots/screens/AddBotScreen';
 import {MemberProfileScreen} from '../features/member';
 import {GestionScreen} from '../features/gestion';
-import {BotProfileScreen} from '../features/botprofile';
 import {
   AssociateIntroWrapper,
   AssociateReadyWrapper,
@@ -53,6 +52,7 @@ import {
 import type {VerifyResult} from '../features/associate';
 import {BotSpaceScreen} from './BotSpaceScreen';
 import {ContextSwitcher} from './ContextSwitcher';
+import {useMemberSectionStore, type MemberSection} from './memberSectionStore';
 
 function Booting(): React.JSX.Element {
   const {colors} = useTheme();
@@ -116,7 +116,6 @@ function AuthFlow(): React.JSX.Element {
 export type MemberStackParamList = {
   Tabs: undefined;
   AddBot: undefined;
-  BotProfile: undefined;
   BotSpace: undefined;
   AssociateIntro: undefined;
   AssociateReady: undefined;
@@ -127,8 +126,6 @@ export type MemberStackParamList = {
 };
 
 const MemberStack = createNativeStackNavigator<MemberStackParamList>();
-
-type MemberSection = 'dashboard' | 'member' | 'gestion';
 
 const MEMBER_MENU: ReadonlyArray<HeaderMenuItem<MemberSection>> = [
   {id: 'dashboard', label: 'Tableau de bord', Icon: LayoutDashboard},
@@ -142,10 +139,18 @@ function MemberTabs({
   navigation: {navigate: (name: 'AddBot' | 'BotSpace') => void};
 }): React.JSX.Element {
   const {colors} = useTheme();
-  const [section, setSection] = useState<MemberSection>('dashboard');
+  const section = useMemberSectionStore(st => st.section);
+  const setSection = useMemberSectionStore(st => st.setSection);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const offline = useAuthStore(s => s.offline);
   const member = useAuthStore(s => s.member);
+
+  // Au démontage (déconnexion), on repart du Tableau de bord.
+  useEffect(() => {
+    return () => {
+      useMemberSectionStore.getState().setSection('dashboard');
+    };
+  }, []);
 
   // Retour Android : Profil / Gestion → Tableau de bord.
   // Actif seulement quand cet écran est au premier plan.
@@ -219,7 +224,6 @@ function MemberShell(): React.JSX.Element {
     <MemberStack.Navigator screenOptions={{headerShown: false}}>
       <MemberStack.Screen name="Tabs" component={MemberTabs} />
       <MemberStack.Screen name="AddBot" component={AddBotScreenWrapper} />
-      <MemberStack.Screen name="BotProfile" component={BotProfileScreenWrapper} />
       <MemberStack.Screen name="BotSpace" component={BotSpaceScreenWrapper} />
       <MemberStack.Screen
         name="AssociateIntro"
@@ -249,22 +253,17 @@ function MemberShell(): React.JSX.Element {
   );
 }
 
-function BotProfileScreenWrapper({
-  navigation,
-}: {
-  navigation: {navigate: (name: 'AddBot') => void};
-}): React.JSX.Element {
-  return (
-    <BotProfileScreen onAddBot={() => navigation.navigate('AddBot')} />
-  );
-}
-
 function BotSpaceScreenWrapper({
   navigation,
 }: {
-  navigation: {goBack: () => void};
+  navigation: {goBack: () => void; navigate: (name: 'AddBot') => void};
 }): React.JSX.Element {
-  return <BotSpaceScreen onExit={() => navigation.goBack()} />;
+  return (
+    <BotSpaceScreen
+      onExit={() => navigation.goBack()}
+      onAddBot={() => navigation.navigate('AddBot')}
+    />
+  );
 }
 
 function AddBotScreenWrapper({
