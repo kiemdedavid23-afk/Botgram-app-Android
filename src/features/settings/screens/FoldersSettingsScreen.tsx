@@ -112,7 +112,7 @@ export function FoldersSettingsScreen({onBack}: Props): React.JSX.Element {
         </Text>
         <View style={card}>
           {appearance.customFolders.length === 0 ? (
-            <Text style={{color: colors.textSecondary, paddingVertical: 8}}>
+            <Text style={[styles.empty, {color: colors.textSecondary}]}>
               {t.emptyCustomFolders}
             </Text>
           ) : (
@@ -127,7 +127,12 @@ export function FoldersSettingsScreen({onBack}: Props): React.JSX.Element {
                   onLongPress={() => removeCustom(f.id)}
                   style={styles.row}>
                   <Folder size={18} color={colors.accent} />
-                  <Text style={[styles.title, {color: colors.textPrimary, flex: 1}]}>
+                  <Text
+                    style={[
+                      styles.title,
+                      styles.grow,
+                      {color: colors.textPrimary},
+                    ]}>
                     {f.name}
                   </Text>
                 </Pressable>
@@ -158,7 +163,7 @@ export function FoldersSettingsScreen({onBack}: Props): React.JSX.Element {
                 <Text style={{color: colors.textSecondary}}>{t.cancel}</Text>
               </Pressable>
               <Pressable onPress={create}>
-                <Text style={{color: colors.accent, fontWeight: '700'}}>
+                <Text style={[styles.bold, {color: colors.accent}]}>
                   {t.createFolder}
                 </Text>
               </Pressable>
@@ -173,7 +178,7 @@ export function FoldersSettingsScreen({onBack}: Props): React.JSX.Element {
               getShadow('sm', mode),
             ]}>
             <Plus size={18} color={colors.accent} />
-            <Text style={{color: colors.accent, fontWeight: '700'}}>
+            <Text style={[styles.bold, {color: colors.accent}]}>
               {t.newFolder}
             </Text>
           </Pressable>
@@ -209,6 +214,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   labels: {flex: 1, gap: 2},
+  empty: {paddingVertical: 8},
+  grow: {flex: 1},
+  bold: {fontWeight: '700'},
   title: {fontSize: 16, fontWeight: '600'},
   sep: {height: 1},
   input: {
