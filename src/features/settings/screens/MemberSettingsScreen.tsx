@@ -4,14 +4,14 @@
  */
 import React from 'react';
 import {View, Text, Pressable, StyleSheet, ScrollView} from 'react-native';
-import {UserRound, LogOut,SlidersHorizontal, Bot} from 'lucide-react-native';
+import {UserRound, LogOut, SlidersHorizontal, Bot} from 'lucide-react-native';
 import {
   useTheme,
   settingsMetrics as sm,
   getShadow,
 } from '../../../shared/theme';
 import {useAuthStore} from '../../auth';
-import {texts} from '../texts';
+import {settingsTexts as texts} from '../texts';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 
 type Props = {
