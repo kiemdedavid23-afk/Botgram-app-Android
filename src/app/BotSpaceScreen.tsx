@@ -27,10 +27,9 @@ import {EmptyScreen} from '../shared/components/EmptyScreen';
 import {BotChatsStack} from '../features/conversations/navigation/BotChatsStack';
 import {useConversationsStore} from '../features/conversations/store/conversationsStore';
 import {useBotsStore} from '../features/bots/store/botsStore';
-import {MemberSettingsScreen} from '../features/settings';
+import {BotSettingsStack} from '../features/settings';
 import {BotProfileScreen} from '../features/botprofile';
 import {ContextSwitcher} from './ContextSwitcher';
-import {useMemberSectionStore} from './memberSectionStore';
 
 type Props = {
   /** Retour à l'espace membre. */
@@ -51,7 +50,6 @@ export function BotSpaceScreen({onExit, onAddBot}: Props): React.JSX.Element {
   const bots = useBotsStore(s => s.bots);
   const selected = bots.find(b => b.selected) ?? bots[0];
   const botName = selected?.name ?? 'Bot';
-  const setMemberSection = useMemberSectionStore(s => s.setSection);
 
   // Retour Android depuis un onglet secondaire → revient sur Échanges.
   // (Le fil ouvert dans BotChatsStack gère déjà son propre retour.)
@@ -68,10 +66,6 @@ export function BotSpaceScreen({onExit, onAddBot}: Props): React.JSX.Element {
     };
   }, [tab]);
 
-  const goMember = (section: 'member' | 'gestion'): void => {
-    setMemberSection(section);
-    onExit();
-  };
 
   const headerRight = (
     <View style={styles.headerRight}>
@@ -120,13 +114,8 @@ export function BotSpaceScreen({onExit, onAddBot}: Props): React.JSX.Element {
     <View style={[styles.root, {backgroundColor: colors.bgSecondary}]}>
       <BrandBar title="Botgram" right={headerRight} />
       {tab === 'settings' ? (
-        // La page Paramètres n'a pas de marge basse pour la barre flottante.
         <View style={styles.settingsBody}>
-          <MemberSettingsScreen
-            onGoProfile={() => goMember('member')}
-            onGoGestion={() => goMember('gestion')}
-            onGoBotProfile={() => setTab('profile')}
-          />
+          <BotSettingsStack />
         </View>
       ) : tab === 'profile' ? (
         <BotProfileScreen onAddBot={onAddBot} />
