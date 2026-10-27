@@ -2,7 +2,7 @@
  * Liste des conversations — onglet Échanges (L5b).
  * Abonnement realtime et setBotId : niveau app (useRealtimeLifecycle).
  */
-import React, {useMemo, type ReactNode} from 'react';
+import React, {useEffect, useMemo, type ReactNode} from 'react';
 import {useShallow} from 'zustand/react/shallow';
 import {View, Text, StyleSheet, ActivityIndicator} from 'react-native';
 import {useTheme, fontSize} from '../../../shared/theme';
@@ -14,6 +14,8 @@ import {
   selectFilteredItems,
   folderCounts,
 } from '../store/conversationsStore';
+import {useArchiveStore} from '../store/archiveStore';
+import {applyArchiveVisibility} from '../store/filters';
 import {conversationsTexts as t} from '../texts';
 import {FoldersBar} from '../components/FoldersBar';
 import {ConversationsBody} from '../components/ConversationsBody';
@@ -48,12 +50,30 @@ export function ConversationsScreen({
   const folder = useConversationsStore(s => s.folder);
   const setFolder = useConversationsStore(s => s.setFolder);
   const items = useConversationsStore(s => s.items);
-  // useShallow : le sélecteur renvoie un nouveau tableau (filter) pour les
-  // dossiers Personnel / Travail / Non lus ; sans lui, boucle de rendu infinie.
-  const filtered = useConversationsStore(useShallow(selectFilteredItems));
+  const baseFiltered = useConversationsStore(useShallow(selectFilteredItems));
   const pinConversation = useConversationsStore(s => s.pinConversation);
   const deleteConversation = useConversationsStore(s => s.deleteConversation);
-  const counts = useMemo(() => folderCounts(items), [items]);
+
+  const archivedIds = useArchiveStore(s => s.ids);
+  const archiveRev = useArchiveStore(s => s.revision);
+  const hydrateArchive = useArchiveStore(s => s.hydrate);
+  const archiveConv = useArchiveStore(s => s.archive);
+  const unarchiveConv = useArchiveStore(s => s.unarchive);
+
+  useEffect(() => {
+    fireAndForget(hydrateArchive());
+  }, [hydrateArchive]);
+
+  const filtered = useMemo(
+    () => applyArchiveVisibility(baseFiltered, folder, archivedIds),
+    [baseFiltered, folder, archivedIds, archiveRev],
+  );
+
+  const counts = useMemo(
+    () => folderCounts(items, archivedIds),
+    [items, archivedIds, archiveRev],
+  );
+
   const {searchQuery, searching, onSearchChange, clearSearch} =
     useConversationSearch();
 
@@ -81,6 +101,10 @@ export function ConversationsScreen({
       <ConversationsBody
         onPin={pinConversation}
         onDelete={deleteConversation}
+        onArchive={id => archiveConv(id)}
+        onUnarchive={id => unarchiveConv(id)}
+        isArchived={id => !!archivedIds[id]}
+        swipeAction={appearance.swipeAction}
         filtered={filtered}
         loading={loading}
         loadingMore={loadingMore}
