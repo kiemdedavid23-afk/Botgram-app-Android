@@ -21,6 +21,14 @@ export const settingsTexts = {
   comingSoonSub: 'Cette section sera disponible prochainement.',
   back: 'Retour',
 
+  myProfile: 'Mon profil',
+  myProfileSub: 'Nom, photo, coordonnées',
+  gestion: 'Gestion',
+  gestionSub: 'Bots, appareils, préférences',
+  botProfile: 'Profil du bot',
+  botProfileSub: 'Identité Telegram, langues',
+  logout: 'Se déconnecter',
+
   appearanceTitle: 'Apparence',
   preview: 'Aperçu',
   previewInName: 'Awa',
