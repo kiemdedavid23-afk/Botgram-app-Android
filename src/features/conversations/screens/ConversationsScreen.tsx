@@ -22,12 +22,15 @@ import {fireAndForget} from '../../../core/utils/fireAndForget';
 
 type Props = {
   onOpenConversation?: (id: string) => void;
+  /** Appui sur la photo d'une ligne → profil contact. */
+  onOpenProfile?: (id: string) => void;
   /** Contenu à droite de la barre de marque (avatar de bascule). */
   headerRight?: ReactNode;
 };
 
 export function ConversationsScreen({
   onOpenConversation,
+  onOpenProfile,
   headerRight,
 }: Props): React.JSX.Element {
   const {colors, appearance} = useTheme();
@@ -87,6 +90,7 @@ export function ConversationsScreen({
         onRetry={() => fireAndForget(load(true))}
         onLoadMore={() => fireAndForget(loadMore())}
         onOpen={onOpenConversation}
+        onOpenProfile={onOpenProfile}
       />
       {searching ? (
         <View style={styles.searching}>
