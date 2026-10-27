@@ -78,10 +78,7 @@ export function AppearanceScreen({onBack}: Props): React.JSX.Element {
             <View
               style={[
                 styles.bubbleIn,
-                {
-                  backgroundColor: 'rgba(255,255,255,0.92)',
-                  borderRadius: appearance.cornerRadius,
-                },
+                {borderRadius: appearance.cornerRadius},
               ]}>
               <Text
                 style={{
@@ -91,19 +88,18 @@ export function AppearanceScreen({onBack}: Props): React.JSX.Element {
                 }}>
                 {t.previewInName}
               </Text>
-              <Text style={{color: '#222', fontSize: appearance.fontSize}}>
+              <Text
+                style={[styles.previewText, {fontSize: appearance.fontSize}]}>
                 {t.previewInText}
               </Text>
             </View>
             <View
               style={[
                 styles.bubbleOut,
-                {
-                  backgroundColor: 'rgba(200,255,200,0.95)',
-                  borderRadius: appearance.cornerRadius,
-                },
+                {borderRadius: appearance.cornerRadius},
               ]}>
-              <Text style={{color: '#222', fontSize: appearance.fontSize}}>
+              <Text
+                style={[styles.previewText, {fontSize: appearance.fontSize}]}>
                 {t.previewOutText}
               </Text>
             </View>
@@ -156,7 +152,7 @@ export function AppearanceScreen({onBack}: Props): React.JSX.Element {
                 onPress={() => setAppearance({wallpaper: id})}
                 style={[
                   styles.wpItem,
-                  active && {borderColor: colors.accent, borderWidth: 2},
+                  active && {borderColor: colors.accent},
                 ]}>
                 <GradientView
                   colors={[...w.colors]}
@@ -200,10 +196,10 @@ export function AppearanceScreen({onBack}: Props): React.JSX.Element {
                   style={[
                     styles.colorDot,
                     {backgroundColor: c},
-                    active && {
-                      borderWidth: 3,
-                      borderColor: colors.accent,
-                    },
+                    active && [
+                      styles.colorDotActive,
+                      {borderColor: colors.accent},
+                    ],
                   ]}
                 />
               );
@@ -255,7 +251,7 @@ function SliderRow({
       </View>
       <View style={styles.sliderControls}>
         <Pressable onPress={onMinus} style={[styles.stepBtn, {backgroundColor: colors.bgSecondary}]}>
-          <Text style={{color: colors.textPrimary, fontSize: 18}}>−</Text>
+          <Text style={[styles.stepLabel, {color: colors.textPrimary}]}>−</Text>
         </Pressable>
         <View style={[styles.track, {backgroundColor: colors.bgTertiary}]}>
           <View
@@ -269,7 +265,7 @@ function SliderRow({
           />
         </View>
         <Pressable onPress={onPlus} style={[styles.stepBtn, {backgroundColor: colors.bgSecondary}]}>
-          <Text style={{color: colors.textPrimary, fontSize: 18}}>+</Text>
+          <Text style={[styles.stepLabel, {color: colors.textPrimary}]}>+</Text>
         </Pressable>
       </View>
     </View>
@@ -299,8 +295,22 @@ const styles = StyleSheet.create({
     gap: 10,
     minHeight: 120,
   },
-  bubbleIn: {alignSelf: 'flex-start', padding: 10, maxWidth: '85%', gap: 2},
-  bubbleOut: {alignSelf: 'flex-end', padding: 10, maxWidth: '85%'},
+  bubbleIn: {
+    alignSelf: 'flex-start',
+    padding: 10,
+    maxWidth: '85%',
+    gap: 2,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+  },
+  bubbleOut: {
+    alignSelf: 'flex-end',
+    padding: 10,
+    maxWidth: '85%',
+    backgroundColor: 'rgba(200,255,200,0.95)',
+  },
+  previewText: {color: '#222'},
+  colorDotActive: {borderWidth: 3},
+  stepLabel: {fontSize: 18},
   segment: {
     flexDirection: 'row',
     backgroundColor: 'transparent',
