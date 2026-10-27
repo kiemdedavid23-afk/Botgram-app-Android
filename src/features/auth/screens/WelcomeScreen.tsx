@@ -2,6 +2,7 @@ import React from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {ArrowRight} from 'lucide-react-native';
 import {BotgramLogo} from '../../../shared/components/BotgramLogo';
+import {StatusBarStrip} from '../../../shared/components/StatusBarStrip';
 import {authColors, authMetrics} from '../../../shared/theme/authColors';
 import {texts} from '../texts';
 
@@ -9,7 +10,9 @@ type Props = {onContinue: () => void};
 
 export function WelcomeScreen({onContinue}: Props): React.JSX.Element {
   return (
-    <View style={styles.root}>
+    <View style={styles.outer}>
+      <StatusBarStrip forceBlue />
+      <View style={styles.root}>
       <View style={styles.logoWrap}>
         <BotgramLogo size={authMetrics.logoSize} />
       </View>
@@ -18,11 +21,13 @@ export function WelcomeScreen({onContinue}: Props): React.JSX.Element {
       <Pressable style={styles.fab} onPress={onContinue} accessibilityLabel="Commencer">
         <ArrowRight size={26} color={authColors.white} />
       </Pressable>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outer: {flex: 1, backgroundColor: authColors.bg},
   root: {
     flex: 1,
     backgroundColor: authColors.bg,
