@@ -205,14 +205,17 @@ async function probeLanguages(
 /**
  * Source Image RN avec Authorization — URL Worker uniquement dans core/api.
  * hasPhoto initial = false ; Image onLoad/onError met à jour via setPhotoPresent.
+ * `version` (optionnelle) force le rechargement après changement de photo.
  */
 export async function buildBotPhotoSource(
   botId: string,
+  version?: number,
 ): Promise<{uri: string; headers: Record<string, string>} | null> {
   const token = await getAccessToken();
   if (!token) return null;
+  const suffix = version ? `?v=${version}` : '';
   return {
-    uri: `${env.apiUrl}/bots/${botId}/photo`,
+    uri: `${env.apiUrl}/bots/${botId}/photo${suffix}`,
     headers: {Authorization: `Bearer ${token}`},
   };
 }
