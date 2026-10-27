@@ -9,14 +9,19 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
-import {useTheme, fontSize} from '../../../shared/theme';
+import {useTheme} from '../../../shared/theme';
 import {threadMetrics as tm} from '../../../shared/theme/threadMetrics';
 import {useThreadStore} from '../store/threadStore';
 import {messageTimestamp} from '../store/mergeMessages';
 import {MessageBubble} from '../components/MessageBubble';
 import {DaySeparator} from '../components/DaySeparator';
-import {ThreadHeader} from '../components/ThreadHeader';
+import {ThreadHeader, useThreadHeaderHeight} from '../components/ThreadHeader';
+import {ThreadMenu} from '../components/ThreadMenu';
+import {useConversationsStore} from '../../conversations/store/conversationsStore';
+import {useArchiveStore} from '../../conversations/store/archiveStore';
+import {conversationsTexts as ct} from '../../conversations/texts';
 import {ComposerBar} from '../components/ComposerBar';
 import {threadTexts as t} from '../texts';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
@@ -62,6 +67,17 @@ export function ThreadScreen({
   const sending = useThreadStore(s => s.sending);
   const sendError = useThreadStore(s => s.sendError);
 
+  // Menu ⋮ : état et actions de la conversation (stores existants).
+  const conversation = useConversationsStore(s =>
+    s.items.find(c => c.id === conversationId),
+  );
+  const pinConversation = useConversationsStore(s => s.pinConversation);
+  const deleteConversation = useConversationsStore(s => s.deleteConversation);
+  const archived = useArchiveStore(s => !!s.ids[conversationId]);
+  const archiveConv = useArchiveStore(s => s.archive);
+  const unarchiveConv = useArchiveStore(s => s.unarchive);
+  const headerHeight = useThreadHeaderHeight(offline);
+
   React.useEffect(() => {
     open({conversationId, title, photoUrl, initials});
     return () => {
@@ -96,27 +112,64 @@ export function ThreadScreen({
   );
 
   const headerTitle = storeTitle || title || '';
+  const subtitle = conversationSubtitle(conversation);
+
+  const onTogglePin = useCallback(() => {
+    fireAndForget(pinConversation(conversationId, !conversation?.pinned));
+  }, [pinConversation, conversationId, conversation?.pinned]);
+
+  const onToggleArchive = useCallback(() => {
+    if (archived) {
+      unarchiveConv(conversationId);
+      return;
+    }
+    archiveConv(conversationId);
+    onBack(); // la conversation quitte la liste principale
+  }, [archived, archiveConv, unarchiveConv, conversationId, onBack]);
+
+  const onDeleteConversation = useCallback(() => {
+    Alert.alert(
+      ct.deleteConversationConfirmTitle,
+      ct.deleteConversationConfirmBody,
+      [
+        {text: ct.cancel, style: 'cancel'},
+        {
+          text: ct.deleteConversationConfirm2,
+          style: 'destructive',
+          onPress: () => {
+            fireAndForget(
+              deleteConversation(conversationId).then(ok => {
+                if (ok) onBack();
+              }),
+            );
+          },
+        },
+      ],
+    );
+  }, [deleteConversation, conversationId, onBack]);
 
   return (
     <View style={[styles.root, {backgroundColor: colors.bgChat}]}>
       <ThreadHeader
         title={headerTitle}
+        subtitle={subtitle}
         photoUrl={photoUrl}
         initials={initials}
+        offline={offline}
         onBack={onBack}
         onPressAvatar={onPressAvatar}
+        right={
+          <ThreadMenu
+            pinned={!!conversation?.pinned}
+            archived={archived}
+            offline={offline}
+            onViewProfile={onPressAvatar}
+            onTogglePin={onTogglePin}
+            onToggleArchive={onToggleArchive}
+            onDelete={onDeleteConversation}
+          />
+        }
       />
-      {offline ? (
-        <View style={[styles.offline, {backgroundColor: colors.bgTertiary}]}>
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontSize: fontSize.listSubtitle,
-            }}>
-            {t.offlineBanner}
-          </Text>
-        </View>
-      ) : null}
       {loading && items.length === 0 ? (
         <View style={styles.center}>
           <ActivityIndicator color={colors.accent} />
@@ -135,7 +188,10 @@ export function ThreadScreen({
             fireAndForget(loadOlder());
           }}
           onEndReachedThreshold={0.3}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[
+            styles.listContent,
+            {paddingBottom: tm.listPadT + headerHeight},
+          ]}
           ListFooterComponent={
             loadingOlder ? (
               <ActivityIndicator color={colors.accent} style={styles.older} />
@@ -171,6 +227,23 @@ export function ThreadScreen({
   );
 }
 
+function conversationSubtitle(
+  c: {chat_type?: string; username?: string | null} | undefined,
+): string | null {
+  if (!c) return null;
+  if (c.username) return `@${c.username}`;
+  switch (c.chat_type) {
+    case 'private':
+      return t.chatPrivate;
+    case 'group':
+      return t.chatGroup;
+    case 'channel':
+      return t.chatChannel;
+    default:
+      return null;
+  }
+}
+
 function buildInvertedRows(items: Message[]): Row[] {
   if (items.length === 0) return [];
   const asc: Row[] = [];
@@ -189,7 +262,6 @@ function buildInvertedRows(items: Message[]): Row[] {
 
 const styles = StyleSheet.create({
   root: {flex: 1},
-  offline: {padding: tm.offlinePad, alignItems: 'center'},
   center: {flex: 1, alignItems: 'center', justifyContent: 'center'},
   listContent: {
     paddingTop: tm.listPadB,
