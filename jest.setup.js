@@ -38,3 +38,11 @@ jest.mock('@react-native-documents/picker', () => ({
   isErrorWithCode: () => false,
   errorCodes: {OPERATION_CANCELED: 'OPERATION_CANCELED'},
 }));
+
+jest.mock('@react-native-clipboard/clipboard', () => ({
+  __esModule: true,
+  default: {
+    setString: jest.fn(),
+    getString: jest.fn(() => Promise.resolve('')),
+  },
+}));
