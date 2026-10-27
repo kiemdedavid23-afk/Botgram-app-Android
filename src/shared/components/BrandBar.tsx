@@ -3,17 +3,9 @@
  * Référence : BrandBar.css + tokens.
  */
 import React, {type ReactNode} from 'react';
-import {
-  View,
-  Text,
-  StatusBar,
-  StyleSheet,
-  type StyleProp,
-  type ViewStyle,
-} from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {View, Text, StyleSheet, type StyleProp, type ViewStyle} from 'react-native';
 import {useTheme, space, fontSize, fontWeight, brandBarMetrics as bm} from '../theme';
-import {statusBarColors} from '../theme/statusBar';
+import {StatusBarStrip} from './StatusBarStrip';
 
 type Props = {
   title?: string;
@@ -26,12 +18,7 @@ export function BrandBar({
   right,
   style,
 }: Props): React.JSX.Element {
-  const {colors, mode} = useTheme();
-  const insets = useSafeAreaInsets();
-
-  // Bandeau derrière la barre d'état : bleu de marque en clair (comme le site).
-  const stripColor =
-    mode === 'dark' ? colors.bgPrimary : statusBarColors.light;
+  const {colors} = useTheme();
 
   return (
     <View
@@ -43,8 +30,7 @@ export function BrandBar({
         },
         style,
       ]}>
-      <StatusBar barStyle="light-content" />
-      <View style={{height: insets.top, backgroundColor: stripColor}} />
+      <StatusBarStrip />
       <View style={styles.inner}>
         <Text
           style={[styles.title, {color: colors.accent}]}
