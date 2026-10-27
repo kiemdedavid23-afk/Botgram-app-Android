@@ -17,17 +17,23 @@ export const wallpapers: Record<
   ocean: {label: 'Océan', emoji: '🐚', colors: ['#9ad7f5', '#7ee0d6']},
 };
 
+export type CustomFolder = {id: string; name: string};
+
 export type AppearanceSettings = {
   fontSize: number;
   cornerRadius: number;
   listDensity: 'two' | 'three';
-  swipeAction: 'delete' | 'folder' | 'pin';
+  swipeAction: 'archive' | 'folder' | 'pin';
   wallpaper: WallpaperId;
   nameColor: string;
   followSystemTheme: boolean;
   limitAnimations: boolean;
   sendWithEnter: boolean;
   theme: ThemeMode;
+  /** Code BCP-47 — affichage seul en v1 (pas de traduction). */
+  uiLanguage: string;
+  /** Dossiers personnalisés (locaux). */
+  customFolders: CustomFolder[];
 };
 
 export const defaultAppearance: AppearanceSettings = {
@@ -41,6 +47,8 @@ export const defaultAppearance: AppearanceSettings = {
   limitAnimations: false,
   sendWithEnter: false,
   theme: 'light',
+  uiLanguage: 'fr',
+  customFolders: [],
 };
 
 export function getColors(mode: ThemeMode): ColorTokens {

@@ -56,8 +56,18 @@ export function ThemeProvider({children}: Props): React.JSX.Element {
       try {
         const raw = await cacheGetString(APPEARANCE_STORAGE_KEY);
         if (raw && !cancelled) {
-          const parsed = JSON.parse(raw) as Partial<AppearanceSettings>;
-          setAppearanceState(prev => ({...prev, ...parsed}));
+          const parsed = JSON.parse(raw) as Partial<AppearanceSettings> & {
+            swipeAction?: string;
+          };
+          if (parsed.swipeAction === 'delete') {
+            parsed.swipeAction = 'archive';
+          }
+          setAppearanceState(prev => ({
+            ...prev,
+            ...parsed,
+            customFolders: parsed.customFolders ?? prev.customFolders,
+            uiLanguage: parsed.uiLanguage ?? prev.uiLanguage,
+          }));
         }
       } catch {
         // ignore corrupt cache

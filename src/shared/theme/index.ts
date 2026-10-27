@@ -26,6 +26,7 @@ export {
   defaultAppearance,
   type AppearanceSettings,
   type WallpaperId,
+  type CustomFolder,
 } from './appearance';
 
 export {gradients, wallpaperGradients} from './gradients';
