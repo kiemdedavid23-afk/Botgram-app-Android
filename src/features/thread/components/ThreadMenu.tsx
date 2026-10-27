@@ -5,16 +5,7 @@
  */
 import React, {useState} from 'react';
 import {Modal, View, Text, Pressable, StyleSheet} from 'react-native';
-import {
-  EllipsisVertical,
-  UserRound,
-  Pin,
-  PinOff,
-  Archive,
-  ArchiveRestore,
-  Trash2,
-  type LucideIcon,
-} from 'lucide-react-native';
+import {EllipsisVertical} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   useTheme,
@@ -26,7 +17,7 @@ import {
 } from '../../../shared/theme';
 import {threadMetrics as tm} from '../../../shared/theme/threadMetrics';
 import {threadTexts as t} from '../texts';
-import {conversationsTexts as ct} from '../../conversations/texts';
+import {buildConversationMenu} from '../../conversations/components/conversationMenu';
 import {RoundButton} from './RoundButton';
 
 type Props = {
@@ -38,15 +29,6 @@ type Props = {
   onTogglePin: () => void;
   onToggleArchive: () => void;
   onDelete: () => void;
-};
-
-type Item = {
-  id: string;
-  label: string;
-  Icon: LucideIcon;
-  onPress: () => void;
-  danger?: boolean;
-  disabled?: boolean;
 };
 
 export function ThreadMenu({
@@ -62,42 +44,15 @@ export function ThreadMenu({
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
 
-  const groups: Item[][] = [];
-  if (onViewProfile) {
-    groups.push([
-      {
-        id: 'profile',
-        label: t.menuViewProfile,
-        Icon: UserRound,
-        onPress: onViewProfile,
-      },
-    ]);
-  }
-  groups.push([
-    {
-      id: 'pin',
-      label: pinned ? ct.unpinAction : ct.pinAction,
-      Icon: pinned ? PinOff : Pin,
-      onPress: onTogglePin,
-      disabled: offline,
-    },
-    {
-      id: 'archive',
-      label: archived ? ct.unarchiveAction : ct.archiveAction,
-      Icon: archived ? ArchiveRestore : Archive,
-      onPress: onToggleArchive,
-    },
-  ]);
-  groups.push([
-    {
-      id: 'delete',
-      label: ct.deleteConversation,
-      Icon: Trash2,
-      onPress: onDelete,
-      danger: true,
-      disabled: offline,
-    },
-  ]);
+  const groups = buildConversationMenu({
+    pinned,
+    archived,
+    offline,
+    onViewProfile,
+    onTogglePin,
+    onToggleArchive,
+    onDelete,
+  });
 
   const top =
     insets.top +
