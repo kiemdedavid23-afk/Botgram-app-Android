@@ -1,4 +1,4 @@
-/** Profil Telegram du bot — 6 onglets (site BotProfilePage). */
+/** Profil Telegram du bot — 6 onglets, lecture seule (site BotProfilePage). */
 import React, {useEffect, useMemo, useState} from 'react';
 import {
   View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator,
@@ -15,27 +15,12 @@ import {CommandsSection} from '../components/CommandsSection';
 import {MenuSection} from '../components/MenuSection';
 import {RightsSection} from '../components/RightsSection';
 import {InfoSection} from '../components/InfoSection';
-import {TelegramPreview} from '../components/TelegramPreview';
-import {SaveBar} from '../components/SaveBar';
-import {hasChanges, validate} from '../utils/diff';
-import {setCommands, setMenuButton, setRight, setRights} from '../utils/edit';
-import {
-  ADMIN_RIGHT_KEYS, DEFAULT_LANG, emptyRights,
-} from '../../../core/api/endpoints/botProfile.types';
-import type {AdminRightKey} from '../../../core/api/endpoints/botProfile.types';
-import {RIGHT_SCOPE} from '../utils/labels';
+import {DEFAULT_LANG} from '../../../core/api/endpoints/botProfile.types';
 import {PROFILE_TABS, type TabId} from '../utils/tabs';
 import {texts} from '../texts';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 
 type Props = {onAddBot?: () => void};
-
-function keysFor(target: 'groups' | 'channels'): AdminRightKey[] {
-  return ADMIN_RIGHT_KEYS.filter(k => {
-    const s = RIGHT_SCOPE[k];
-    return s === 'both' || s === target;
-  });
-}
 
 function makeStyles(c: ColorTokens) {
   return StyleSheet.create({
@@ -55,9 +40,10 @@ function makeStyles(c: ColorTokens) {
       paddingHorizontal: m.scrollPadH, paddingBottom: m.scrollPadBottom,
       gap: m.scrollGap, paddingTop: m.scrollPadTop,
     },
+    tabsBar: {backgroundColor: c.bgSecondary},
     tabs: {flexDirection: 'row', gap: m.gap, paddingVertical: m.paddingV},
     tab: {
-      flexDirection: 'row', alignItems: 'center', gap: m.tabIconGap,
+      flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: m.tabIconGap,
       paddingVertical: m.tabPadV, paddingHorizontal: m.tabPadH,
       borderRadius: m.tabRadius, minHeight: m.tabRowMinHeight,
     },
@@ -74,14 +60,10 @@ function makeStyles(c: ColorTokens) {
       fontSize: m.headHintSize, lineHeight: m.headHintLineHeight,
       color: c.textSecondary,
     },
-    report: {
-      padding: m.reportPad, borderRadius: m.inputRadius, gap: m.reportGap,
-      backgroundColor: c.bgPrimary,
+    note: {
+      fontSize: m.noteSize, lineHeight: m.noteLineHeight,
+      paddingHorizontal: m.headPadH, color: c.textHint,
     },
-    reportTitle: {fontWeight: m.reportTitleWeight, marginBottom: m.reportTitleMarginBottom, color: c.textPrimary},
-    reportLineOk: {fontSize: m.reportLineSize, color: c.online},
-    reportLineErr: {fontSize: m.reportLineSize, color: c.danger},
-    reportClose: {fontWeight: m.reportCloseWeight, marginTop: m.reportCloseMarginTop, color: c.accent},
   });
 }
 
@@ -93,17 +75,10 @@ export function BotProfileScreen({onAddBot}: Props): React.JSX.Element {
   const loadBots = useBotsStore(s => s.load);
   const botId = member?.selected_bot_id ?? null;
   const bot = bots.find(b => b.id === botId);
-  const draft = useBotProfileStore(s => s.draft);
-  const saved = useBotProfileStore(s => s.saved);
+  const profile = useBotProfileStore(s => s.saved);
   const loading = useBotProfileStore(s => s.loading);
-  const saving = useBotProfileStore(s => s.saving);
   const loadError = useBotProfileStore(s => s.loadError);
-  const report = useBotProfileStore(s => s.report);
   const load = useBotProfileStore(s => s.load);
-  const edit = useBotProfileStore(s => s.edit);
-  const discard = useBotProfileStore(s => s.discard);
-  const save = useBotProfileStore(s => s.save);
-  const dismissReport = useBotProfileStore(s => s.dismissReport);
   const [tab, setTab] = useState<TabId>('identity');
   const [lang, setLang] = useState(DEFAULT_LANG);
 
@@ -119,8 +94,6 @@ export function BotProfileScreen({onAddBot}: Props): React.JSX.Element {
     }));
   }, [botId, botName, botUsername, botTelegramId, load]);
 
-  const dirty = hasChanges(saved, draft);
-  const errors = useMemo(() => (draft ? validate(draft) : {}), [draft]);
   const currentTab = PROFILE_TABS.find(t => t.id === tab) ?? PROFILE_TABS[0]!;
 
   if (!botId || !bot) {
@@ -136,19 +109,20 @@ export function BotProfileScreen({onAddBot}: Props): React.JSX.Element {
       </View>
     );
   }
-  if ((loading && !draft) || (!draft && !loadError) || (!draft || !saved)) {
+
+  const resync = () => fireAndForget(load(botId, {
+    name: bot.name,
+    username: bot.username ?? undefined,
+    telegram_id: String(bot.telegram_bot_id),
+  }, true));
+
+  if (!profile) {
     return (
       <View style={[styles.root, styles.center]}>
-        {loadError && !draft ? (
+        {loadError ? (
           <>
             <Text style={styles.err}>{loadError}</Text>
-            <Pressable
-              onPress={() => fireAndForget(load(botId, {
-                name: bot.name,
-                username: bot.username ?? undefined,
-                telegram_id: String(bot.telegram_bot_id),
-              }, true))}
-              style={styles.cta}>
+            <Pressable onPress={resync} style={styles.cta}>
               <Text style={styles.ctaText}>{texts.retry}</Text>
             </Pressable>
           </>
@@ -161,101 +135,50 @@ export function BotProfileScreen({onAddBot}: Props): React.JSX.Element {
 
   return (
     <View style={styles.root}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <BotHero profile={draft} />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={styles.tabs}>
-            {PROFILE_TABS.map(t => {
-              const on = t.id === tab;
-              const Icon = t.Icon;
-              return (
-                <Pressable
-                  key={t.id}
-                  onPress={() => setTab(t.id)}
-                  style={[styles.tab, on ? styles.tabOn : styles.tabOff]}>
-                  <Icon
-                    size={m.tabIconSize}
-                    color={on ? colors.white : colors.textSecondary}
-                  />
-                  <Text style={on ? styles.tabTextOn : styles.tabTextOff}>
-                    {t.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </ScrollView>
+      <ScrollView contentContainerStyle={styles.scroll} stickyHeaderIndices={[1]}>
+        <BotHero profile={profile} />
+        <View style={styles.tabsBar}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.tabs}>
+              {PROFILE_TABS.map(t => {
+                const on = t.id === tab;
+                const Icon = t.Icon;
+                return (
+                  <Pressable
+                    key={t.id}
+                    onPress={() => setTab(t.id)}
+                    style={[styles.tab, on ? styles.tabOn : styles.tabOff]}>
+                    <Icon
+                      size={m.tabIconSize}
+                      color={on ? colors.white : colors.textSecondary}
+                    />
+                    <Text style={on ? styles.tabTextOn : styles.tabTextOff}>
+                      {t.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </ScrollView>
+        </View>
         <View style={styles.head}>
           <Text style={styles.headTitle}>{currentTab.title}</Text>
           <Text style={styles.headHint}>{currentTab.hint}</Text>
         </View>
+        <Text style={styles.note}>{texts.readOnlyNote}</Text>
         {tab === 'identity' ? (
-          <IdentitySection draft={draft} lang={lang} onLang={setLang} onEdit={edit} />
+          <IdentitySection profile={profile} lang={lang} onLang={setLang} />
         ) : null}
-        {tab === 'languages' ? (
-          <LanguagesSection draft={draft} onEdit={edit} />
-        ) : null}
+        {tab === 'languages' ? <LanguagesSection profile={profile} /> : null}
         {tab === 'commands' ? (
-          <CommandsSection
-            draft={draft} lang={lang} onLang={setLang} errors={errors}
-            onChange={(key, list) => edit(d => setCommands(d, key, list))}
-          />
+          <CommandsSection profile={profile} lang={lang} onLang={setLang} />
         ) : null}
-        {tab === 'menu' ? (
-          <MenuSection
-            draft={draft} errors={errors}
-            onChange={b => edit(d => setMenuButton(d, b))}
-          />
-        ) : null}
-        {tab === 'rights' ? (
-          <RightsSection
-            draft={draft}
-            onToggle={(target, key, value) => edit(d => setRight(d, target, key, value))}
-            onSetAll={(target, value) => {
-              const next = {...emptyRights()};
-              const scoped = keysFor(target);
-              for (const k of ADMIN_RIGHT_KEYS) {
-                next[k] = scoped.includes(k) ? value : draft.admin_rights[target][k];
-              }
-              edit(d => setRights(d, target, next));
-            }}
-          />
-        ) : null}
+        {tab === 'menu' ? <MenuSection profile={profile} /> : null}
+        {tab === 'rights' ? <RightsSection profile={profile} /> : null}
         {tab === 'info' ? (
-          <InfoSection
-            profile={draft} saved={saved} draft={draft}
-            onResync={() => fireAndForget(load(botId, {
-              name: bot.name,
-              username: bot.username ?? undefined,
-              telegram_id: String(bot.telegram_bot_id),
-            }, true))}
-          />
-        ) : null}
-        {tab === 'identity' || tab === 'menu' || tab === 'commands' ? (
-          <TelegramPreview profile={draft} lang={lang} />
-        ) : null}
-        {report ? (
-          <View style={styles.report}>
-            <Text style={styles.reportTitle}>{texts.reportTitle}</Text>
-            {report.map(r => (
-              <Text
-                key={r.id}
-                style={r.ok ? styles.reportLineOk : styles.reportLineErr}>
-                {r.label}: {r.message}
-              </Text>
-            ))}
-            <Pressable onPress={dismissReport}>
-              <Text style={styles.reportClose}>{texts.reportClose}</Text>
-            </Pressable>
-          </View>
+          <InfoSection profile={profile} loading={loading} onResync={resync} />
         ) : null}
       </ScrollView>
-      <SaveBar
-        visible={dirty}
-        saving={saving}
-        onSave={() => { fireAndForget(save()); }}
-        onDiscard={discard}
-      />
     </View>
   );
 }
