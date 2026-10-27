@@ -66,7 +66,7 @@ export function PermissionsScreen({onBack}: Props): React.JSX.Element {
             getShadow('sm', mode),
           ]}>
           <View style={styles.row}>
-            <View style={[styles.icon, {backgroundColor: '#E74C3C'}]}>
+            <View style={[styles.icon, styles.iconNotif]}>
               <Bell size={sm.iconInner} color={colors.white} />
             </View>
             <View style={styles.labels}>
@@ -76,7 +76,7 @@ export function PermissionsScreen({onBack}: Props): React.JSX.Element {
               <Text style={{color: colors.textSecondary, fontSize: sm.subSize}}>
                 {t.permNotificationsSub}
               </Text>
-              <Text style={{color: colors.textHint, fontSize: 12, marginTop: 4}}>
+              <Text style={[styles.status, {color: colors.textHint}]}>
                 {statusLabel}
               </Text>
             </View>
@@ -125,6 +125,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  iconNotif: {backgroundColor: '#E74C3C'},
+  status: {fontSize: 12, marginTop: 4},
   labels: {flex: 1},
   title: {fontSize: sm.titleSize, fontWeight: '600'},
   cta: {
