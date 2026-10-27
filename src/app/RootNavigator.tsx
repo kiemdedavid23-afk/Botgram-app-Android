@@ -166,7 +166,7 @@ function MemberTabs({
       return () => {
         sub.remove();
       };
-    }, [section]),
+    }, [section, setSection]),
   );
 
   return (
