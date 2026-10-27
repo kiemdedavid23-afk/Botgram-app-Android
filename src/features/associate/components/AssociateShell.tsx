@@ -2,14 +2,8 @@
  * En-tête + barre de progression — AssociateFlow.css .assoc / .assoc__head.
  */
 import React from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-} from 'react-native';
-import {ChevronLeft} from 'lucide-react-native';
+import {View, Text, ScrollView, StyleSheet} from 'react-native';
+import {ScreenHeader} from '../../../shared/components/ScreenHeader';
 import {useTheme, associateMetrics as m} from '../../../shared/theme';
 import {stepLabel} from '../texts';
 
@@ -33,32 +27,7 @@ export function AssociateShell({
 
   return (
     <View style={[styles.root, {backgroundColor: colors.bgSecondary}]}>
-      <View
-        style={[
-          styles.head,
-          {
-            backgroundColor: colors.bgPrimary,
-            borderBottomColor: colors.border,
-          },
-        ]}>
-        {onBack ? (
-          <Pressable
-            onPress={onBack}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel="Retour"
-            style={styles.back}>
-            <ChevronLeft size={m.headIcon} color={colors.textPrimary} />
-          </Pressable>
-        ) : (
-          <View style={styles.back} />
-        )}
-        <Text
-          style={[styles.title, {color: colors.textPrimary}]}
-          numberOfLines={1}>
-          {title}
-        </Text>
-      </View>
+      <ScreenHeader title={title} onBack={onBack} />
       <View style={[styles.progress, {backgroundColor: colors.bgPrimary}]}>
         {dots.map(d => {
           const active = d === step;
@@ -92,25 +61,6 @@ export function AssociateShell({
 
 const styles = StyleSheet.create({
   root: {flex: 1},
-  head: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: m.headGap,
-    paddingVertical: m.headPadV,
-    paddingHorizontal: m.headPadH,
-    borderBottomWidth: 1,
-  },
-  back: {
-    width: m.headBackSize,
-    height: m.headBackSize,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    flex: 1,
-    fontSize: m.headTitleSize,
-    fontWeight: m.headTitleWeight,
-  },
   progress: {
     flexDirection: 'row',
     gap: m.progressGap,
