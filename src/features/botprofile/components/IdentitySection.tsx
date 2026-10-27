@@ -1,109 +1,69 @@
 /**
- * Onglet Identité — name / description / short par langue.
+ * Onglet Identité (lecture seule) — puces de langue, aperçu Telegram, textes.
+ * L'aperçu Telegram n'existe que dans cet onglet.
  */
 import React from 'react';
-import {View, Text, TextInput, StyleSheet} from 'react-native';
+import {View, StyleSheet} from 'react-native';
 import {useTheme, botProfileMetrics as m} from '../../../shared/theme';
 import type {BotProfile} from '../../../core/api/endpoints/botProfile.types';
 import {DEFAULT_LANG} from '../../../core/api/endpoints/botProfile.types';
-import {setTextField} from '../utils/edit';
-import {validate} from '../utils/validate';
-import {FIELD_LIMITS} from '../utils/labels';
 import {texts} from '../texts';
 import {LangChips} from './LangChips';
+import {ReadOnlyField} from './ReadOnlyField';
+import {TelegramPreview} from './TelegramPreview';
 
 type Props = {
-  draft: BotProfile;
+  profile: BotProfile;
   lang: string;
   onLang: (lang: string) => void;
-  onEdit: (recipe: (d: BotProfile) => BotProfile) => void;
 };
 
 export function IdentitySection({
-  draft,
+  profile,
   lang,
   onLang,
-  onEdit,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
-  const t = draft.texts[lang] ?? draft.texts[DEFAULT_LANG] ?? {
+  const t = profile.texts[lang] ?? profile.texts[DEFAULT_LANG] ?? {
     name: '',
     description: '',
     short_description: '',
   };
 
-  const errors = validate(draft);
-  const field = (
-    label: string,
-    key: 'name' | 'description' | 'short_description',
-    multiline?: boolean,
-  ) => {
-    const err = errors[`text:${lang}:${key}`];
-    const limit = FIELD_LIMITS[key];
-    return (
-      <View style={styles.field}>
-        <View style={styles.fieldHead}>
-          <Text style={[styles.label, {color: colors.textSecondary}]}>
-            {label}
-          </Text>
-          <Text style={[styles.counter, {color: colors.textHint}]}>
-            {t[key].length}/{limit}
-          </Text>
-        </View>
-        <TextInput
-          value={t[key]}
-          onChangeText={v =>
-            onEdit(d => setTextField(d, lang, key, v.slice(0, limit)))
-          }
-          multiline={multiline}
-          style={[
-            styles.input,
-            multiline && styles.area,
-            {
-              color: colors.textPrimary,
-              borderColor: err ? colors.danger : colors.border,
-              backgroundColor: colors.bgSecondary,
-            },
-          ]}
-        />
-        {err ? (
-          <Text style={[styles.err, {color: colors.danger}]}>{err}</Text>
-        ) : null}
-      </View>
-    );
-  };
-
   return (
     <View style={styles.stack}>
       <LangChips
-        languages={Object.keys(draft.texts)}
+        languages={Object.keys(profile.texts)}
         active={lang}
         onSelect={onLang}
       />
-      {field(texts.labelName, 'name')}
-      {field(texts.labelDescription, 'description', true)}
-      {field(texts.labelShort, 'short_description', true)}
+      <TelegramPreview profile={profile} lang={lang} />
+      <View style={[styles.card, {backgroundColor: colors.bgPrimary}]}>
+        <ReadOnlyField
+          label={texts.labelName}
+          value={t.name}
+          hint={texts.hintName}
+        />
+        <ReadOnlyField
+          label={texts.labelDescription}
+          value={t.description}
+          hint={texts.hintDescription}
+        />
+        <ReadOnlyField
+          label={texts.labelShort}
+          value={t.short_description}
+          hint={texts.hintShort}
+        />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   stack: {gap: m.stackGap},
-  field: {gap: m.fieldInnerGap},
-  fieldHead: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  card: {
+    borderRadius: m.cardRadius,
+    padding: m.fieldsPad,
+    gap: m.stackGap,
   },
-  label: {fontSize: m.labelSize, fontWeight: m.labelWeight},
-  counter: {fontSize: m.counterSize},
-  input: {
-    minHeight: m.inputHeight,
-    borderRadius: m.inputRadius,
-    borderWidth: m.borderWidth,
-    paddingHorizontal: m.inputPadH,
-    paddingVertical: m.inputPadV,
-    fontSize: m.inputFontSize,
-  },
-  area: {minHeight: m.areaMinHeight, textAlignVertical: 'top'},
-  err: {fontSize: m.errFontSize},
 });
