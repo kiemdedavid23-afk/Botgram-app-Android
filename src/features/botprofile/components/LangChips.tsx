@@ -9,6 +9,7 @@ type Props = {
   onSelect: (lang: string) => void;
 };
 
+/** Sélecteur de langue à afficher (pas d'édition). Actif : bleu pâle, comme le site. */
 export function LangChips({languages, active, onSelect}: Props): React.JSX.Element {
   const {colors} = useTheme();
   return (
@@ -22,14 +23,12 @@ export function LangChips({languages, active, onSelect}: Props): React.JSX.Eleme
               onPress={() => onSelect(code)}
               style={[
                 styles.chip,
-                {
-                  backgroundColor: on ? colors.accent : colors.bgTertiary,
-                },
+                {backgroundColor: on ? colors.accentSoft : colors.bgPrimary},
               ]}>
               <Text
                 style={[
                   styles.chipText,
-                  {color: on ? colors.white : colors.textPrimary},
+                  {color: on ? colors.accent : colors.textSecondary},
                 ]}>
                 {langLabel(code)}
               </Text>
