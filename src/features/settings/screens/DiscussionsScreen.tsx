@@ -97,11 +97,13 @@ export function DiscussionsScreen({
                 onPress={() => setSwipe(id)}
                 style={styles.swipeOption}>
                 <Text
-                  style={{
-                    color: active ? colors.textPrimary : colors.textHint,
-                    fontWeight: active ? fontWeight.bold : fontWeight.medium,
-                    fontSize: active ? 18 : 15,
-                  }}>
+                  style={[
+                    active ? styles.swipeTextActive : styles.swipeTextIdle,
+                    {
+                      color: active ? colors.textPrimary : colors.textHint,
+                      fontWeight: active ? fontWeight.bold : fontWeight.medium,
+                    },
+                  ]}>
                   {label}
                 </Text>
                 {active ? (
@@ -119,7 +121,7 @@ export function DiscussionsScreen({
           {t.sendSection}
         </Text>
         <View style={[card, styles.switchRow]}>
-          <View style={{flex: 1, gap: 4}}>
+          <View style={styles.switchLabels}>
             <Text style={[styles.fieldLabel, {color: colors.textPrimary}]}>
               {t.sendWithEnter}
             </Text>
@@ -219,6 +221,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   folderLabel: {flex: 1, fontSize: 16, fontWeight: '600'},
+  swipeTextActive: {fontSize: 18},
+  swipeTextIdle: {fontSize: 15},
+  switchLabels: {flex: 1, gap: 4},
   swipeOption: {alignItems: 'center', paddingVertical: 8, gap: 4},
   swipeBar: {height: 3, width: 48, borderRadius: 2},
   hint: {fontSize: sm.subSize, marginTop: 8, textAlign: 'center'},
