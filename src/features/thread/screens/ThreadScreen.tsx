@@ -28,6 +28,7 @@ type Props = {
   photoUrl?: string | null;
   initials?: string | null;
   onBack: () => void;
+  onPressAvatar?: () => void;
 };
 
 type Row =
@@ -40,6 +41,7 @@ export function ThreadScreen({
   photoUrl,
   initials,
   onBack,
+  onPressAvatar,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
   const open = useThreadStore(s => s.open);
@@ -102,6 +104,7 @@ export function ThreadScreen({
         photoUrl={photoUrl}
         initials={initials}
         onBack={onBack}
+        onPressAvatar={onPressAvatar}
       />
       {offline ? (
         <View style={[styles.offline, {backgroundColor: colors.bgTertiary}]}>
