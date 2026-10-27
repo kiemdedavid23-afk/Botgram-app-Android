@@ -55,7 +55,6 @@ export function ConversationsScreen({
   const deleteConversation = useConversationsStore(s => s.deleteConversation);
 
   const archivedIds = useArchiveStore(s => s.ids);
-  const archiveRev = useArchiveStore(s => s.revision);
   const hydrateArchive = useArchiveStore(s => s.hydrate);
   const archiveConv = useArchiveStore(s => s.archive);
   const unarchiveConv = useArchiveStore(s => s.unarchive);
@@ -66,12 +65,12 @@ export function ConversationsScreen({
 
   const filtered = useMemo(
     () => applyArchiveVisibility(baseFiltered, folder, archivedIds),
-    [baseFiltered, folder, archivedIds, archiveRev],
+    [baseFiltered, folder, archivedIds],
   );
 
   const counts = useMemo(
     () => folderCounts(items, archivedIds),
-    [items, archivedIds, archiveRev],
+    [items, archivedIds],
   );
 
   const {searchQuery, searching, onSearchChange, clearSearch} =
