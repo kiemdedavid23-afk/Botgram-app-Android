@@ -136,7 +136,7 @@ export function BotProfileScreen({onAddBot}: Props): React.JSX.Element {
   return (
     <View style={styles.root}>
       <ScrollView contentContainerStyle={styles.scroll} stickyHeaderIndices={[1]}>
-        <BotHero profile={profile} />
+        <BotHero key={profile.bot_id} profile={profile} status={bot.status} />
         <View style={styles.tabsBar}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={styles.tabs}>
