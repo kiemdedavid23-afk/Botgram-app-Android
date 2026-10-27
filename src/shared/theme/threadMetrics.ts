@@ -29,6 +29,22 @@ export const threadMetrics = {
   headerHitSlop: 8,
   avatarSize: 40,
   titleSize: 16,
+  /** En-tête flottant (pilule + boutons ronds) */
+  floatBtnSize: 44,
+  floatPillHeight: 52,
+  floatPadT: 6,
+  floatPadB: 8,
+  floatPadH: 10,
+  floatGap: 8,
+  floatPillPadL: 6,
+  floatPillPadR: 16,
+  subtitleSize: 12,
+  /** Bandeau hors-ligne flottant sous l'en-tête */
+  offlineBannerHeight: 32,
+  /** Menu ⋮ */
+  menuMinWidth: 260,
+  menuGapBelowButton: 6,
+  menuIconSize: 20,
   daySepPadV: 8,
   daySepFont: 12,
   /** boutons inline */
