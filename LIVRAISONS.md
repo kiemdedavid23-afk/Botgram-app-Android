@@ -134,3 +134,29 @@ npm run lint
 npm test -- --ci --coverage=false
 ```
 *(Coller sorties réelles après `npm install @op-engineering/op-sqlite@18.2.5 --save-exact`.)*
+
+
+## Thread — en-tête flottant + menu ⋮ de la conversation
+
+### Créés
+- `src/features/thread/components/RoundButton.tsx` — bouton rond blanc (← et ⋮)
+- `src/features/thread/components/ThreadMenu.tsx` — menu ⋮ groupé : Contact / Organisation / Zone dangereuse
+
+### Modifiés
+- `src/features/thread/components/ThreadHeader.tsx` — en-tête transparent flottant : rond ←, pilule (avatar, nom, sous-titre), rond ⋮ ; bandeau hors-ligne flottant ; `useThreadHeaderHeight`
+- `src/features/thread/screens/ThreadScreen.tsx` — branche le menu (stores existants), la liste passe derrière l'en-tête
+- `src/features/thread/texts.ts`, `src/shared/theme/threadMetrics.ts`
+
+### Actions du menu ⋮ (toutes déjà existantes dans l'app)
+- Voir le profil du contact
+- Épingler / Désépingler (désactivé hors ligne)
+- Archiver / Désarchiver (archive locale ; retour à la liste après archivage)
+- Supprimer la conversation (double confirmation ; désactivé hors ligne ; retour à la liste)
+
+### Écarts
+- Pas de point vert : aucune donnée de présence dans l'app
+- Sous-titre : `@username` sinon Privé / Groupe / Canal
+- Pas de « Déplacer vers un dossier » : les dossiers sont calculés par type de chat, rien à déplacer
+
+### Preuves CI
+*(non exécutées — coller sorties réelles de typecheck / lint / test)*
