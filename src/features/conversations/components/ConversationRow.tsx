@@ -1,5 +1,5 @@
-import React from 'react';
-import {View, Text, Pressable, StyleSheet, Alert} from 'react-native';
+import React, {useState} from 'react';
+import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {Pin} from 'lucide-react-native';
 import {useTheme, fontWeight} from '../../../shared/theme';
 import {Avatar} from '../../../shared/components/Avatar';
@@ -10,6 +10,12 @@ import {conversationTitle} from '../store/conversationsStore';
 import type {ConversationSummary} from '../../../core/api/endpoints/conversations';
 import {conversationsTexts as ct} from '../texts';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
+import {ConversationActionsSheet} from './ConversationActionsSheet';
+import {
+  buildConversationMenu,
+  confirmDeleteConversation,
+  conversationSubtitle,
+} from './conversationMenu';
 
 type Props = {
   item: ConversationSummary;
@@ -46,67 +52,30 @@ export function ConversationRow({
   const time = formatConversationTime(item.last_message_at);
   const unread = item.unread_count ?? 0;
   const showBadge = !hideBadge && unread > 0;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const pinned = !!item.pinned;
+  const groups = buildConversationMenu({
+    pinned,
+    archived,
+    onViewProfile: onPressAvatar,
+    onTogglePin: () => {
+      if (onPin) fireAndForget(onPin(item.id, !pinned));
+    },
+    onToggleArchive: () => {
+      if (archived) onUnarchive?.(item.id);
+      else onArchive?.(item.id);
+    },
+    onDelete: () =>
+      confirmDeleteConversation(() => {
+        if (onDelete) fireAndForget(onDelete(item.id));
+      }),
+  });
 
   return (
+    <>
     <Pressable
       onPress={onPress}
-      onLongPress={() => {
-        const pinned = !!item.pinned;
-        type Btn = {
-          text: string;
-          style?: 'cancel' | 'destructive';
-          onPress?: () => void;
-        };
-        const pinBtn: Btn = {
-          text: pinned ? ct.unpinAction : ct.pinAction,
-          onPress: () => {
-            if (onPin) fireAndForget(onPin(item.id, !pinned));
-          },
-        };
-        const archiveBtn: Btn = archived
-          ? {
-              text: ct.unarchiveAction,
-              onPress: () => onUnarchive?.(item.id),
-            }
-          : {
-              text: ct.archiveAction,
-              onPress: () => onArchive?.(item.id),
-            };
-        const deleteBtn: Btn = {
-          text: ct.deleteConversation,
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert(
-              ct.deleteConversationConfirmTitle,
-              ct.deleteConversationConfirmBody,
-              [
-                {text: ct.cancel, style: 'cancel'},
-                {
-                  text: ct.deleteConversationConfirm2,
-                  style: 'destructive',
-                  onPress: () => {
-                    if (onDelete) fireAndForget(onDelete(item.id));
-                  },
-                },
-              ],
-            );
-          },
-        };
-        const cancelBtn: Btn = {text: ct.cancel, style: 'cancel'};
-        // Ordre : action préférée (swipe) en premier, puis le reste.
-        const preferred =
-          swipeAction === 'pin'
-            ? pinBtn
-            : swipeAction === 'archive'
-              ? archiveBtn
-              : archiveBtn;
-        const rest: Btn[] = [];
-        for (const b of [pinBtn, archiveBtn, deleteBtn]) {
-          if (b.text !== preferred.text) rest.push(b);
-        }
-        const buttons = [preferred, ...rest, cancelBtn];
-        Alert.alert(conversationTitle(item), undefined, buttons);
-      }}
+      onLongPress={() => setMenuOpen(true)}
       style={({pressed}) => [
         styles.item,
         {
@@ -186,6 +155,23 @@ export function ConversationRow({
         </View>
       </View>
     </Pressable>
+    <ConversationActionsSheet
+      visible={menuOpen}
+      onClose={() => setMenuOpen(false)}
+      title={title}
+      subtitle={conversationSubtitle(item)}
+      photoUrl={item.photo_url}
+      initials={item.initials}
+      groups={groups}
+      highlightId={
+        swipeAction === 'pin'
+          ? 'pin'
+          : swipeAction === 'archive'
+            ? 'archive'
+            : undefined
+      }
+    />
+    </>
   );
 }
 
