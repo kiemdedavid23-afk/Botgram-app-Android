@@ -1,15 +1,24 @@
 /**
  * Espace bot (release) — Échanges / Contacts / Paramètres / Profil.
  * Ouvert depuis le tableau de bord ou la feuille de bascule de l'en-tête.
- * Échanges : BotChatsStack (liste + fil). Les autres onglets restent des
- * écrans provisoires jusqu'à leur implémentation.
- * Retour à l'espace membre : photo de l'en-tête → membre, ou retour Android.
+ *
+ * En-tête commun (photo du bot + menu ⋮ « Espace membre ») sur Échanges,
+ * Paramètres et Profil du bot.
+ * - Échanges : BotChatsStack (liste + fil).
+ * - Contacts : écran provisoire.
+ * - Paramètres : page Paramètres actuelle (refonte à venir).
+ * - Profil : profil Telegram du bot.
  */
 import React, {useEffect, useState} from 'react';
 import {View, StyleSheet, BackHandler} from 'react-native';
-import {useTheme} from '../shared/theme';
+import {LayoutDashboard} from 'lucide-react-native';
+import {useTheme, space} from '../shared/theme';
 import {BrandBar} from '../shared/components/BrandBar';
 import {HeaderAvatarButton} from '../shared/components/HeaderAvatarButton';
+import {
+  HeaderMenu,
+  type HeaderMenuItem,
+} from '../shared/components/HeaderMenu';
 import {
   BotBottomNav,
   type BotTabId,
@@ -18,19 +27,23 @@ import {EmptyScreen} from '../shared/components/EmptyScreen';
 import {BotChatsStack} from '../features/conversations/navigation/BotChatsStack';
 import {useConversationsStore} from '../features/conversations/store/conversationsStore';
 import {useBotsStore} from '../features/bots/store/botsStore';
+import {MemberSettingsScreen} from '../features/settings';
+import {BotProfileScreen} from '../features/botprofile';
 import {ContextSwitcher} from './ContextSwitcher';
+import {useMemberSectionStore} from './memberSectionStore';
 
 type Props = {
+  /** Retour à l'espace membre. */
   onExit: () => void;
+  /** Ouvre le parcours d'ajout de bot (depuis le profil du bot). */
+  onAddBot: () => void;
 };
 
-const TAB_TITLES: Record<Exclude<BotTabId, 'chats'>, string> = {
-  contacts: 'Contacts',
-  settings: 'Paramètres',
-  profile: 'Profil',
-};
+const BOT_MENU: ReadonlyArray<HeaderMenuItem<'member'>> = [
+  {id: 'member', label: 'Espace membre', Icon: LayoutDashboard},
+];
 
-export function BotSpaceScreen({onExit}: Props): React.JSX.Element {
+export function BotSpaceScreen({onExit, onAddBot}: Props): React.JSX.Element {
   const {colors} = useTheme();
   const [tab, setTab] = useState<BotTabId>('chats');
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -38,6 +51,7 @@ export function BotSpaceScreen({onExit}: Props): React.JSX.Element {
   const bots = useBotsStore(s => s.bots);
   const selected = bots.find(b => b.selected) ?? bots[0];
   const botName = selected?.name ?? 'Bot';
+  const setMemberSection = useMemberSectionStore(s => s.setSection);
 
   // Retour Android depuis un onglet secondaire → revient sur Échanges.
   // (Le fil ouvert dans BotChatsStack gère déjà son propre retour.)
@@ -54,12 +68,20 @@ export function BotSpaceScreen({onExit}: Props): React.JSX.Element {
     };
   }, [tab]);
 
+  const goMember = (section: 'member' | 'gestion'): void => {
+    setMemberSection(section);
+    onExit();
+  };
+
   const headerRight = (
-    <HeaderAvatarButton
-      title={botName}
-      open={switcherOpen}
-      onPress={() => setSwitcherOpen(true)}
-    />
+    <View style={styles.headerRight}>
+      <HeaderAvatarButton
+        title={botName}
+        open={switcherOpen}
+        onPress={() => setSwitcherOpen(true)}
+      />
+      <HeaderMenu items={BOT_MENU} activeId={null} onSelect={onExit} />
+    </View>
   );
 
   const nav = (
@@ -97,7 +119,20 @@ export function BotSpaceScreen({onExit}: Props): React.JSX.Element {
   return (
     <View style={[styles.root, {backgroundColor: colors.bgSecondary}]}>
       <BrandBar title="Botgram" right={headerRight} />
-      <EmptyScreen title={TAB_TITLES[tab]} subtitle="Bientôt disponible" />
+      {tab === 'settings' ? (
+        // La page Paramètres n'a pas de marge basse pour la barre flottante.
+        <View style={styles.settingsBody}>
+          <MemberSettingsScreen
+            onGoProfile={() => goMember('member')}
+            onGoGestion={() => goMember('gestion')}
+            onGoBotProfile={() => setTab('profile')}
+          />
+        </View>
+      ) : tab === 'profile' ? (
+        <BotProfileScreen onAddBot={onAddBot} />
+      ) : (
+        <EmptyScreen title="Contacts" subtitle="Bientôt disponible" />
+      )}
       {nav}
       {switcher}
     </View>
@@ -106,4 +141,10 @@ export function BotSpaceScreen({onExit}: Props): React.JSX.Element {
 
 const styles = StyleSheet.create({
   root: {flex: 1},
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.xs,
+  },
+  settingsBody: {flex: 1, paddingBottom: space.bottomNavZone},
 });
