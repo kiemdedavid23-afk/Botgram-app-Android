@@ -19,6 +19,15 @@ export const threadTexts = {
     'Vendredi',
     'Samedi',
   ] as const,
+  // En-tête + menu ⋮ de la conversation
+  menuButton: 'Menu de la conversation',
+  menuClose: 'Fermer le menu',
+  back: 'Retour',
+  menuViewProfile: 'Voir le profil du contact',
+  chatPrivate: 'Privé',
+  chatGroup: 'Groupe',
+  chatChannel: 'Canal',
+  menuNeedsNetwork: 'Indisponible hors ligne',
   // L5d
   composerPlaceholder: 'Message',
   send: 'Envoyer',
