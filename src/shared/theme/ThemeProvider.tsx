@@ -56,15 +56,24 @@ export function ThemeProvider({children}: Props): React.JSX.Element {
       try {
         const raw = await cacheGetString(APPEARANCE_STORAGE_KEY);
         if (raw && !cancelled) {
-          const parsed = JSON.parse(raw) as Partial<AppearanceSettings> & {
-            swipeAction?: string;
-          };
-          if (parsed.swipeAction === 'delete') {
-            parsed.swipeAction = 'archive';
-          }
+          const parsed = JSON.parse(raw) as Omit<
+            Partial<AppearanceSettings>,
+            'swipeAction'
+          > & {swipeAction?: string};
+          const {swipeAction: savedSwipe, ...savedRest} = parsed;
+          // Ancienne valeur 'delete' → 'archive' ; valeur inconnue → ignorée.
+          const swipeAction: AppearanceSettings['swipeAction'] | undefined =
+            savedSwipe === 'delete'
+              ? 'archive'
+              : savedSwipe === 'archive' ||
+                savedSwipe === 'folder' ||
+                savedSwipe === 'pin'
+              ? savedSwipe
+              : undefined;
           setAppearanceState(prev => ({
             ...prev,
-            ...parsed,
+            ...savedRest,
+            swipeAction: swipeAction ?? prev.swipeAction,
             customFolders: parsed.customFolders ?? prev.customFolders,
             uiLanguage: parsed.uiLanguage ?? prev.uiLanguage,
           }));
