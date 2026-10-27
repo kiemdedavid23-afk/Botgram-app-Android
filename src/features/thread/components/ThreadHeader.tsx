@@ -11,6 +11,8 @@ type Props = {
   photoUrl?: string | null;
   initials?: string | null;
   onBack: () => void;
+  /** Appui sur l'avatar / zone titre → profil contact. */
+  onPressAvatar?: () => void;
 };
 
 export function ThreadHeader({
@@ -18,6 +20,7 @@ export function ThreadHeader({
   photoUrl,
   initials,
   onBack,
+  onPressAvatar,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
   const insets = useSafeAreaInsets();
@@ -32,10 +35,18 @@ export function ThreadHeader({
         },
       ]}>
       <View style={styles.row}>
-        <Pressable onPress={onBack} hitSlop={tm.headerHitSlop} accessibilityRole="button">
+        <Pressable
+          onPress={onBack}
+          hitSlop={tm.headerHitSlop}
+          accessibilityRole="button">
           <ChevronLeft size={28} color={colors.accent} strokeWidth={2} />
         </Pressable>
-        <View style={styles.info}>
+        <Pressable
+          onPress={onPressAvatar}
+          disabled={!onPressAvatar}
+          style={styles.info}
+          accessibilityRole={onPressAvatar ? 'button' : undefined}
+          accessibilityLabel={title}>
           <Avatar
             photoUrl={photoUrl}
             initials={initials}
@@ -54,7 +65,7 @@ export function ThreadHeader({
             ]}>
             {title}
           </Text>
-        </View>
+        </Pressable>
       </View>
     </View>
   );
