@@ -85,7 +85,8 @@ export function onDownloadProgress(
   if (!downloadEmitter) return () => {};
   const sub = downloadEmitter.addListener(
     'botgramDownloadProgress',
-    (e: {id: string; received: number; total: number}) => {
+    (raw: unknown) => {
+      const e = raw as {id: string; received: number; total: number};
       if (e.id === id) cb(e.received, e.total);
     },
   );
@@ -155,12 +156,14 @@ export const audioEngine = {
   /** État toutes les ~250 ms pendant la lecture, et à chaque changement. */
   subscribe(cb: (s: AudioState) => void): () => void {
     if (!audioEmitter) return () => {};
-    const sub = audioEmitter.addListener('botgramAudioState', cb);
+    const sub = audioEmitter.addListener('botgramAudioState', (e: unknown) => cb(e as AudioState));
     return () => sub.remove();
   },
   onError(cb: (e: {id: string | null; code: string; message: string}) => void): () => void {
     if (!audioEmitter) return () => {};
-    const sub = audioEmitter.addListener('botgramAudioError', cb);
+    const sub = audioEmitter.addListener('botgramAudioError', (e: unknown) =>
+      cb(e as {id: string | null; code: string; message: string}),
+    );
     return () => sub.remove();
   },
 };
