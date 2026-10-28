@@ -1,4 +1,4 @@
-/** Profil Telegram du bot — 6 onglets, lecture seule (site BotProfilePage). */
+/** Profil Telegram du bot — 4 onglets (Identité, Langues, Commandes, Infos), lecture seule. */
 import React, {useEffect, useMemo, useState} from 'react';
 import {
   View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator,
@@ -12,8 +12,6 @@ import {BotHero} from '../components/BotHero';
 import {IdentitySection} from '../components/IdentitySection';
 import {LanguagesSection} from '../components/LanguagesSection';
 import {CommandsSection} from '../components/CommandsSection';
-import {MenuSection} from '../components/MenuSection';
-import {RightsSection} from '../components/RightsSection';
 import {InfoSection} from '../components/InfoSection';
 import {DEFAULT_LANG} from '../../../core/api/endpoints/botProfile.types';
 import {PROFILE_TABS, type TabId} from '../utils/tabs';
@@ -51,7 +49,7 @@ function makeStyles(c: ColorTokens) {
     tabOff: {backgroundColor: c.bgPrimary},
     tabTextOn: {fontSize: m.tabLabelSize, fontWeight: m.tabFontWeight, color: c.white},
     tabTextOff: {fontSize: m.tabLabelSize, fontWeight: m.tabFontWeight, color: c.textSecondary},
-    head: {gap: m.headGap, paddingHorizontal: m.headPadH, paddingBottom: m.headPadBottom},
+    head: {gap: m.headGap, paddingBottom: m.headPadBottom},
     headTitle: {
       fontSize: m.headTitleSize, fontWeight: m.headTitleWeight,
       letterSpacing: m.letterSpacingTight, color: c.textPrimary,
@@ -59,10 +57,6 @@ function makeStyles(c: ColorTokens) {
     headHint: {
       fontSize: m.headHintSize, lineHeight: m.headHintLineHeight,
       color: c.textSecondary,
-    },
-    note: {
-      fontSize: m.noteSize, lineHeight: m.noteLineHeight,
-      paddingHorizontal: m.headPadH, color: c.textHint,
     },
   });
 }
@@ -135,7 +129,7 @@ export function BotProfileScreen({onAddBot}: Props): React.JSX.Element {
 
   return (
     <View style={styles.root}>
-      <ScrollView contentContainerStyle={styles.scroll} stickyHeaderIndices={[1]}>
+      <ScrollView contentContainerStyle={styles.scroll}>
         <BotHero key={profile.bot_id} profile={profile} status={bot.status} />
         <View style={styles.tabsBar}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -165,7 +159,6 @@ export function BotProfileScreen({onAddBot}: Props): React.JSX.Element {
           <Text style={styles.headTitle}>{currentTab.title}</Text>
           <Text style={styles.headHint}>{currentTab.hint}</Text>
         </View>
-        <Text style={styles.note}>{texts.readOnlyNote}</Text>
         {tab === 'identity' ? (
           <IdentitySection profile={profile} lang={lang} onLang={setLang} />
         ) : null}
@@ -173,10 +166,13 @@ export function BotProfileScreen({onAddBot}: Props): React.JSX.Element {
         {tab === 'commands' ? (
           <CommandsSection profile={profile} lang={lang} onLang={setLang} />
         ) : null}
-        {tab === 'menu' ? <MenuSection profile={profile} /> : null}
-        {tab === 'rights' ? <RightsSection profile={profile} /> : null}
         {tab === 'info' ? (
-          <InfoSection profile={profile} loading={loading} onResync={resync} />
+          <InfoSection
+            profile={profile}
+            status={bot.status}
+            loading={loading}
+            onResync={resync}
+          />
         ) : null}
       </ScrollView>
     </View>
