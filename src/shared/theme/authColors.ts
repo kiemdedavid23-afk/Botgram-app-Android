@@ -96,3 +96,21 @@ export const welcomeMetrics = {
   footerPaddingH: 24,
   footerPaddingBottom: 24,
 } as const;
+
+/**
+ * Écrans de saisie (email, …) sur fond photo sombre — voir AuthBackground.
+ * Même bleu et même ambiance que l'écran Welcome.
+ */
+export const authDark = {
+  title: '#ffffff',
+  text: '#ffffff',
+  help: '#C3D2F0',
+  placeholder: 'rgba(195,210,240,0.55)',
+  border: 'rgba(255,255,255,0.30)',
+  borderFocus: '#1E9BFF',
+  danger: '#FF8A8A',
+  accent: '#1E9BFF',
+  buttonText: '#ffffff',
+  buttonShadow: 'rgba(30,155,255,0.45)',
+  backIcon: '#ffffff',
+} as const;
