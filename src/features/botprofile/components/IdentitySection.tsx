@@ -1,6 +1,5 @@
 /**
- * Onglet Identité (lecture seule) — puces de langue, aperçu Telegram, textes.
- * L'aperçu Telegram n'existe que dans cet onglet.
+ * Onglet Identité (lecture seule) — puces de langue puis nom et descriptions.
  */
 import React from 'react';
 import {View, StyleSheet} from 'react-native';
@@ -10,7 +9,6 @@ import {DEFAULT_LANG} from '../../../core/api/endpoints/botProfile.types';
 import {texts} from '../texts';
 import {LangChips} from './LangChips';
 import {ReadOnlyField} from './ReadOnlyField';
-import {TelegramPreview} from './TelegramPreview';
 
 type Props = {
   profile: BotProfile;
@@ -37,7 +35,6 @@ export function IdentitySection({
         active={lang}
         onSelect={onLang}
       />
-      <TelegramPreview profile={profile} lang={lang} />
       <View style={[styles.card, {backgroundColor: colors.bgPrimary}]}>
         <ReadOnlyField
           label={texts.labelName}
