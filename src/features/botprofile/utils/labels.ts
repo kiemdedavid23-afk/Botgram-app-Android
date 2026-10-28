@@ -1,6 +1,8 @@
 /**
  * Libellés profil bot — site utils/labels.ts
  */
+import type {BotStatus} from '../../../core/api/endpoints/bots';
+import {texts} from '../texts';
 import type {
   AdminRightKey,
   CommandScope,
@@ -64,4 +66,13 @@ export const RIGHT_SCOPE: Record<
   can_edit_messages: 'channels',
   can_pin_messages: 'groups',
   can_manage_topics: 'groups',
+};
+
+/** Libellé d'état de connexion du bot (héros + onglet Infos). */
+export const STATUS_LABELS: Record<BotStatus, string> = {
+  connected: texts.statusConnected,
+  pending: texts.statusPending,
+  webhook_error: texts.statusWebhookError,
+  token_invalid: texts.statusTokenInvalid,
+  disconnected: texts.statusDisconnected,
 };
