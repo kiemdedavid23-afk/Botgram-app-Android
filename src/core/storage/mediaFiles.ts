@@ -106,3 +106,59 @@ export async function openMediaFile(
     return {ok: false, code: 'no_handler'};
   }
 }
+
+// ---------------------------------------------------------------------------
+// Photos de profil des bots (cache de 2 jours, voir core/media/botPhotoCache.ts).
+// Dossier séparé de botgram-media : « vider le cache des médias » ne les touche pas.
+// ---------------------------------------------------------------------------
+
+function botPhotoRoot(): string {
+  return `${fs.dirs.DocumentDir}/botgram-botphotos`;
+}
+
+/** Nom de fichier sûr (pas de chemin). */
+function safeName(name: string): string {
+  return name.replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
+/** URI `file://` utilisable directement par <Image>. */
+export function botPhotoFileUri(name: string): string {
+  return `file://${botPhotoRoot()}/${safeName(name)}`;
+}
+
+export async function botPhotoFileExists(name: string): Promise<boolean> {
+  return fs.exists(`${botPhotoRoot()}/${safeName(name)}`);
+}
+
+export async function botPhotoFileWrite(
+  name: string,
+  base64Data: string,
+): Promise<void> {
+  const root = botPhotoRoot();
+  if (!(await fs.exists(root))) {
+    await fs.mkdir(root);
+  }
+  await fs.writeFile(`${root}/${safeName(name)}`, base64Data, 'base64');
+}
+
+export async function botPhotoFileDelete(name: string): Promise<void> {
+  const path = `${botPhotoRoot()}/${safeName(name)}`;
+  if (await fs.exists(path)) {
+    await fs.unlink(path);
+  }
+}
+
+/** Supprime toutes les photos de bots (déconnexion du membre). */
+export async function botPhotoClearAll(): Promise<void> {
+  const root = botPhotoRoot();
+  if (!(await fs.exists(root))) return;
+  const entries = await fs.ls(root);
+  for (const name of entries) {
+    await fs.unlink(`${root}/${name}`);
+  }
+  try {
+    await fs.unlink(root);
+  } catch {
+    // dossier déjà retiré
+  }
+}
