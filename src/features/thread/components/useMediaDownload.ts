@@ -41,6 +41,8 @@ export function useMediaDownload(
         if (alive.current) setPath(p);
         return p;
       }
+      // Message en cours d'envoi : rien à télécharger (seule la copie locale compte).
+      if (messageId.startsWith('local:')) return null;
       if (alive.current) {
         setLoading(true);
         setError(null);
@@ -79,6 +81,8 @@ export function useMediaDownload(
 
   useEffect(() => {
     alive.current = true;
+    setPath(null);
+    setError(null);
     const storage = getMediaStorage();
     storage
       .exists(messageId)
