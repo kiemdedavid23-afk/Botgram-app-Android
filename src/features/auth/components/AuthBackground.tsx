@@ -8,7 +8,6 @@ import React from 'react';
 import {View, Image, StatusBar, StyleSheet} from 'react-native';
 import {welcomeColors} from '../../../shared/theme/authColors';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const bgImage = require('../../../assets/auth_bg.webp');
 
 type Props = {children: React.ReactNode};
