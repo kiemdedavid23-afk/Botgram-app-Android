@@ -21,25 +21,12 @@ import {
   emptyRights,
 } from './botProfile.types';
 
-const PROBE_LANGUAGES = [
-  'fr',
-  'en',
-  'ar',
-  'es',
-  'pt',
-  'de',
-  'it',
-  'ru',
-  'tr',
-  'hi',
-  'id',
-  'nl',
-  'zh',
-  'ja',
-  'ko',
-  'sw',
-];
-const PROBE_PARALLEL = 5;
+/**
+ * Les 7 langues les plus parlées (pas d'hébreu ni d'arabe — choix produit).
+ * Une requête textes (+ une requête commandes si différent) par langue.
+ */
+const PROBE_LANGUAGES = ['fr', 'en', 'es', 'pt', 'ru', 'hi', 'zh'];
+const PROBE_PARALLEL = 4;
 
 function base(botId: string): string {
   return `/bots/${botId}/profile`;
@@ -166,7 +153,10 @@ async function probeLanguages(
 ): Promise<{
   texts: Record<string, LocalizedTexts>;
   commands: Record<string, BotCommandItem[]>;
+  /** false si au moins une lecture a échoué : la liste peut être incomplète. */
+  complete: boolean;
 }> {
+  let complete = true;
   const texts: Record<string, LocalizedTexts> = {};
   const commands: Record<string, BotCommandItem[]> = {};
   let stopped = false;
@@ -175,6 +165,7 @@ async function probeLanguages(
     if (stopped) return;
     const found = await readTexts(botId, code);
     if (!found.ok) {
+      complete = false;
       if (
         found.error.code === 'RATE_LIMITED' ||
         found.error.code === 'TOO_MANY_REQUESTS'
@@ -186,6 +177,7 @@ async function probeLanguages(
     if (sameTexts(found.data, defaults)) return;
     texts[code] = found.data;
     const listRes = await readCommands(botId, code);
+    if (!listRes.ok) complete = false;
     const list = listRes.ok ? listRes.data : [];
     if (
       list.length > 0 &&
@@ -199,7 +191,7 @@ async function probeLanguages(
     const batch = PROBE_LANGUAGES.slice(i, i + PROBE_PARALLEL);
     await Promise.all(batch.map(probe));
   }
-  return {texts, commands};
+  return {texts, commands, complete};
 }
 
 /**
@@ -221,7 +213,63 @@ export async function buildBotPhotoSource(
 }
 
 /**
- * Charge le profil complet.
+ * Socle du profil : 2 requêtes seulement (textes par défaut + commandes par défaut).
+ * Le menu, les droits par défaut et les autres langues ne sont PAS lus ici :
+ * aucun écran ne les affiche à l'ouverture (langues : voir getBotLanguages).
+ */
+export async function getBotProfileCore(
+  botId: string,
+  seed: ProfileSeed,
+): Promise<HttpResult<BotProfile>> {
+  const [defaultsRes, cmdRes] = await Promise.all([
+    readTexts(botId, DEFAULT_LANG),
+    readCommands(botId, DEFAULT_LANG),
+  ]);
+  if (!defaultsRes.ok) return defaultsRes;
+  if (!cmdRes.ok) return cmdRes;
+
+  const defaults = defaultsRes.data;
+  const profile: BotProfile = {
+    bot_id: botId,
+    hasPhoto: false,
+    texts: {
+      [DEFAULT_LANG]: {
+        name: defaults.name || seed.name || '',
+        description: defaults.description,
+        short_description: defaults.short_description,
+      },
+    },
+    commands:
+      cmdRes.data.length > 0 ? {[`default|${DEFAULT_LANG}`]: cmdRes.data} : {},
+    menu_button: {type: 'default'},
+    admin_rights: {groups: emptyRights(), channels: emptyRights()},
+    info: {id: seed.telegram_id ?? '', username: seed.username ?? ''},
+    synced_at: Date.now(),
+  };
+  return {
+    ok: true,
+    data: profile,
+    status: 200,
+    headers: new Headers(),
+    requestId: null,
+  };
+}
+
+/** Autres langues (sonde sur 7 langues) — à la demande, à l'ouverture d'un onglet concerné. */
+export async function getBotLanguages(
+  botId: string,
+  defaults: LocalizedTexts,
+  defaultCommands: BotCommandItem[],
+): Promise<{
+  texts: Record<string, LocalizedTexts>;
+  commands: Record<string, BotCommandItem[]>;
+  complete: boolean;
+}> {
+  return probeLanguages(botId, defaults, defaultCommands);
+}
+
+/**
+ * Charge le profil complet (toutes sondes — gardé pour les usages « tout d'un coup »).
  * Échec textes défaut OU commandes OU menu OU droits → HttpResult en erreur.
  * Photo non lue ici (réserve L4b-2).
  */

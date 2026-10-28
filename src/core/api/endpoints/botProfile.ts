@@ -13,6 +13,8 @@ import {DEFAULT_LANG, emptyTexts} from './botProfile.types';
 
 export {
   getBotProfile,
+  getBotProfileCore,
+  getBotLanguages,
   buildBotPhotoSource,
 } from './botProfileRead';
 
