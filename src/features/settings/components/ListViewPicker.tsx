@@ -32,6 +32,8 @@ export function ListViewPicker(): React.JSX.Element {
   );
 }
 
+const TRANSPARENT = 'transparent';
+
 function Option({
   label,
   lines,
@@ -44,6 +46,7 @@ function Option({
   onPress: () => void;
 }): React.JSX.Element {
   const {colors} = useTheme();
+  const boxBorder = active ? colors.border : TRANSPARENT;
   return (
     <Pressable
       accessibilityRole="radio"
@@ -56,7 +59,7 @@ function Option({
           styles.box,
           {
             backgroundColor: active ? colors.bgPrimary : colors.bgSecondary,
-            borderColor: active ? colors.border : 'transparent',
+            borderColor: boxBorder,
           },
         ]}>
         <View style={styles.rows}>
