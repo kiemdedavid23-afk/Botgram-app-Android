@@ -34,6 +34,7 @@ const HEADER_AVATAR = 46;
 const HANDLE_W = 40;
 const HANDLE_H = 4;
 const ICON = 22;
+const SUBTITLE_SIZE = 13;
 
 export function ConversationActionsSheet({
   visible,
@@ -90,7 +91,7 @@ export function ConversationActionsSheet({
               {subtitle ? (
                 <Text
                   numberOfLines={1}
-                  style={{color: colors.textSecondary, fontSize: 13}}>
+                  style={[styles.subtitle, {color: colors.textSecondary}]}>
                   {subtitle}
                 </Text>
               ) : null}
@@ -172,6 +173,7 @@ const styles = StyleSheet.create({
     paddingBottom: space.md,
   },
   headerTexts: {flex: 1, minWidth: 0},
+  subtitle: {fontSize: SUBTITLE_SIZE},
   sep: {
     height: StyleSheet.hairlineWidth,
     marginVertical: space.xs,
