@@ -59,3 +59,40 @@ export const authMetrics = {
   fabIconSize: 26,
 } as const;
 
+
+/**
+ * Écran Welcome (1re page) — habillage sombre de l'affiche « Botsgram ».
+ * Le reste du parcours de connexion reste clair (authColors).
+ */
+export const welcomeColors = {
+  bg: '#020A2A',
+  title: '#ffffff',
+  accent: '#1E9BFF',
+  subtitle: '#C3D2F0',
+  buttonBg: '#1E9BFF',
+  buttonText: '#ffffff',
+  buttonShadow: 'rgba(30,155,255,0.55)',
+} as const;
+
+export const welcomeMetrics = {
+  /** ratio hauteur/largeur de src/assets/welcome_hero.webp (1024 x 946) */
+  heroRatio: 946 / 1024,
+  /** le visuel occupe au moins 55 % de la hauteur d'écran, sans dépasser 125 % de sa hauteur naturelle (évite de rogner les bulles) */
+  heroMinScreenShare: 0.55,
+  heroMaxStretch: 1.25,
+  logoSize: 84,
+  logoMarginBottom: 14,
+  brandSize: 40,
+  headlineSize: 26,
+  headlineLineHeight: 32,
+  subtitleSize: 15,
+  subtitleLineHeight: 21,
+  subtitleMaxWidth: 300,
+  contentPaddingTop: 28,
+  contentPaddingH: 28,
+  buttonHeight: 54,
+  buttonRadius: 27,
+  buttonFontSize: 17,
+  footerPaddingH: 24,
+  footerPaddingBottom: 24,
+} as const;
