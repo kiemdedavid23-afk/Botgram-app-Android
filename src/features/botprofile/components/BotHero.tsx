@@ -26,8 +26,6 @@ type Props = {profile: BotProfile; status?: BotStatus};
 
 export function BotHero({profile, status}: Props): React.JSX.Element {
   const {colors, mode} = useTheme();
-  const [version, setVersion] = useState(0);
-  const [gone, setGone] = useState(false);
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -52,12 +50,7 @@ export function BotHero({profile, status}: Props): React.JSX.Element {
         mime: file.type ?? 'image/jpeg',
         size: typeof file.size === 'number' ? file.size : 0,
       });
-      if (res.ok) {
-        setGone(false);
-        setVersion(v => v + 1);
-      } else {
-        fail(res.message);
-      }
+      if (!res.ok) fail(res.message);
     } catch (e) {
       if (!(isErrorWithCode(e) && e.code === errorCodes.OPERATION_CANCELED)) {
         fail(texts.errorGeneric);
@@ -72,8 +65,7 @@ export function BotHero({profile, status}: Props): React.JSX.Element {
     const res = await doDeletePhoto(profile.bot_id);
     setBusy(false);
     setConfirmDelete(false);
-    if (res.ok) setGone(true);
-    else fail(res.message);
+    if (!res.ok) fail(res.message);
   };
 
   return (
@@ -81,14 +73,12 @@ export function BotHero({profile, status}: Props): React.JSX.Element {
       <View pointerEvents="none" style={styles.deco} />
       <HeroActions
         link={link}
-        canDeletePhoto={profile.hasPhoto && !gone}
+        canDeletePhoto={profile.hasPhoto}
         onDeletePhoto={() => setConfirmDelete(true)}
       />
       <HeroPhoto
         botId={profile.bot_id}
         initial={initial}
-        version={version}
-        gone={gone}
         busy={busy}
         onChangePhoto={() => {
           changePhoto().catch(() => undefined);

@@ -1,21 +1,19 @@
 /**
- * Avatar du héros : photo du bot (ou initiale) + badge appareil photo.
- * La photo est chargée avec l'en-tête Authorization ; `version` force le rechargement.
+ * Avatar du héros : photo du bot (cache partagé 2 jours) ou initiale + badge appareil photo.
  */
-import React, {useEffect, useState} from 'react';
-import {View, Text, Image, Pressable, ActivityIndicator, StyleSheet} from 'react-native';
+import React, {useEffect} from 'react';
+import {View, Text, Pressable, ActivityIndicator, StyleSheet} from 'react-native';
 import {Camera} from 'lucide-react-native';
 import {useTheme, botProfileMetrics as m} from '../../../shared/theme';
 import {botHeroMetrics as h} from '../../../shared/theme/botHeroMetrics';
-import {buildBotPhotoSource} from '../../../core/api/endpoints/botProfile';
+import {BotPhoto} from '../../../shared/components/BotPhoto';
+import {useBotPhotoStore} from '../../../shared/botPhoto/botPhotoStore';
 import {useBotProfileStore} from '../store/botProfileStore';
 import {texts} from '../texts';
 
 type Props = {
   botId: string;
   initial: string;
-  version: number;
-  gone: boolean;
   busy: boolean;
   onChangePhoto: () => void;
 };
@@ -23,59 +21,33 @@ type Props = {
 export function HeroPhoto({
   botId,
   initial,
-  version,
-  gone,
   busy,
   onChangePhoto,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
   const setPhotoPresent = useBotProfileStore(s => s.setPhotoPresent);
-  const [photo, setPhoto] = useState<{
-    uri: string;
-    headers: Record<string, string>;
-  } | null>(null);
+  const known = useBotPhotoStore(s => s.photos[botId]?.known ?? false);
+  const hasUri = useBotPhotoStore(s => (s.photos[botId]?.uri ?? null) !== null);
 
+  // Le profil (complétude, bouton « supprimer la photo ») suit l'état réel de la photo.
   useEffect(() => {
-    if (gone) {
-      setPhoto(null);
-      return undefined;
-    }
-    let cancelled = false;
-    buildBotPhotoSource(botId, version)
-      .then(src => {
-        if (!cancelled) setPhoto(src);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setPhoto(null);
-          setPhotoPresent(false);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [botId, version, gone, setPhotoPresent]);
+    if (known) setPhotoPresent(hasUri);
+  }, [known, hasUri, setPhotoPresent]);
 
   return (
     <View style={styles.wrap}>
       <View style={[styles.avatar, {borderColor: colors.heroChipBorder}]}>
-        {photo ? (
-          <Image
-            source={photo}
-            style={styles.img}
-            onLoad={() => setPhotoPresent(true)}
-            onError={() => {
-              setPhoto(null);
-              setPhotoPresent(false);
-            }}
-          />
-        ) : (
-          <View style={[styles.img, styles.initialBg]}>
-            <Text style={[styles.initial, {color: colors.heroText}]}>
-              {initial}
-            </Text>
-          </View>
-        )}
+        <BotPhoto
+          botId={botId}
+          style={styles.img}
+          fallback={
+            <View style={[styles.img, styles.initialBg]}>
+              <Text style={[styles.initial, {color: colors.heroText}]}>
+                {initial}
+              </Text>
+            </View>
+          }
+        />
       </View>
       <Pressable
         onPress={onChangePhoto}
