@@ -4,6 +4,7 @@
 import React, {useEffect, useRef} from 'react';
 import {View, Text, Pressable, StyleSheet, Animated, ActivityIndicator} from 'react-native';
 import {Bot as BotIcon, RefreshCw, Unplug, Trash2} from 'lucide-react-native';
+import {BotPhoto} from '../../../shared/components/BotPhoto';
 import {useTheme, gestionMetrics as g, getShadow} from '../../../shared/theme';
 import type {Bot} from '../../../core/api/endpoints/bots';
 import {
@@ -72,7 +73,11 @@ export function BotCard({
       ]}>
       <View style={styles.top}>
         <View style={[styles.icon, {backgroundColor: colors.accentSoft}]}>
-          <BotIcon size={g.botIconGlyph} color={colors.accent} />
+          <BotPhoto
+            botId={bot.id}
+            style={styles.photo}
+            fallback={<BotIcon size={g.botIconGlyph} color={colors.accent} />}
+          />
           {connected ? (
             <Animated.View
               style={[
@@ -240,6 +245,14 @@ const styles = StyleSheet.create({
     borderRadius: g.botIconRadius,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  photo: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: g.botIcon,
+    height: g.botIcon,
+    borderRadius: g.botIconRadius,
   },
   pulse: {
     position: 'absolute',
