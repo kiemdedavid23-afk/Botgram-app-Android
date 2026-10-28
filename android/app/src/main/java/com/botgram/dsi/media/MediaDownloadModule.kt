@@ -1,5 +1,6 @@
 package com.botgram.dsi.media
 
+import android.net.Uri
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -62,6 +63,35 @@ class MediaDownloadModule(private val rc: ReactApplicationContext) :
   @ReactMethod
   fun cancel(id: String) {
     cancelled.add(id)
+  }
+
+  /**
+   * Copie un fichier local (content:// du sélecteur, file:// ou chemin) vers `destPath`.
+   * Sert à garder sur le téléphone les médias qu'on envoie : on peut les lire sans le Worker.
+   * Résout avec la taille copiée.
+   */
+  @ReactMethod
+  fun copyLocal(src: String, destPath: String, promise: Promise) {
+    executor.execute {
+      val dest = File(destPath)
+      val part = File("$destPath.part")
+      try {
+        dest.parentFile?.mkdirs()
+        val input =
+            when {
+              src.startsWith("content://") -> rc.contentResolver.openInputStream(Uri.parse(src))
+              src.startsWith("file://") -> File(Uri.parse(src).path ?: "").inputStream()
+              else -> File(src).inputStream()
+            } ?: throw IOException("Fichier source illisible")
+        input.use { i -> part.outputStream().use { o -> i.copyTo(o, 64 * 1024) } }
+        if (dest.exists()) dest.delete()
+        if (!part.renameTo(dest)) throw IOException("Copie impossible")
+        promise.resolve(dest.length().toDouble())
+      } catch (e: Exception) {
+        if (part.exists()) part.delete()
+        promise.reject("copy_failed", e.message ?: "Copie impossible", e)
+      }
+    }
   }
 
   private fun doDownload(
