@@ -5,6 +5,11 @@
 import {sendMedia, sendAlbum} from '../../../core/api/endpoints/messages';
 import type {Message} from '../../../core/realtime/events';
 import {uuidV4} from '../../../core/utils/uuid';
+import {
+  keepOutgoingCopy,
+  promoteOutgoingCopy,
+  dropOutgoingCopy,
+} from '../../../core/media/outgoingCopy';
 import {upsertOutgoing} from './sendActions';
 import {threadTexts} from '../texts';
 import {
@@ -165,6 +170,16 @@ export async function doSendMedia(
   const localId = `local:${clientId}`;
   pendingByLocalId.set(localId, {files, caption});
 
+  // Copie locale (fichier unique), AVANT d'afficher la bulle : elle est lisible dès son apparition,
+  // sans dépendre du Worker.
+  if (files.length === 1) {
+    try {
+      await keepOutgoingCopy(files[0]!.uri, localId);
+    } catch {
+      // l'envoi continue sans copie
+    }
+  }
+
   const optimistic = optimisticMedia(
     conversationId,
     files,
@@ -201,6 +216,7 @@ export async function doSendMedia(
 
   if (signal?.aborted) {
     pendingByLocalId.delete(localId);
+    await dropOutgoingCopy(localId);
     ctx.set(s => ({
       items: s.items.filter(m => m.id !== localId),
       sending: false,
@@ -231,12 +247,18 @@ export async function doSendMedia(
     client_message_id:
       res.data.message.client_message_id ?? clientId,
   };
+  if (files.length === 1) {
+    try {
+      await promoteOutgoingCopy(localId, serverMsg.id);
+    } catch {
+      // la copie reste sous l'id provisoire : pas bloquant
+    }
+  }
   ctx.set(s => ({
     items: upsertOutgoing(s.items, serverMsg),
     sending: false,
     sendError: null,
   }));
-
 }
 
 function mapMediaSendError(code: string, status: number): string {
@@ -255,6 +277,7 @@ export async function doResendMediaAsNew(
   const pending = pendingByLocalId.get(localMessage.id);
   if (!pending) return;
   pendingByLocalId.delete(localMessage.id);
+  await dropOutgoingCopy(localMessage.id);
   ctx.set(s => ({
     items: s.items.filter(m => m.id !== localMessage.id),
     sendError: null,
