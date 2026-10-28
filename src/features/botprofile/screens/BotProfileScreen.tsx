@@ -1,7 +1,7 @@
 /** Profil Telegram du bot — 4 onglets (Identité, Langues, Commandes, Infos), lecture seule. */
 import React, {useEffect, useMemo, useState} from 'react';
 import {
-  View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator, InteractionManager,
+  View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator,
 } from 'react-native';
 import {useTheme, botProfileMetrics as m} from '../../../shared/theme';
 import type {ColorTokens} from '../../../shared/theme';
@@ -94,10 +94,11 @@ export function BotProfileScreen({onAddBot}: Props): React.JSX.Element {
   // (Identité, Langues, Commandes) — jamais pour Infos — et après le premier affichage.
   useEffect(() => {
     if (!botId || !hasProfile || tab === 'info') return undefined;
-    const task = InteractionManager.runAfterInteractions(() => {
+    // Léger délai : le premier affichage de l'onglet passe avant les requêtes.
+    const timer = setTimeout(() => {
       fireAndForget(loadLanguages(botId));
-    });
-    return () => task.cancel();
+    }, 350);
+    return () => clearTimeout(timer);
   }, [botId, hasProfile, tab, loadLanguages]);
 
   const currentTab = PROFILE_TABS.find(t => t.id === tab) ?? PROFILE_TABS[0]!;
