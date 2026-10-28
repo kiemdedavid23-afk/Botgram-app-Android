@@ -1,80 +1,156 @@
 import React from 'react';
-import {View, Text, Pressable, StyleSheet} from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  Image,
+  StatusBar,
+  StyleSheet,
+  useWindowDimensions,
+} from 'react-native';
 import {ArrowRight} from 'lucide-react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {BotgramLogo} from '../../../shared/components/BotgramLogo';
-import {StatusBarStrip} from '../../../shared/components/StatusBarStrip';
-import {authColors, authMetrics} from '../../../shared/theme/authColors';
+import {welcomeColors, welcomeMetrics} from '../../../shared/theme/authColors';
 import {texts} from '../texts';
+
+// Visuel dérivé de l'affiche « Botsgram » (recadré, sans texte intégré, fondu haut/bas).
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const heroImage = require('../../../assets/welcome_hero.webp');
 
 type Props = {onContinue: () => void};
 
 export function WelcomeScreen({onContinue}: Props): React.JSX.Element {
+  const {width, height} = useWindowDimensions();
+  const naturalHeight = width * welcomeMetrics.heroRatio;
+  const heroHeight = Math.min(
+    Math.max(naturalHeight, height * welcomeMetrics.heroMinScreenShare),
+    naturalHeight * welcomeMetrics.heroMaxStretch,
+  );
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.outer}>
-      <StatusBarStrip forceBlue />
-      <View style={styles.root}>
-      <View style={styles.logoWrap}>
-        <BotgramLogo size={authMetrics.logoSize} />
+    <View style={styles.root}>
+      <StatusBar barStyle="light-content" />
+
+      <Image
+        source={heroImage}
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          width,
+          height: heroHeight,
+        }}
+        resizeMode="cover"
+        accessible={false}
+      />
+
+      <View
+        style={[
+          styles.content,
+          {paddingTop: insets.top + welcomeMetrics.contentPaddingTop},
+        ]}>
+        <View style={styles.logoWrap}>
+          <BotgramLogo size={welcomeMetrics.logoSize} tone="vivid" />
+        </View>
+        <Text style={styles.brand} accessibilityRole="header">
+          <Text style={styles.brandStart}>{texts.welcomeBrandStart}</Text>
+          <Text style={styles.brandEnd}>{texts.welcomeBrandEnd}</Text>
+        </Text>
+        <Text style={styles.headline}>
+          {texts.welcomeHeadline}
+          {'\n'}
+          <Text style={styles.headlineAccent}>{texts.welcomeHeadlineAccent}</Text>
+        </Text>
+        <Text style={styles.sub}>{texts.welcomeSubtitle}</Text>
       </View>
-      <Text style={styles.title}>{texts.welcomeTitle}</Text>
-      <Text style={styles.sub}>{texts.welcomeSubtitle}</Text>
-      <Pressable style={styles.fab} onPress={onContinue} accessibilityLabel="Commencer">
-        <ArrowRight size={26} color={authColors.white} />
-      </Pressable>
+
+      <View
+        style={[
+          styles.footer,
+          {paddingBottom: insets.bottom + welcomeMetrics.footerPaddingBottom},
+        ]}>
+        <Pressable
+          style={({pressed}) => [styles.button, pressed && styles.buttonPressed]}
+          onPress={onContinue}
+          accessibilityRole="button"
+          accessibilityLabel={texts.welcomeCta}>
+          <Text style={styles.buttonText}>{texts.welcomeCta}</Text>
+          <ArrowRight size={20} color={welcomeColors.buttonText} />
+        </Pressable>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  outer: {flex: 1, backgroundColor: authColors.bg},
-  root: {
-    flex: 1,
-    backgroundColor: authColors.bg,
+  root: {flex: 1, backgroundColor: welcomeColors.bg},
+  content: {
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 28,
-    paddingBottom: 96,
+    paddingHorizontal: welcomeMetrics.contentPaddingH,
   },
   logoWrap: {
-    width: authMetrics.logoSize,
-    height: authMetrics.logoSize,
-    borderRadius: authMetrics.logoRadius,
+    width: welcomeMetrics.logoSize,
+    height: welcomeMetrics.logoSize,
+    borderRadius: welcomeMetrics.logoSize * 0.225,
     overflow: 'hidden',
-    marginBottom: authMetrics.logoMarginBottom,
-    shadowColor: authColors.logoShadow,
+    marginBottom: welcomeMetrics.logoMarginBottom,
+    shadowColor: welcomeColors.buttonShadow,
     shadowOpacity: 1,
     shadowRadius: 24,
     shadowOffset: {width: 0, height: 8},
-    elevation: 8,
+    elevation: 10,
   },
-  title: {
-    fontSize: authMetrics.titleSize,
-    fontWeight: authMetrics.titleWeight,
-    color: authColors.text,
+  brand: {
+    fontSize: welcomeMetrics.brandSize,
+    fontWeight: '700',
+    letterSpacing: -0.5,
+    marginBottom: 18,
+  },
+  brandStart: {color: welcomeColors.title},
+  brandEnd: {color: welcomeColors.accent},
+  headline: {
+    fontSize: welcomeMetrics.headlineSize,
+    lineHeight: welcomeMetrics.headlineLineHeight,
+    fontWeight: '700',
+    color: welcomeColors.title,
+    textAlign: 'center',
     marginBottom: 10,
   },
+  headlineAccent: {color: welcomeColors.accent},
   sub: {
-    fontSize: authMetrics.subtitleSize,
-    color: authColors.textMuted,
-    lineHeight: authMetrics.subtitleSize * authMetrics.subtitleLineHeight,
-    maxWidth: authMetrics.subtitleMaxWidth,
+    fontSize: welcomeMetrics.subtitleSize,
+    lineHeight: welcomeMetrics.subtitleLineHeight,
+    color: welcomeColors.subtitle,
     textAlign: 'center',
+    maxWidth: welcomeMetrics.subtitleMaxWidth,
   },
-  fab: {
+  footer: {
     position: 'absolute',
-    right: authMetrics.fabRight,
-    bottom: authMetrics.fabBottom,
-    width: authMetrics.fabSize,
-    height: authMetrics.fabSize,
-    borderRadius: authMetrics.fabSize / 2,
-    backgroundColor: authColors.fabBg,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: welcomeMetrics.footerPaddingH,
+  },
+  button: {
+    height: welcomeMetrics.buttonHeight,
+    borderRadius: welcomeMetrics.buttonRadius,
+    backgroundColor: welcomeColors.buttonBg,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: authColors.fabShadow,
+    gap: 8,
+    shadowColor: welcomeColors.buttonShadow,
     shadowOpacity: 1,
-    shadowRadius: 14,
-    shadowOffset: {width: 0, height: 4},
-    elevation: 6,
+    shadowRadius: 18,
+    shadowOffset: {width: 0, height: 6},
+    elevation: 8,
+  },
+  buttonPressed: {opacity: 0.85},
+  buttonText: {
+    color: welcomeColors.buttonText,
+    fontSize: welcomeMetrics.buttonFontSize,
+    fontWeight: '600',
   },
 });
