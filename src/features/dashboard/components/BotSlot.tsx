@@ -7,6 +7,7 @@ import React, {useEffect, useRef} from 'react';
 import {View, Text, Pressable, StyleSheet, Animated} from 'react-native';
 import {Bot, Plus, ChevronRight} from 'lucide-react-native';
 import {GradientView} from '../../../shared/components/GradientView';
+import {BotPhoto} from '../../../shared/components/BotPhoto';
 import {useTheme, dashboardMetrics as dm} from '../../../shared/theme';
 import type {Bot as BotType} from '../../../core/api/endpoints/bots';
 import {isBotConnected} from '../logic';
@@ -81,7 +82,11 @@ export function BotCard({bot, onPress, busy}: BotCardProps): React.JSX.Element {
             colors={[colors.accentSoft, colors.accentSoft24]}
             angle={145}
             style={styles.iconBox}>
-            <Bot size={dm.botIconSize} color={colors.accent} />
+            <BotPhoto
+              botId={bot.id}
+              style={styles.botPhoto}
+              fallback={<Bot size={dm.botIconSize} color={colors.accent} />}
+            />
           </GradientView>
           {connected ? (
             <>
@@ -236,6 +241,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
   },
+  botPhoto: {width: dm.botIconBox, height: dm.botIconBox},
   iconBoxSolid: {
     width: dm.botIconBox,
     height: dm.botIconBox,
