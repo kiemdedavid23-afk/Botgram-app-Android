@@ -7,6 +7,17 @@ export const threadTexts = {
   kindPhoto: 'Photo',
   kindDocument: 'Document',
   kindAlbum: 'Album',
+  kindVideo: 'Vidéo',
+  kindAudio: 'Audio',
+  kindVoice: 'Message vocal',
+  kindAnimation: 'GIF',
+  kindVideoNote: 'Vidéo ronde',
+  kindSticker: 'Sticker',
+  mediaPlayError: 'Lecture impossible',
+  mediaPlay: 'Lire',
+  mediaPause: 'Pause',
+  mediaSpeed: 'Vitesse de lecture',
+  mediaFullscreen: 'Plein écran',
   kindCallback: 'Action',
   kindOther: 'Message',
   yesterday: 'Hier',
@@ -132,6 +143,18 @@ export function kindLabel(kind: string): string {
       return threadTexts.kindDocument;
     case 'album':
       return threadTexts.kindAlbum;
+    case 'video':
+      return threadTexts.kindVideo;
+    case 'audio':
+      return threadTexts.kindAudio;
+    case 'voice':
+      return threadTexts.kindVoice;
+    case 'animation':
+      return threadTexts.kindAnimation;
+    case 'video_note':
+      return threadTexts.kindVideoNote;
+    case 'sticker':
+      return threadTexts.kindSticker;
     case 'callback_query':
       return threadTexts.kindCallback;
     default:
