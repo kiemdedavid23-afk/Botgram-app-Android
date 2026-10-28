@@ -18,6 +18,7 @@ import {
 import {registerMemberDataCleaner} from '../../../core/utils/memberData';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 import type {HttpResult} from '../../../core/api/session';
+import {useBotPhotoStore} from '../../../shared/botPhoto/botPhotoStore';
 
 const CACHE_KEY = 'bots.list';
 const TTL_MS = 3 * 60 * 1000;
@@ -172,6 +173,8 @@ export const useBotsStore = create<BotsStore>((set, get) => {
           if (res.ok && res.data.deleted) {
             const next = get().bots.filter(b => b.id !== id);
             set({bots: next});
+            // Bot supprimé : sa photo en cache disparaît aussi.
+            fireAndForget(useBotPhotoStore.getState().forget(id));
             if (current(gen)) await persistBots(next);
           }
           return res;
