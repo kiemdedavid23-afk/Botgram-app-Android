@@ -26,7 +26,7 @@ export function CodeScreen({email, expiresIn, onNeedsProfile, onSuccess, onBack}
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [focused, setFocused] = useState(false);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<React.ComponentRef<typeof TextInput>>(null);
   const wentToMail = useRef(false);
   const completeVerify = useAuthStore(s => s.completeVerify);
   const setPendingCode = useAuthStore(s => s.setPendingCode);
@@ -111,7 +111,6 @@ export function CodeScreen({email, expiresIn, onNeedsProfile, onSuccess, onBack}
       }
     });
     return () => sub.remove();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const openMail = async () => {

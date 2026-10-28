@@ -15,7 +15,6 @@ import {welcomeColors, welcomeMetrics} from '../../../shared/theme/authColors';
 import {texts} from '../texts';
 
 // Visuel dérivé de l'affiche « Botsgram » (recadré, sans texte intégré, fondu haut/bas).
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const heroImage = require('../../../assets/welcome_hero.webp');
 
 type Props = {onContinue: () => void};
@@ -35,13 +34,7 @@ export function WelcomeScreen({onContinue}: Props): React.JSX.Element {
 
       <Image
         source={heroImage}
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          width,
-          height: heroHeight,
-        }}
+        style={[styles.hero, {width, height: heroHeight}]}
         resizeMode="cover"
         accessible={false}
       />
@@ -86,6 +79,7 @@ export function WelcomeScreen({onContinue}: Props): React.JSX.Element {
 
 const styles = StyleSheet.create({
   root: {flex: 1, backgroundColor: welcomeColors.bg},
+  hero: {position: 'absolute', bottom: 0, left: 0},
   content: {
     alignItems: 'center',
     paddingHorizontal: welcomeMetrics.contentPaddingH,
