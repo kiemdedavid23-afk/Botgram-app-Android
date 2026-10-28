@@ -1,4 +1,4 @@
-/** Commandes (lecture seule) — site CommandsSection + .bp-cmds */
+/** Commandes (lecture seule) — alignées sur la marge de l'écran (aucun retrait propre). */
 import React, {useMemo, useState} from 'react';
 import {View, Text, Pressable, StyleSheet, ScrollView} from 'react-native';
 import {useTheme, botProfileMetrics as m} from '../../../shared/theme';
@@ -19,20 +19,15 @@ type Props = {
 function makeStyles(c: ColorTokens) {
   return StyleSheet.create({
     root: {paddingBottom: m.rootPadBottom},
-    title: {
-      fontSize: m.titleFontSize, fontWeight: m.titleFontWeight,
-      paddingHorizontal: m.headPaddingH, paddingTop: m.headPaddingTop,
-      paddingBottom: m.headPaddingBottom, color: c.textPrimary,
-    },
     label: {
       fontSize: m.sectionLabelSize, fontWeight: m.sectionLabelWeight,
       letterSpacing: m.sectionLabelSpacing, textTransform: 'uppercase',
-      paddingHorizontal: m.headPaddingH, marginBottom: m.labelMarginBottom,
+      marginBottom: m.labelMarginBottom,
       marginTop: m.labelMarginTop, color: c.textHint,
     },
     row: {
       flexDirection: 'row', gap: m.scopeRowGap,
-      paddingHorizontal: m.headPaddingH, marginBottom: m.scopeRowMarginBottom,
+      marginBottom: m.scopeRowMarginBottom,
     },
     chip: {
       paddingVertical: m.chipPadV, paddingHorizontal: m.chipPadH,
@@ -42,9 +37,9 @@ function makeStyles(c: ColorTokens) {
     chipOff: {backgroundColor: c.bgPrimary},
     chipTextOn: {fontSize: m.chipFontSize, fontWeight: m.chipFontWeight, color: c.accent},
     chipTextOff: {fontSize: m.chipFontSize, fontWeight: m.chipFontWeight, color: c.textSecondary},
-    empty: {padding: m.emptyPad, color: c.textHint},
+    empty: {paddingVertical: m.emptyPad, color: c.textHint},
     card: {
-      marginHorizontal: m.cardMarginH, borderRadius: m.cardRadius,
+      borderRadius: m.cardRadius,
       backgroundColor: c.bgPrimary, overflow: 'hidden',
     },
     item: {
@@ -66,7 +61,6 @@ export function CommandsSection({profile, lang, onLang}: Props): React.JSX.Eleme
 
   return (
     <View style={styles.root}>
-      <Text style={styles.title}>{texts.cmdsTitle}</Text>
       <Text style={styles.label}>{texts.cmdsScope}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={styles.row}>
