@@ -28,8 +28,8 @@ export function SwipePicker(): React.JSX.Element {
   const {colors, appearance, setAppearance} = useTheme();
   const current = appearance.swipeAction;
   const idx = ORDER.indexOf(current);
-  const prev = ORDER[(idx + ORDER.length - 1) % ORDER.length];
-  const next = ORDER[(idx + 1) % ORDER.length];
+  const prev = ORDER[(idx + ORDER.length - 1) % ORDER.length] ?? current;
+  const next = ORDER[(idx + 1) % ORDER.length] ?? current;
   const Icon = ICON[current];
 
   return (
