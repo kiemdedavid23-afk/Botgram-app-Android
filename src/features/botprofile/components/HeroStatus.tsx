@@ -1,20 +1,12 @@
-/** Pastille d'état de connexion du bot (ex. « Connecté · Webhook actif »). */
+/** Pastille d'état de connexion du bot (ex. « Connecté »). */
 import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
 import {useTheme} from '../../../shared/theme';
 import {botHeroMetrics as h} from '../../../shared/theme/botHeroMetrics';
 import type {BotStatus} from '../../../core/api/endpoints/bots';
-import {texts} from '../texts';
+import {STATUS_LABELS} from '../utils/labels';
 
 type Props = {status: BotStatus | undefined};
-
-const LABELS: Record<BotStatus, string> = {
-  connected: texts.statusConnected,
-  pending: texts.statusPending,
-  webhook_error: texts.statusWebhookError,
-  token_invalid: texts.statusTokenInvalid,
-  disconnected: texts.statusDisconnected,
-};
 
 export function HeroStatus({status}: Props): React.JSX.Element | null {
   const {colors} = useTheme();
@@ -33,7 +25,7 @@ export function HeroStatus({status}: Props): React.JSX.Element | null {
       ]}>
       <View style={[styles.dot, {backgroundColor: dot}]} />
       <Text style={[styles.text, {color: colors.heroText}]}>
-        {LABELS[status]}
+        {STATUS_LABELS[status]}
       </Text>
     </View>
   );
