@@ -3,7 +3,7 @@
  */
 import React, {useEffect, useState} from 'react';
 import {View, Text, Pressable, StyleSheet, Alert} from 'react-native';
-import {useTheme} from '../../../shared/theme';
+import {useChatTheme} from '../../../shared/theme';
 import {threadMetrics as tm} from '../../../shared/theme/threadMetrics';
 import {threadTexts as t} from '../texts';
 import type {Message} from '../../../core/realtime/events';
@@ -68,9 +68,14 @@ export function MessageStatus({
   onResendNew,
   onResendMedia,
 }: Props): React.JSX.Element | null {
-  const {colors} = useTheme();
+  const chat = useChatTheme();
   const waitS = useRetryCountdown(message);
-  const labelStyle = {color: colors.accent, fontSize: tm.retryBtnFont};
+  const labelStyle = {
+    color: chat.bubbleOutText,
+    fontSize: tm.retryBtnFont,
+    fontWeight: '700' as const,
+    textDecorationLine: 'underline' as const,
+  };
   const isText = message.kind === 'text';
   const isMediaFailed =
     !isText &&
@@ -84,7 +89,7 @@ export function MessageStatus({
 
   return (
     <View style={styles.row}>
-      <Text style={{color: colors.textHint, fontSize: tm.retryBtnFont}}>
+      <Text style={{color: chat.timeOut, fontSize: tm.retryBtnFont}}>
         {statusLabel(message.status)}
       </Text>
       {isText && message.retryable ? (
@@ -137,7 +142,7 @@ export function MessageStatus({
         </Pressable>
       ) : null}
       {isMediaFailed && !canResendMedia ? (
-        <Text style={{color: colors.textHint, fontSize: tm.retryBtnFont}}>
+        <Text style={{color: chat.timeOut, fontSize: tm.retryBtnFont}}>
           {t.mediaResendPickAgain}
         </Text>
       ) : null}

@@ -1,6 +1,6 @@
 import React from 'react';
 import {View, Text, StyleSheet, useWindowDimensions, Pressable, Alert} from 'react-native';
-import {useTheme} from '../../../shared/theme';
+import {useTheme, useChatTheme} from '../../../shared/theme';
 import {threadMetrics as tm} from '../../../shared/theme/threadMetrics';
 import type {Message} from '../../../core/realtime/events';
 import {FormattedText} from './FormattedText';
@@ -23,11 +23,13 @@ type Props = {
 };
 
 export function MessageBubble({message, onRetry, onResendSame, onResendNew, onResendMedia, onDelete}: Props): React.JSX.Element {
-  const {colors} = useTheme();
+  const {appearance} = useTheme();
+  const chat = useChatTheme();
   const {width} = useWindowDimensions();
   const isOut = message.direction === 'out';
-  const bubbleBg = isOut ? colors.bubbleOut : colors.bubbleIn;
-  const textColor = isOut ? colors.bubbleOutText : colors.bubbleInText;
+  const bubbleBg = isOut ? chat.bubbleOut : chat.bubbleIn;
+  const textColor = isOut ? chat.bubbleOutText : chat.bubbleInText;
+  const timeColor = isOut ? chat.timeOut : chat.timeIn;
   const ts = message.created_at ?? message.sent_at ?? undefined;
   const isText = message.kind === 'text' || !message.kind;
   const caption = message.text;
@@ -59,7 +61,7 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
           styles.bubble,
           {
             backgroundColor: bubbleBg,
-            borderRadius: tm.bubbleRadius,
+            borderRadius: appearance.cornerRadius,
           },
         ]}>
         {message.kind === 'photo' ? (
@@ -97,6 +99,7 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
             text={caption}
             parseMode={message.parse_mode}
             color={textColor}
+            fontSize={appearance.fontSize}
           />
         ) : null}
         {!isText &&
@@ -107,12 +110,13 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
             text={caption}
             parseMode={message.parse_mode}
             color={textColor}
+            fontSize={appearance.fontSize}
           />
         ) : null}
         {message.buttons && message.buttons.length > 0 ? (
           <InlineButtons rows={message.buttons} />
         ) : null}
-        <Text style={[styles.time, {color: colors.textHint}]}>
+        <Text style={[styles.time, {color: timeColor}]}>
           {formatMessageTime(ts)}
         </Text>
         {isOut && onRetry && onResendSame && onResendNew && onResendMedia ? (

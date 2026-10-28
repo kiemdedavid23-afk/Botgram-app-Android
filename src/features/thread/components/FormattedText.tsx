@@ -12,13 +12,15 @@ type Props = {
   text: string | null | undefined;
   parseMode: string | null | undefined;
   color: string;
+  /** Taille du texte (réglage Apparence). */
+  fontSize?: number;
 };
 
-export function FormattedText({text, parseMode, color}: Props): React.JSX.Element {
+export function FormattedText({text, parseMode, color, fontSize}: Props): React.JSX.Element {
   const {colors} = useTheme();
   const segments = parseFormattedText(text, parseMode);
   return (
-    <Text style={{color}}>
+    <Text style={fontSize ? {color, fontSize} : {color}}>
       {segments.map((seg, i) => (
         <Segment key={i} seg={seg} color={color} linkColor={colors.accent} />
       ))}
