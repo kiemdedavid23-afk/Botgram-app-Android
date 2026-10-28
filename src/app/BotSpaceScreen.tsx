@@ -71,6 +71,7 @@ export function BotSpaceScreen({onExit, onAddBot}: Props): React.JSX.Element {
     <View style={styles.headerRight}>
       <HeaderAvatarButton
         title={botName}
+        showAvatar={false}
         open={switcherOpen}
         onPress={() => setSwitcherOpen(true)}
       />
