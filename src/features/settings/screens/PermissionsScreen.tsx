@@ -1,138 +1,123 @@
 /**
- * Contrôle des permissions — ouverture des réglages système.
+ * Permissions — état réel de l'autorisation de notifications (Android 13+),
+ * demande directe, puis réglages système si elle est refusée définitivement.
  */
-import React, {useCallback, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
-  View,
   Text,
+  ScrollView,
   StyleSheet,
-  Pressable,
   Linking,
   Platform,
   AppState,
+  PermissionsAndroid,
 } from 'react-native';
-import {Bell} from 'lucide-react-native';
-import {SettingsShell} from '../../../shared/components/SettingsShell';
-import {
-  useTheme,
-  settingsMetrics as sm,
-  getShadow,
-} from '../../../shared/theme';
+import {Bell, Settings} from 'lucide-react-native';
+import {useTheme, fontWeight} from '../../../shared/theme';
+import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {settingsTexts as t} from '../texts';
+import {SettingsPage} from '../components/SettingsPage';
+import {SettingsCard, CardTitle, LinkRow} from '../components/ui';
 
 type Props = {onBack: () => void};
 
 type PermStatus = 'granted' | 'denied' | 'unknown';
 
+const NOTIF_MIN_API = 33;
+
+async function readNotificationStatus(): Promise<PermStatus> {
+  if (Platform.OS !== 'android' || Number(Platform.Version) < NOTIF_MIN_API) {
+    return 'unknown';
+  }
+  try {
+    const ok = await PermissionsAndroid.check(
+      PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+    );
+    return ok ? 'granted' : 'denied';
+  } catch {
+    return 'unknown';
+  }
+}
+
 export function PermissionsScreen({onBack}: Props): React.JSX.Element {
-  const {colors, mode} = useTheme();
-  const [notifStatus, setNotifStatus] = useState<PermStatus>('unknown');
+  const {colors} = useTheme();
+  const [status, setStatus] = useState<PermStatus>('unknown');
 
   const refresh = useCallback(() => {
-    // Sans module permissions dédié ici : statut inconnu jusqu'aux réglages système.
-    // L'utilisateur bascule dans les settings OS puis revient.
-    setNotifStatus('unknown');
+    fireAndForget(readNotificationStatus().then(setStatus));
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
+    refresh();
     const sub = AppState.addEventListener('change', state => {
-      if (state === 'active') refresh();
+      if (state === 'active') {
+        refresh();
+      }
     });
     return () => sub.remove();
   }, [refresh]);
 
   const openSystemSettings = () => {
-    if (Platform.OS === 'android') {
-      fireAndForgetLinking(Linking.openSettings());
-    } else {
-      fireAndForgetLinking(Linking.openURL('app-settings:'));
-    }
+    fireAndForget(
+      Platform.OS === 'android'
+        ? Linking.openSettings()
+        : Linking.openURL('app-settings:'),
+    );
   };
 
-  const statusLabel =
-    notifStatus === 'granted'
+  const allow = async () => {
+    const res = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+    );
+    if (res === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+      openSystemSettings();
+    }
+    refresh();
+  };
+
+  const label =
+    status === 'granted'
       ? t.permStatusGranted
-      : notifStatus === 'denied'
+      : status === 'denied'
         ? t.permStatusDenied
         : t.permStatusUnknown;
+  const statusColor =
+    status === 'granted'
+      ? colors.success
+      : status === 'denied'
+        ? colors.danger
+        : colors.textHint;
 
   return (
-    <SettingsShell title={t.permissionsTitle} onBack={onBack}>
-      <View style={styles.body}>
-        <View
-          style={[
-            styles.card,
-            {backgroundColor: colors.bgPrimary},
-            getShadow('sm', mode),
-          ]}>
-          <View style={styles.row}>
-            <View style={[styles.icon, styles.iconNotif]}>
-              <Bell size={sm.iconInner} color={colors.white} />
-            </View>
-            <View style={styles.labels}>
-              <Text style={[styles.title, {color: colors.textPrimary}]}>
-                {t.permNotifications}
-              </Text>
-              <Text style={{color: colors.textSecondary, fontSize: sm.subSize}}>
-                {t.permNotificationsSub}
-              </Text>
-              <Text style={[styles.status, {color: colors.textHint}]}>
-                {statusLabel}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        <Pressable
-          onPress={openSystemSettings}
-          style={({pressed}) => [
-            styles.cta,
-            {
-              backgroundColor: colors.accent,
-              opacity: pressed ? 0.9 : 1,
-            },
-          ]}>
-          <Text style={[styles.ctaText, {color: colors.white}]}>
-            {t.permOpenSettings}
-          </Text>
-        </Pressable>
-      </View>
-    </SettingsShell>
+    <SettingsPage title={t.permissionsTitle} onBack={onBack}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <SettingsCard>
+          <CardTitle>{t.permNotifications}</CardTitle>
+          <LinkRow
+            Icon={Bell}
+            label={status === 'denied' ? t.permAllow : t.permNotifications}
+            onPress={status === 'denied' ? () => fireAndForget(allow()) : undefined}
+            trailing={
+              <Text style={[styles.status, {color: statusColor}]}>{label}</Text>
+            }
+          />
+          <LinkRow
+            Icon={Settings}
+            label={t.permOpenSettings}
+            last
+            onPress={openSystemSettings}
+          />
+        </SettingsCard>
+        <Text style={[styles.hint, {color: colors.textSecondary}]}>
+          {t.permNotificationsSub}
+        </Text>
+      </ScrollView>
+    </SettingsPage>
   );
 }
 
-function fireAndForgetLinking(p: Promise<unknown>): void {
-  p.catch(() => {
-    // ignore
-  });
-}
-
 const styles = StyleSheet.create({
-  body: {
-    paddingHorizontal: sm.cardMarginH,
-    paddingTop: 16,
-    gap: 16,
-  },
-  card: {
-    borderRadius: sm.cardRadius,
-    padding: 14,
-  },
-  row: {flexDirection: 'row', gap: 12, alignItems: 'center'},
-  icon: {
-    width: sm.iconSize,
-    height: sm.iconSize,
-    borderRadius: sm.iconRadius,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconNotif: {backgroundColor: '#E74C3C'},
-  status: {fontSize: 12, marginTop: 4},
-  labels: {flex: 1},
-  title: {fontSize: sm.titleSize, fontWeight: '600'},
-  cta: {
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  ctaText: {fontSize: 16, fontWeight: '700'},
+  scroll: {paddingTop: 12, paddingBottom: 24, gap: 12},
+  status: {fontSize: 15, fontWeight: fontWeight.semibold},
+  hint: {fontSize: 13, paddingHorizontal: 32, marginTop: -4},
 });

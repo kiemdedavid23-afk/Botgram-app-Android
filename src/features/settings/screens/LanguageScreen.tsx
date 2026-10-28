@@ -2,83 +2,75 @@
  * Liste des 32 langues — sélection locale, sans traduction (v1).
  */
 import React from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  Pressable,
-  StyleSheet,
-} from 'react-native';
+import {View, Text, FlatList, Pressable, StyleSheet} from 'react-native';
 import {Check} from 'lucide-react-native';
-import {SettingsShell} from '../../../shared/components/SettingsShell';
-import {useTheme, settingsMetrics as sm, getShadow} from '../../../shared/theme';
+import {useTheme, settingsMetrics as sm} from '../../../shared/theme';
 import {APP_LANGUAGES} from '../languages';
 import {settingsTexts as t} from '../texts';
+import {SettingsPage} from '../components/SettingsPage';
 
 type Props = {onBack: () => void};
 
 export function LanguageScreen({onBack}: Props): React.JSX.Element {
-  const {colors, mode, appearance, setAppearance} = useTheme();
+  const {colors, appearance, setAppearance} = useTheme();
 
   return (
-    <SettingsShell title={t.languageTitle} onBack={onBack}>
-      <Text style={[styles.hint, {color: colors.textSecondary}]}>
-        {t.languageHint}
-      </Text>
-      <FlatList
-        data={APP_LANGUAGES}
-        keyExtractor={item => item.code}
-        contentContainerStyle={styles.list}
-        renderItem={({item}) => {
-          const active = appearance.uiLanguage === item.code;
-          return (
-            <Pressable
-              onPress={() => setAppearance({uiLanguage: item.code})}
-              style={({pressed}) => [
-                styles.row,
-                {
-                  backgroundColor: colors.bgPrimary,
-                },
-                getShadow('sm', mode),
-                pressed && {opacity: 0.9},
-              ]}>
-              <View style={styles.labels}>
-                <Text style={[styles.native, {color: colors.textPrimary}]}>
-                  {item.nativeName}
-                </Text>
-                <Text style={{color: colors.textSecondary, fontSize: sm.subSize}}>
-                  {item.name}
-                </Text>
-              </View>
-              {active ? <Check size={20} color={colors.accent} /> : null}
-            </Pressable>
-          );
-        }}
-      />
-    </SettingsShell>
+    <SettingsPage title={t.languageTitle} onBack={onBack}>
+      <View style={[styles.card, {backgroundColor: colors.bgPrimary}]}>
+        <FlatList
+          data={APP_LANGUAGES}
+          keyExtractor={item => item.code}
+          ListHeaderComponent={
+            <Text style={[styles.hint, {color: colors.textSecondary}]}>
+              {t.languageHint}
+            </Text>
+          }
+          ItemSeparatorComponent={() => (
+            <View style={[styles.sep, {backgroundColor: colors.borderSoft}]} />
+          )}
+          renderItem={({item}) => {
+            const active = appearance.uiLanguage === item.code;
+            return (
+              <Pressable
+                accessibilityRole="radio"
+                accessibilityState={{selected: active}}
+                onPress={() => setAppearance({uiLanguage: item.code})}
+                android_ripple={{color: colors.accentSoft}}
+                style={styles.row}>
+                <View style={styles.labels}>
+                  <Text style={[styles.native, {color: colors.textPrimary}]}>
+                    {item.nativeName}
+                  </Text>
+                  <Text style={{color: colors.textSecondary, fontSize: sm.subSize}}>
+                    {item.name}
+                  </Text>
+                </View>
+                {active ? <Check size={22} color={colors.accent} /> : null}
+              </Pressable>
+            );
+          }}
+        />
+      </View>
+    </SettingsPage>
   );
 }
 
 const styles = StyleSheet.create({
-  hint: {
-    marginHorizontal: sm.cardMarginH,
-    marginTop: 8,
-    marginBottom: 8,
-    fontSize: sm.subSize,
+  card: {
+    flex: 1,
+    margin: sm.cardMarginH,
+    borderRadius: sm.cardRadius,
+    overflow: 'hidden',
   },
-  list: {
-    paddingHorizontal: sm.cardMarginH,
-    paddingBottom: 40,
-    gap: 8,
-  },
+  hint: {fontSize: sm.subSize, paddingHorizontal: 20, paddingVertical: 14},
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    borderRadius: sm.cardRadius,
+    minHeight: 56,
+    paddingHorizontal: 20,
     gap: 12,
   },
   labels: {flex: 1, gap: 2},
-  native: {fontSize: 16, fontWeight: '600'},
+  native: {fontSize: 17},
+  sep: {height: StyleSheet.hairlineWidth, marginLeft: 20},
 });

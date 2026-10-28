@@ -1,369 +1,254 @@
 /**
- * Sous-page Apparence — thème, wallpaper, messages, animations.
+ * Sous-page Apparence — mise en page de référence (Paramètres des échanges) :
+ * taille du texte + aperçu, thème de couleur, coins, vue de la liste, glissement.
+ * Chaque réglage est réellement appliqué (fil de messages, liste des échanges).
  */
-import React from 'react';
+import React, {useRef, useState} from 'react';
 import {
   View,
   Text,
   ScrollView,
-  StyleSheet,
   Pressable,
   Switch,
+  Alert,
+  StyleSheet,
+  type LayoutChangeEvent,
 } from 'react-native';
-import {SettingsShell} from '../../../shared/components/SettingsShell';
-import {GradientView} from '../../../shared/components/GradientView';
+import {Image as ImageIcon, Palette, Moon, Sun, Smartphone, Zap, RotateCcw} from 'lucide-react-native';
+import {HeaderMenu, type HeaderMenuItem} from '../../../shared/components/HeaderMenu';
 import {
   useTheme,
-  settingsMetrics as sm,
-  getShadow,
   nameColors,
-  wallpapers,
-  type WallpaperId,
+  defaultAppearance as d,
   fontWeight,
 } from '../../../shared/theme';
 import {settingsTexts as t} from '../texts';
+import {SettingsPage} from '../components/SettingsPage';
+import {SettingsCard, CardTitle, LinkRow} from '../components/ui';
+import {SettingsSlider} from '../components/SettingsSlider';
+import {ChatPreview, withAlpha} from '../components/ChatPreview';
+import {ThemeCarousel} from '../components/ThemeCarousel';
+import {ListViewPicker} from '../components/ListViewPicker';
+import {SwipePicker} from '../components/SwipePicker';
 
 type Props = {onBack: () => void};
 
 const FONT_MIN = 12;
-const FONT_MAX = 20;
+const FONT_MAX = 24;
 const RADIUS_MIN = 8;
 const RADIUS_MAX = 28;
 
+const MENU: ReadonlyArray<HeaderMenuItem<'reset'>> = [
+  {id: 'reset', label: t.reset, Icon: RotateCcw},
+];
+
 export function AppearanceScreen({onBack}: Props): React.JSX.Element {
-  const {colors, mode, appearance, setAppearance} = useTheme();
-  const wp = wallpapers[appearance.wallpaper];
-  const card = [
-    styles.card,
-    {backgroundColor: colors.bgPrimary},
-    getShadow('sm', mode),
-  ];
+  const {colors, mode, appearance, setAppearance, toggleTheme} = useTheme();
+  const scrollRef = useRef<ScrollView>(null);
+  const [themeY, setThemeY] = useState(0);
+  const [nameOpen, setNameOpen] = useState(false);
+  const night = mode === 'dark';
 
-  const setThemeMode = (choice: 'light' | 'dark' | 'auto') => {
-    if (choice === 'auto') {
-      setAppearance({followSystemTheme: true});
-    } else {
-      setAppearance({followSystemTheme: false, theme: choice});
-    }
+  const resetAll = () => {
+    Alert.alert(t.resetConfirmTitle, t.resetConfirmBody, [
+      {text: t.cancel, style: 'cancel'},
+      {
+        text: t.reset,
+        style: 'destructive',
+        onPress: () =>
+          setAppearance({
+            fontSize: d.fontSize,
+            cornerRadius: d.cornerRadius,
+            listDensity: d.listDensity,
+            swipeAction: d.swipeAction,
+            wallpaper: d.wallpaper,
+            nameColor: d.nameColor,
+            followSystemTheme: d.followSystemTheme,
+            theme: d.theme,
+            limitAnimations: d.limitAnimations,
+          }),
+      },
+    ]);
   };
 
-  const themeChoice = appearance.followSystemTheme
-    ? 'auto'
-    : appearance.theme;
+  const goToThemes = () =>
+    scrollRef.current?.scrollTo({y: Math.max(0, themeY - 8), animated: true});
 
-  const bumpFont = (delta: number) => {
-    const next = Math.min(FONT_MAX, Math.max(FONT_MIN, appearance.fontSize + delta));
-    setAppearance({fontSize: next});
-  };
-
-  const bumpRadius = (delta: number) => {
-    const next = Math.min(
-      RADIUS_MAX,
-      Math.max(RADIUS_MIN, appearance.cornerRadius + delta),
-    );
-    setAppearance({cornerRadius: next});
-  };
+  const onThemeLayout = (e: LayoutChangeEvent) => setThemeY(e.nativeEvent.layout.y);
 
   return (
-    <SettingsShell title={t.appearanceTitle} onBack={onBack}>
+    <SettingsPage
+      title={t.appearanceTitle}
+      onBack={onBack}
+      right={<HeaderMenu items={MENU} onSelect={resetAll} />}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}>
-        <Text style={[styles.blockTitle, {color: colors.accent}]}>{t.preview}</Text>
-        <View style={card}>
-          <GradientView
-            colors={[...wp.colors]}
-            angle={145}
-            style={styles.previewBox}>
-            <View
-              style={[
-                styles.bubbleIn,
-                {borderRadius: appearance.cornerRadius},
-              ]}>
-              <Text
-                style={{
-                  color: appearance.nameColor,
-                  fontWeight: fontWeight.semibold,
-                  fontSize: appearance.fontSize - 1,
-                }}>
-                {t.previewInName}
-              </Text>
-              <Text
-                style={[styles.previewText, {fontSize: appearance.fontSize}]}>
-                {t.previewInText}
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.bubbleOut,
-                {borderRadius: appearance.cornerRadius},
-              ]}>
-              <Text
-                style={[styles.previewText, {fontSize: appearance.fontSize}]}>
-                {t.previewOutText}
-              </Text>
-            </View>
-          </GradientView>
-        </View>
-
-        <Text style={[styles.blockTitle, {color: colors.accent}]}>{t.theme}</Text>
-        <View style={[card, styles.segment]}>
-          {(
-            [
-              ['light', t.themeLight],
-              ['dark', t.themeDark],
-              ['auto', t.themeAuto],
-            ] as const
-          ).map(([id, label]) => {
-            const active = themeChoice === id;
-            return (
-              <Pressable
-                key={id}
-                onPress={() => setThemeMode(id)}
-                style={[
-                  styles.segItem,
-                  active && {
-                    backgroundColor: colors.bgPrimary,
-                    borderColor: colors.borderSoft,
-                  },
-                ]}>
-                <Text
-                  style={{
-                    color: active ? colors.accent : colors.textSecondary,
-                    fontWeight: active ? fontWeight.semibold : fontWeight.medium,
-                  }}>
-                  {label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        <Text style={[styles.blockTitle, {color: colors.accent}]}>
-          {t.wallpaper}
-        </Text>
-        <View style={[card, styles.wpRow]}>
-          {(Object.keys(wallpapers) as WallpaperId[]).map(id => {
-            const w = wallpapers[id];
-            const active = appearance.wallpaper === id;
-            return (
-              <Pressable
-                key={id}
-                onPress={() => setAppearance({wallpaper: id})}
-                style={[
-                  styles.wpItem,
-                  active && {borderColor: colors.accent},
-                ]}>
-                <GradientView
-                  colors={[...w.colors]}
-                  angle={160}
-                  style={styles.wpGrad}>
-                  <Text style={styles.wpEmoji}>{w.emoji}</Text>
-                </GradientView>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        <Text style={[styles.blockTitle, {color: colors.accent}]}>
-          {t.messages}
-        </Text>
-        <View style={card}>
-          <SliderRow
+        <SettingsCard>
+          <CardTitle>{t.textSizeCard}</CardTitle>
+          <SliderLine
             label={t.fontSize}
             value={appearance.fontSize}
-            onMinus={() => bumpFont(-1)}
-            onPlus={() => bumpFont(1)}
+            min={FONT_MIN}
+            max={FONT_MAX}
+            onChange={v => setAppearance({fontSize: v})}
           />
-          <View style={[styles.sep, {backgroundColor: colors.bgSecondary}]} />
-          <SliderRow
-            label={t.bubbleRadius}
-            value={appearance.cornerRadius}
-            onMinus={() => bumpRadius(-1)}
-            onPlus={() => bumpRadius(1)}
+          <ChatPreview />
+          <LinkRow Icon={ImageIcon} label={t.changeWallpaper} onPress={goToThemes} />
+          <LinkRow
+            Icon={Palette}
+            label={t.changeNameColor}
+            last={!nameOpen}
+            onPress={() => setNameOpen(o => !o)}
+            trailing={
+              <View
+                style={[
+                  styles.chip,
+                  {backgroundColor: withAlpha(appearance.nameColor, 0.14)},
+                ]}>
+                <Text style={[styles.chipText, {color: appearance.nameColor}]}>
+                  {t.previewInName}
+                </Text>
+              </View>
+            }
           />
-          <View style={[styles.sep, {backgroundColor: colors.bgSecondary}]} />
-          <Text style={[styles.fieldLabel, {color: colors.textPrimary}]}>
-            {t.nameColor}
-          </Text>
-          <View style={styles.colorRow}>
-            {nameColors.map(c => {
-              const active = appearance.nameColor === c;
-              return (
-                <Pressable
-                  key={c}
-                  onPress={() => setAppearance({nameColor: c})}
-                  style={[
-                    styles.colorDot,
-                    {backgroundColor: c},
-                    active && [
-                      styles.colorDotActive,
-                      {borderColor: colors.accent},
-                    ],
-                  ]}
+          {nameOpen ? (
+            <View style={styles.dots}>
+              {nameColors.map(c => {
+                const active = appearance.nameColor === c;
+                return (
+                  <Pressable
+                    key={c}
+                    accessibilityRole="button"
+                    accessibilityState={{selected: active}}
+                    accessibilityLabel={c}
+                    onPress={() => setAppearance({nameColor: c})}
+                    style={[
+                      styles.dotRing,
+                      {borderColor: active ? colors.accent : 'transparent'},
+                    ]}>
+                    <View style={[styles.dot, {backgroundColor: c}]} />
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : null}
+        </SettingsCard>
+
+        <View onLayout={onThemeLayout}>
+          <SettingsCard>
+            <CardTitle>{t.colorTheme}</CardTitle>
+            <ThemeCarousel />
+            <LinkRow
+              Icon={night ? Sun : Moon}
+              label={night ? t.switchToDay : t.switchToNight}
+              onPress={toggleTheme}
+            />
+            <LinkRow
+              Icon={Smartphone}
+              label={t.autoTheme}
+              last
+              trailing={
+                <Switch
+                  value={appearance.followSystemTheme}
+                  onValueChange={v =>
+                    setAppearance(
+                      v ? {followSystemTheme: true} : {followSystemTheme: false, theme: mode},
+                    )
+                  }
+                  trackColor={{false: colors.bgTertiary, true: colors.accent}}
                 />
-              );
-            })}
-          </View>
+              }
+            />
+          </SettingsCard>
         </View>
 
-        <View style={[card, styles.switchRow]}>
-          <View style={styles.switchLabels}>
-            <Text style={[styles.fieldLabel, {color: colors.textPrimary}]}>
-              {t.limitAnimations}
-            </Text>
-            <Text style={{color: colors.textSecondary, fontSize: sm.subSize}}>
-              {t.limitAnimationsSub}
-            </Text>
-          </View>
-          <Switch
-            value={appearance.limitAnimations}
-            onValueChange={v => setAppearance({limitAnimations: v})}
-            trackColor={{false: colors.bgTertiary, true: colors.accent}}
+        <SettingsCard>
+          <CardTitle>{t.cornersCard}</CardTitle>
+          <SliderLine
+            label={t.bubbleRadius}
+            value={appearance.cornerRadius}
+            min={RADIUS_MIN}
+            max={RADIUS_MAX}
+            onChange={v => setAppearance({cornerRadius: v})}
           />
-        </View>
+        </SettingsCard>
+
+        <ListViewPicker />
+        <SwipePicker />
+
+        <SettingsCard>
+          <LinkRow
+            Icon={Zap}
+            label={t.limitAnimations}
+            last
+            trailing={
+              <Switch
+                value={appearance.limitAnimations}
+                onValueChange={v => setAppearance({limitAnimations: v})}
+                trackColor={{false: colors.bgTertiary, true: colors.accent}}
+              />
+            }
+          />
+        </SettingsCard>
+        <Text style={[styles.hint, {color: colors.textSecondary}]}>
+          {t.limitAnimationsSub}
+        </Text>
       </ScrollView>
-    </SettingsShell>
+    </SettingsPage>
   );
 }
 
-function SliderRow({
+function SliderLine({
   label,
   value,
-  onMinus,
-  onPlus,
+  min,
+  max,
+  onChange,
 }: {
   label: string;
   value: number;
-  onMinus: () => void;
-  onPlus: () => void;
+  min: number;
+  max: number;
+  onChange: (v: number) => void;
 }): React.JSX.Element {
   const {colors} = useTheme();
   return (
-    <View style={styles.sliderBlock}>
-      <View style={styles.sliderHead}>
-        <Text style={[styles.fieldLabel, {color: colors.textPrimary}]}>
-          {label}
-        </Text>
-        <Text style={{color: colors.textSecondary, fontWeight: fontWeight.semibold}}>
-          {value}
-        </Text>
-      </View>
-      <View style={styles.sliderControls}>
-        <Pressable onPress={onMinus} style={[styles.stepBtn, {backgroundColor: colors.bgSecondary}]}>
-          <Text style={[styles.stepLabel, {color: colors.textPrimary}]}>−</Text>
-        </Pressable>
-        <View style={[styles.track, {backgroundColor: colors.bgTertiary}]}>
-          <View
-            style={[
-              styles.trackFill,
-              {
-                backgroundColor: colors.accent,
-                width: `${Math.min(100, Math.max(8, ((value - 8) / 20) * 100))}%`,
-              },
-            ]}
-          />
-        </View>
-        <Pressable onPress={onPlus} style={[styles.stepBtn, {backgroundColor: colors.bgSecondary}]}>
-          <Text style={[styles.stepLabel, {color: colors.textPrimary}]}>+</Text>
-        </Pressable>
-      </View>
+    <View style={styles.sliderLine}>
+      <SettingsSlider
+        value={value}
+        min={min}
+        max={max}
+        onChange={onChange}
+        accessibilityLabel={label}
+      />
+      <Text style={[styles.value, {color: colors.accent}]}>{value}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    paddingHorizontal: sm.cardMarginH,
-    paddingTop: 12,
-    paddingBottom: 40,
-    gap: 10,
-  },
-  blockTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginTop: 6,
-  },
-  card: {
-    borderRadius: sm.cardRadius,
-    overflow: 'hidden',
-    padding: 14,
-  },
-  previewBox: {
-    borderRadius: 14,
-    padding: 14,
-    gap: 10,
-    minHeight: 120,
-  },
-  bubbleIn: {
-    alignSelf: 'flex-start',
-    padding: 10,
-    maxWidth: '85%',
-    gap: 2,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-  },
-  bubbleOut: {
-    alignSelf: 'flex-end',
-    padding: 10,
-    maxWidth: '85%',
-    backgroundColor: 'rgba(200,255,200,0.95)',
-  },
-  previewText: {color: '#222'},
-  colorDotActive: {borderWidth: 3},
-  stepLabel: {fontSize: 18},
-  segment: {
-    flexDirection: 'row',
-    backgroundColor: 'transparent',
-    padding: 4,
-    gap: 4,
-  },
-  segItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  wpRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  wpItem: {
-    width: 72,
-    height: 96,
-    borderRadius: 14,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  wpGrad: {flex: 1, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 10},
-  wpEmoji: {fontSize: 22},
-  fieldLabel: {fontSize: 15, fontWeight: '600'},
-  sep: {height: 1, marginVertical: 12},
-  colorRow: {flexDirection: 'row', gap: 12, marginTop: 10},
-  colorDot: {width: 32, height: 32, borderRadius: 16},
-  switchRow: {
+  scroll: {paddingTop: 12, paddingBottom: 24, gap: 12},
+  sliderLine: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
+    paddingLeft: 14,
+    paddingRight: 20,
+    paddingBottom: 10,
   },
-  switchLabels: {flex: 1, gap: 4},
-  sliderBlock: {gap: 8},
-  sliderHead: {
+  value: {width: 34, fontSize: 20, textAlign: 'right'},
+  chip: {borderRadius: 16, paddingHorizontal: 14, paddingVertical: 6},
+  chipText: {fontSize: 16, fontWeight: fontWeight.semibold},
+  dots: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    gap: 6,
+    paddingLeft: 62,
+    paddingRight: 16,
+    paddingBottom: 12,
   },
-  sliderControls: {flexDirection: 'row', alignItems: 'center', gap: 8},
-  stepBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  track: {flex: 1, height: 6, borderRadius: 3, overflow: 'hidden'},
-  trackFill: {height: '100%', borderRadius: 3},
+  dotRing: {borderWidth: 2.5, borderRadius: 22, padding: 2},
+  dot: {width: 30, height: 30, borderRadius: 15},
+  hint: {fontSize: 13, paddingHorizontal: 32, marginTop: -4},
 });
