@@ -7,6 +7,8 @@ export const conversationsTexts = {
   folderWork: 'Travail',
   folderUnread: 'Non lus',
   folderArchive: 'Archive',
+  archivedTitle: 'Échanges archivés',
+  archivedBack: 'Retour aux échanges',
   archiveAction: 'Archiver',
   unarchiveAction: 'Désarchiver',
   moveToFolderAction: 'Déplacer vers un dossier',
