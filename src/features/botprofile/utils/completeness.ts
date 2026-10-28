@@ -1,5 +1,5 @@
 /**
- * Completude - site diff.ts completeness() : 6 criteres poids egal.
+ * Completude - site diff.ts completeness() : 5 criteres poids egal (le bouton de menu n'est plus un critere).
  */
 import type {BotProfile} from '../../../core/api/endpoints/botProfile.types';
 import {DEFAULT_LANG} from '../../../core/api/endpoints/botProfile.types';
@@ -21,7 +21,6 @@ export function completeness(profile: BotProfile): Completeness {
       ok: (profile.commands[cmdKey('default', DEFAULT_LANG)] ?? []).length > 0,
       label: 'des commandes',
     },
-    {ok: profile.menu_button.type !== 'default', label: 'un bouton de menu'},
   ];
   const done = items.filter(item => item.ok).length;
   return {
