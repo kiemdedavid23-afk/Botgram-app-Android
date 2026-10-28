@@ -44,7 +44,7 @@ const MENU: ReadonlyArray<HeaderMenuItem<'reset'>> = [
 
 export function AppearanceScreen({onBack}: Props): React.JSX.Element {
   const {colors, mode, appearance, setAppearance, toggleTheme} = useTheme();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const [themeY, setThemeY] = useState(0);
   const [nameOpen, setNameOpen] = useState(false);
   const night = mode === 'dark';
