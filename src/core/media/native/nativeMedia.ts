@@ -16,6 +16,7 @@ type DownloadModule = {
     maxBytes: number,
   ): Promise<{path: string; size: number; mime: string}>;
   cancel(id: string): void;
+  copyLocal(src: string, destPath: string): Promise<number>;
 };
 
 export type AudioItem = {
@@ -122,6 +123,17 @@ export async function nativeDownload(params: {
     };
   } finally {
     signal?.removeEventListener('abort', onAbort);
+  }
+}
+
+/** Copie un fichier local (content://, file://, chemin) vers `destPath`. false si impossible. */
+export async function copyLocalFile(src: string, destPath: string): Promise<boolean> {
+  if (!downloadModule) return false;
+  try {
+    await downloadModule.copyLocal(src, destPath);
+    return true;
+  } catch {
+    return false;
   }
 }
 
