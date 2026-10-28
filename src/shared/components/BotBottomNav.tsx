@@ -16,6 +16,7 @@ import {
 import {MessagesSquare, CircleUser, Settings} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {GradientView} from './GradientView';
+import {BotPhoto} from './BotPhoto';
 import {useTheme, getShadow, navPillBorder,
   navMetrics as nm, gradients, fontWeight, fontSize, space, radii} from '../theme';
 
@@ -26,6 +27,8 @@ type Props = {
   onTabPress: (id: BotTabId) => void;
   /** Nom du bot actif (placeholder étape 1) */
   botName?: string;
+  /** Bot actif : sa photo (cache partagé) remplace l'initiale quand elle existe. */
+  botId?: string | null;
   /** Nombre de non-lus (non branché) */
   unreadBadge?: number;
   visible?: boolean;
@@ -44,6 +47,7 @@ export function BotBottomNav({
   activeTab,
   onTabPress,
   botName = 'Bot',
+  botId,
   unreadBadge,
   visible = true,
   style,
@@ -138,9 +142,15 @@ export function BotBottomNav({
           ]}>
           <View style={styles.iconWrap}>
             <View style={[styles.avatarOuter, profileActive ? avatarActiveBorder : null]}>
-              <GradientView colors={avatarColors} angle={145} style={styles.avatar}>
-                <Text style={[styles.avatarText, {color: colors.white}]}>{botInitial(botName)}</Text>
-              </GradientView>
+              <BotPhoto
+                botId={botId}
+                style={styles.avatar}
+                fallback={
+                  <GradientView colors={avatarColors} angle={145} style={styles.avatar}>
+                    <Text style={[styles.avatarText, {color: colors.white}]}>{botInitial(botName)}</Text>
+                  </GradientView>
+                }
+              />
             </View>
           </View>
           <Text

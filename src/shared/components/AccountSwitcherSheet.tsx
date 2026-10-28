@@ -12,6 +12,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import {Bot, Check} from 'lucide-react-native';
+import {BotPhoto} from './BotPhoto';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Avatar} from './Avatar';
 import {
@@ -158,7 +159,11 @@ export function AccountSwitcherSheet({
                       styles.botIcon,
                       {backgroundColor: colors.bgTertiary},
                     ]}>
-                    <Bot size={24} color={colors.accent} />
+                    <BotPhoto
+                      botId={bot.id}
+                      style={styles.botPhoto}
+                      fallback={<Bot size={24} color={colors.accent} />}
+                    />
                   </View>
                   <View style={styles.labels}>
                     <Text
@@ -232,7 +237,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dot: {width: 10, height: 10, borderRadius: radii.full},
+  botPhoto: {width: ROW_AVATAR, height: ROW_AVATAR},
   botIcon: {
+    overflow: 'hidden',
     width: ROW_AVATAR,
     height: ROW_AVATAR,
     borderRadius: radii.botIcon,
