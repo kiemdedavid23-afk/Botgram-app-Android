@@ -312,7 +312,7 @@ describe('6. addLanguage copie textes defaut', () => {
   });
 });
 
-describe('7. completeness 6 criteres', () => {
+describe('7. completeness 5 criteres', () => {
   it('pct et missing', () => {
     const empty = profile();
     const c = completeness(empty);
