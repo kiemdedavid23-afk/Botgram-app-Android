@@ -1,7 +1,7 @@
 /** Profil Telegram du bot — 4 onglets (Identité, Langues, Commandes, Infos), lecture seule. */
 import React, {useEffect, useMemo, useState} from 'react';
 import {
-  View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator,
+  View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator, InteractionManager,
 } from 'react-native';
 import {useTheme, botProfileMetrics as m} from '../../../shared/theme';
 import type {ColorTokens} from '../../../shared/theme';
@@ -73,6 +73,8 @@ export function BotProfileScreen({onAddBot}: Props): React.JSX.Element {
   const loading = useBotProfileStore(s => s.loading);
   const loadError = useBotProfileStore(s => s.loadError);
   const load = useBotProfileStore(s => s.load);
+  const loadLanguages = useBotProfileStore(s => s.loadLanguages);
+  const hasProfile = profile !== null;
   const [tab, setTab] = useState<TabId>('identity');
   const [lang, setLang] = useState(DEFAULT_LANG);
 
@@ -87,6 +89,16 @@ export function BotProfileScreen({onAddBot}: Props): React.JSX.Element {
       name: botName, username: botUsername, telegram_id: botTelegramId,
     }));
   }, [botId, botName, botUsername, botTelegramId, load]);
+
+  // Autres langues : lues seulement quand un onglet qui les affiche est ouvert
+  // (Identité, Langues, Commandes) — jamais pour Infos — et après le premier affichage.
+  useEffect(() => {
+    if (!botId || !hasProfile || tab === 'info') return undefined;
+    const task = InteractionManager.runAfterInteractions(() => {
+      fireAndForget(loadLanguages(botId));
+    });
+    return () => task.cancel();
+  }, [botId, hasProfile, tab, loadLanguages]);
 
   const currentTab = PROFILE_TABS.find(t => t.id === tab) ?? PROFILE_TABS[0]!;
 
