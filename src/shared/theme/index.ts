@@ -30,6 +30,12 @@ export {
 } from './appearance';
 
 export {gradients, wallpaperGradients} from './gradients';
+export {
+  resolveChatTheme,
+  wallpaperBubbleOut,
+  type ChatTheme,
+} from './chatTheme';
+export {useChatTheme} from './useChatTheme';
 export {ThemeProvider, useTheme} from './ThemeProvider';
 
 export {getColors} from './colors';
