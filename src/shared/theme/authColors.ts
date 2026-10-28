@@ -114,3 +114,21 @@ export const authDark = {
   buttonShadow: 'rgba(30,155,255,0.45)',
   backIcon: '#ffffff',
 } as const;
+
+/**
+ * Écrans clairs enrichis (Code, Profil) : surfaces douces et accents, sur le fond blanc d'origine.
+ */
+export const authUi = {
+  accentStrong: '#0a7fb0',
+  accentSoft: '#E8F5FD',
+  accentBorder: '#BFE3F7',
+  surface: '#F5F7FA',
+  surfaceBorder: '#E3E8EE',
+  label: '#3A4553',
+  dangerSoft: '#FDECEA',
+  dangerBorder: '#F5B7B1',
+  warn: '#C2410C',
+  warnSoft: '#FFF1E6',
+  dotOff: '#D5DCE4',
+  white: '#ffffff',
+} as const;
