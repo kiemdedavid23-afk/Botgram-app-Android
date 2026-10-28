@@ -11,12 +11,15 @@ type Props = {
   title?: string;
   right?: ReactNode;
   style?: StyleProp<ViewStyle>;
+  /** Style Telegram : barre d'état fondue, titre sobre, pas de trait de séparation. */
+  seamless?: boolean;
 };
 
 export function BrandBar({
   title = 'Botgram',
   right,
   style,
+  seamless = false,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
 
@@ -28,12 +31,18 @@ export function BrandBar({
           backgroundColor: colors.bgPrimary,
           borderBottomColor: colors.border,
         },
+        seamless ? styles.noBorder : null,
         style,
       ]}>
-      <StatusBarStrip />
+      <StatusBarStrip seamless={seamless} />
       <View style={styles.inner}>
         <Text
-          style={[styles.title, {color: colors.accent}]}
+          style={[
+            styles.title,
+            seamless
+              ? {color: colors.textPrimary, fontSize: fontSize.brandTitle + 4}
+              : {color: colors.accent},
+          ]}
           numberOfLines={1}>
           {title}
         </Text>
@@ -47,6 +56,7 @@ const styles = StyleSheet.create({
   bar: {
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  noBorder: {borderBottomWidth: 0},
   inner: {
     height: space.brandBarHeight,
     paddingLeft: space.brandBarPaddingLeft,

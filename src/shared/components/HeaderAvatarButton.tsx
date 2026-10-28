@@ -16,6 +16,8 @@ type Props = {
   open: boolean;
   onPress: () => void;
   accessibilityLabel?: string;
+  /** false : on n'affiche que le chevron (le sélecteur reste ouvrable). */
+  showAvatar?: boolean;
 };
 
 const AVATAR_SIZE = 32;
@@ -26,6 +28,7 @@ export function HeaderAvatarButton({
   open,
   onPress,
   accessibilityLabel = 'Changer de compte ou de bot',
+  showAvatar = true,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
   const Chevron = open ? ChevronUp : ChevronDown;
@@ -38,8 +41,10 @@ export function HeaderAvatarButton({
       onPress={onPress}
       hitSlop={space.sm}
       style={styles.root}>
-      <Avatar size={AVATAR_SIZE} title={title} photoUrl={photoUrl} />
-      <Chevron size={18} color={colors.textSecondary} />
+      {showAvatar ? (
+        <Avatar size={AVATAR_SIZE} title={title} photoUrl={photoUrl} />
+      ) : null}
+      <Chevron size={showAvatar ? 18 : 24} color={colors.textSecondary} />
     </Pressable>
   );
 }
