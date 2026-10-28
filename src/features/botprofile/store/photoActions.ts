@@ -10,6 +10,7 @@ import type {HttpFailure} from '../../../core/api/http';
 import {mapProfileError} from '../utils/errors';
 import {validatePhoto, type PickedImage} from '../utils/photo';
 import {useBotProfileStore} from './botProfileStore';
+import {useBotPhotoStore} from '../../../shared/botPhoto/botPhotoStore';
 import {texts} from '../texts';
 
 export type PhotoResult = {ok: true} | {ok: false; message: string};
@@ -22,6 +23,7 @@ function failureMessage(res: HttpFailure): string {
 export async function doDeletePhoto(botId: string): Promise<PhotoResult> {
   const res = await deleteBotPhoto(botId);
   if (!res.ok) return {ok: false, message: failureMessage(res)};
+  await useBotPhotoStore.getState().markRemoved(botId);
   useBotProfileStore.getState().setPhotoPresent(false);
   return {ok: true};
 }
@@ -42,6 +44,8 @@ export async function doUploadPhoto(
   } as unknown as Blob);
   const res = await setBotPhoto(botId, form);
   if (!res.ok) return {ok: false, message: failureMessage(res)};
+  // Nouvelle photo : on la retélécharge une fois, tous les écrans la partagent.
+  await useBotPhotoStore.getState().refresh(botId);
   useBotProfileStore.getState().setPhotoPresent(true);
   return {ok: true};
 }
