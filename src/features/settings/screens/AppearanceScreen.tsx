@@ -117,6 +117,7 @@ export function AppearanceScreen({onBack}: Props): React.JSX.Element {
             <View style={styles.dots}>
               {nameColors.map(c => {
                 const active = appearance.nameColor === c;
+                const ringColor = active ? colors.accent : TRANSPARENT;
                 return (
                   <Pressable
                     key={c}
@@ -124,10 +125,7 @@ export function AppearanceScreen({onBack}: Props): React.JSX.Element {
                     accessibilityState={{selected: active}}
                     accessibilityLabel={c}
                     onPress={() => setAppearance({nameColor: c})}
-                    style={[
-                      styles.dotRing,
-                      {borderColor: active ? colors.accent : 'transparent'},
-                    ]}>
+                    style={[styles.dotRing, {borderColor: ringColor}]}>
                     <View style={[styles.dot, {backgroundColor: c}]} />
                   </Pressable>
                 );
@@ -227,6 +225,8 @@ function SliderLine({
     </View>
   );
 }
+
+const TRANSPARENT = 'transparent';
 
 const styles = StyleSheet.create({
   scroll: {paddingTop: 12, paddingBottom: 24, gap: 12},
