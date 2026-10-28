@@ -4,7 +4,7 @@
  */
 import React, {useEffect, useMemo, type ReactNode} from 'react';
 import {useShallow} from 'zustand/react/shallow';
-import {View, Text, StyleSheet, ActivityIndicator} from 'react-native';
+import {View, Text, StyleSheet, ActivityIndicator, BackHandler} from 'react-native';
 import {useTheme, fontSize} from '../../../shared/theme';
 import {BrandBar} from '../../../shared/components/BrandBar';
 import {SearchBar} from '../../../shared/components/SearchBar';
@@ -13,11 +13,13 @@ import {
   useConversationsStore,
   selectFilteredItems,
   folderCounts,
+  conversationTitle,
 } from '../store/conversationsStore';
 import {useArchiveStore} from '../store/archiveStore';
 import {applyArchiveVisibility} from '../store/filters';
 import {conversationsTexts as t} from '../texts';
 import {FoldersBar} from '../components/FoldersBar';
+import {ArchiveRow, ArchiveHeader} from '../components/ArchivedBar';
 import {ConversationsBody} from '../components/ConversationsBody';
 import {useConversationSearch} from '../hooks/useConversationSearch';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
@@ -76,9 +78,37 @@ export function ConversationsScreen({
   const {searchQuery, searching, onSearchChange, clearSearch} =
     useConversationSearch();
 
+  // Aperçu de la ligne « Échanges archivés » : noms des 3 premières conversations archivées.
+  const archivedPreview = useMemo(
+    () =>
+      items
+        .filter(c => !!archivedIds[c.id])
+        .slice(0, 3)
+        .map(c => conversationTitle(c))
+        .join(', '),
+    [items, archivedIds],
+  );
+
+  // Dans le dossier archive, le retour Android ramène à la liste principale.
+  const inArchive = folder === 'archive';
+  useEffect(() => {
+    if (!inArchive) return undefined;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      setFolder('all');
+      return true;
+    });
+    return () => sub.remove();
+  }, [inArchive, setFolder]);
+
+  // Dernière conversation désarchivée : on quitte le dossier archive (il serait vide).
+  const archivedCount = counts.archive;
+  useEffect(() => {
+    if (inArchive && archivedCount === 0) setFolder('all');
+  }, [inArchive, archivedCount, setFolder]);
+
   return (
     <View style={[styles.root, {backgroundColor: colors.bgPrimary}]}>
-      <BrandBar title={t.title} right={headerRight} />
+      <BrandBar title={t.title} right={headerRight} seamless />
       {offline ? (
         <View style={[styles.offline, {backgroundColor: colors.bgTertiary}]}>
           <Text
@@ -96,7 +126,20 @@ export function ConversationsScreen({
         placeholder={t.searchPlaceholder}
         onClear={clearSearch}
       />
-      <FoldersBar folder={folder} counts={counts} onSelect={setFolder} />
+      {inArchive ? (
+        <ArchiveHeader count={counts.archive} onBack={() => setFolder('all')} />
+      ) : (
+        <>
+          <FoldersBar folder={folder} counts={counts} onSelect={setFolder} />
+          {counts.archive > 0 && searchQuery.trim().length === 0 ? (
+            <ArchiveRow
+              count={counts.archive}
+              preview={archivedPreview}
+              onPress={() => setFolder('archive')}
+            />
+          ) : null}
+        </>
+      )}
       <ConversationsBody
         onPin={pinConversation}
         onDelete={deleteConversation}
