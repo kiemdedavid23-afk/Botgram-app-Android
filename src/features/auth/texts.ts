@@ -1,6 +1,10 @@
 export const texts = {
-  welcomeTitle: 'Botgram',
-  welcomeSubtitle: 'L’application de messagerie la plus rapide au monde. Gratuite et sécurisée.',
+  welcomeBrandStart: 'Bots',
+  welcomeBrandEnd: 'gram',
+  welcomeHeadline: 'Tous vos bots.',
+  welcomeHeadlineAccent: 'Une seule application.',
+  welcomeSubtitle: 'Suivez les conversations et répondez facilement, depuis un seul endroit.',
+  welcomeCta: 'Se connecter',
   continue: 'Continuer',
   emailTitle: 'Votre e-mail',
   emailPlaceholder: 'adresse@exemple.com',
