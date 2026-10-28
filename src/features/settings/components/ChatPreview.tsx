@@ -15,8 +15,11 @@ export function withAlpha(hex: string, alpha: number): string {
   if (!m) {
     return hex;
   }
-  const n = parseInt(m[1] ?? '000000', 16);
-  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
+  const h = m[1] ?? '000000';
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
 }
 
 export function ChatPreview(): React.JSX.Element {
@@ -49,7 +52,7 @@ export function ChatPreview(): React.JSX.Element {
           </Text>
         </View>
         <View style={styles.bodyRow}>
-          <Text style={{color: chat.bubbleInText, fontSize: size, flexShrink: 1}}>
+          <Text style={[styles.shrink, {color: chat.bubbleInText, fontSize: size}]}>
             {t.previewBody}
           </Text>
           <Text style={[styles.time, {color: chat.timeIn}]}>10:55</Text>
@@ -61,7 +64,7 @@ export function ChatPreview(): React.JSX.Element {
           styles.bubbleOut,
           {backgroundColor: chat.bubbleOut, borderRadius: radius},
         ]}>
-        <Text style={{color: chat.bubbleOutText, fontSize: size, flexShrink: 1}}>
+        <Text style={[styles.shrink, {color: chat.bubbleOutText, fontSize: size}]}>
           {t.previewOut}
         </Text>
         <Text style={[styles.time, {color: chat.timeOut}]}>11:10</Text>
@@ -90,4 +93,5 @@ const styles = StyleSheet.create({
   },
   bodyRow: {flexDirection: 'row', alignItems: 'flex-end', gap: 8},
   time: {fontSize: 11, marginBottom: 1},
+  shrink: {flexShrink: 1},
 });
