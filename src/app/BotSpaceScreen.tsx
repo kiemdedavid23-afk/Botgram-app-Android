@@ -6,7 +6,7 @@
  * Paramètres et Profil du bot.
  * - Échanges : BotChatsStack (liste + fil).
  * - Contacts : écran provisoire.
- * - Paramètres : pages Paramètres avec leur propre en-tête (sans BrandBar).
+ * - Paramètres : page Paramètres actuelle (refonte à venir).
  * - Profil : profil Telegram du bot.
  */
 import React, {useEffect, useState} from 'react';
@@ -84,6 +84,7 @@ export function BotSpaceScreen({onExit, onAddBot}: Props): React.JSX.Element {
       activeTab={tab}
       onTabPress={setTab}
       botName={botName}
+      botId={selected?.id}
       unreadBadge={unreadBadge}
       visible
     />
@@ -113,9 +114,7 @@ export function BotSpaceScreen({onExit, onAddBot}: Props): React.JSX.Element {
 
   return (
     <View style={[styles.root, {backgroundColor: colors.bgSecondary}]}>
-      {tab === 'settings' ? null : (
-        <BrandBar title="Botgram" right={headerRight} />
-      )}
+      <BrandBar title="Botgram" right={headerRight} />
       {tab === 'settings' ? (
         <View style={styles.settingsBody}>
           <BotSettingsStack />
