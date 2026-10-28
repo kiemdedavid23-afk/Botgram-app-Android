@@ -10,6 +10,8 @@ import {MessageStatus} from './MessageStatus';
 import {MediaPhoto} from './MediaPhoto';
 import {MediaFile} from './MediaFile';
 import {MediaAlbum} from './MediaAlbum';
+import {MediaVideo} from './MediaVideo';
+import {MediaAudio} from './MediaAudio';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {threadTexts as t} from '../texts';
 
@@ -33,6 +35,12 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
   const ts = message.created_at ?? message.sent_at ?? undefined;
   const isText = message.kind === 'text' || !message.kind;
   const caption = message.text;
+  const isLocal = message.id.startsWith('local:');
+  const isVideoKind =
+    message.kind === 'video' ||
+    message.kind === 'animation' ||
+    message.kind === 'video_note';
+  const isAudioKind = message.kind === 'audio' || message.kind === 'voice';
 
   const confirmDelete = () => {
     if (!onDelete || !isOut) return;
@@ -86,10 +94,33 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
             parseMode={message.parse_mode}
           />
         ) : null}
+        {isVideoKind && !isLocal ? (
+          <MediaVideo
+            messageId={message.id}
+            kind={message.kind}
+            size={message.attachment?.size}
+          />
+        ) : null}
+        {isAudioKind && !isLocal ? (
+          <MediaAudio
+            messageId={message.id}
+            kind={message.kind}
+            name={message.attachment?.name}
+            size={message.attachment?.size}
+            isOut={isOut}
+          />
+        ) : null}
+        {(isVideoKind || isAudioKind) && isLocal ? (
+          <Text style={{color: textColor, fontSize: tm.kindLabelSize}}>
+            {message.attachment?.name ?? kindLabel(message.kind)}
+          </Text>
+        ) : null}
         {!isText &&
         message.kind !== 'photo' &&
         message.kind !== 'document' &&
-        message.kind !== 'album' ? (
+        message.kind !== 'album' &&
+        !isVideoKind &&
+        !isAudioKind ? (
           <Text style={{color: textColor, fontSize: tm.kindLabelSize}}>
             {kindLabel(message.kind)}
           </Text>

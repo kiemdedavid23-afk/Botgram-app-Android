@@ -6,6 +6,7 @@ import {View, StyleSheet} from 'react-native';
 import {threadMetrics as tm} from '../../../shared/theme/threadMetrics';
 import {MediaPhoto} from './MediaPhoto';
 import {MediaFile} from './MediaFile';
+import {MediaVideo} from './MediaVideo';
 import {FormattedText} from './FormattedText';
 import {useTheme} from '../../../shared/theme';
 import type {AlbumItem} from '../../../core/realtime/events';
@@ -29,9 +30,19 @@ export function MediaAlbum({
           const isPhoto =
             item.kind === 'photo' ||
             (item.attachment?.mime ?? '').startsWith('image/');
+          const isVideo =
+            item.kind === 'video' ||
+            (item.attachment?.mime ?? '').startsWith('video/');
           return (
             <View key={item.id} style={styles.cell}>
-              {isPhoto ? (
+              {isVideo ? (
+                <MediaVideo
+                  messageId={item.id}
+                  kind="video"
+                  compact
+                  size={item.attachment?.size}
+                />
+              ) : isPhoto ? (
                 <MediaPhoto
                   messageId={item.id}
                   size={item.attachment?.size}
