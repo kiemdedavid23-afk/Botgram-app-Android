@@ -15,7 +15,7 @@ export function withAlpha(hex: string, alpha: number): string {
   if (!m) {
     return hex;
   }
-  const n = parseInt(m[1], 16);
+  const n = parseInt(m[1] ?? '000000', 16);
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
 }
 
@@ -73,7 +73,7 @@ export function ChatPreview(): React.JSX.Element {
 
 const styles = StyleSheet.create({
   box: {paddingHorizontal: 12, paddingVertical: 14, gap: 8},
-  dim: {...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)'},
+  dim: {...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.45)'},
   bubble: {paddingHorizontal: 12, paddingVertical: 8, maxWidth: '86%'},
   bubbleIn: {alignSelf: 'flex-start', gap: 6},
   bubbleOut: {
