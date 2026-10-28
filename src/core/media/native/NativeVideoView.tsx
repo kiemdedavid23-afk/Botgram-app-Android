@@ -59,7 +59,8 @@ export const NativeVideoView = forwardRef<NativeVideoHandle, NativeVideoProps>(
     const dispatch = (command: string, args: unknown[] = []) => {
       const node = findNodeHandle(inner.current);
       if (node != null) {
-        UIManager.dispatchViewManagerCommand(node, command, args);
+        // Commande par nom (chaîne) : acceptée à l'exécution, mais typée number par RN.
+        UIManager.dispatchViewManagerCommand(node, command as unknown as number, args);
       }
     };
 
