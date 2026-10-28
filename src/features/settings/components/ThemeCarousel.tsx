@@ -12,6 +12,7 @@ import {
 } from '../../../shared/theme';
 
 const IDS = Object.keys(wallpapers) as WallpaperId[];
+const TRANSPARENT = 'transparent';
 
 export function ThemeCarousel(): React.JSX.Element {
   const {colors, appearance, setAppearance} = useTheme();
@@ -23,6 +24,7 @@ export function ThemeCarousel(): React.JSX.Element {
       {IDS.map(id => {
         const wp = wallpapers[id];
         const active = appearance.wallpaper === id;
+        const frameBorder = active ? colors.accent : TRANSPARENT;
         return (
           <Pressable
             key={id}
@@ -30,10 +32,7 @@ export function ThemeCarousel(): React.JSX.Element {
             accessibilityState={{selected: active}}
             accessibilityLabel={wp.label}
             onPress={() => setAppearance({wallpaper: id})}
-            style={[
-              styles.frame,
-              {borderColor: active ? colors.accent : 'transparent'},
-            ]}>
+            style={[styles.frame, {borderColor: frameBorder}]}>
             <GradientView colors={[...wp.colors]} angle={160} style={styles.card}>
               <View style={[styles.pill, styles.pillIn]} />
               <View
