@@ -10,7 +10,8 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import {useTheme} from '../../../shared/theme';
+import {useTheme, useChatTheme} from '../../../shared/theme';
+import {GradientView} from '../../../shared/components/GradientView';
 import {threadMetrics as tm} from '../../../shared/theme/threadMetrics';
 import {useThreadStore} from '../store/threadStore';
 import {messageTimestamp} from '../store/mergeMessages';
@@ -51,6 +52,7 @@ export function ThreadScreen({
   onPressAvatar,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
+  const chat = useChatTheme();
   const open = useThreadStore(s => s.open);
   const close = useThreadStore(s => s.close);
   const items = useThreadStore(s => s.items);
@@ -141,6 +143,14 @@ export function ThreadScreen({
 
   return (
     <View style={[styles.root, {backgroundColor: colors.bgChat}]}>
+      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+        <GradientView
+          colors={[...chat.wallpaperColors]}
+          angle={160}
+          style={StyleSheet.absoluteFill}
+        />
+        {chat.dim ? <View style={[StyleSheet.absoluteFill, styles.dim]} /> : null}
+      </View>
       <ThreadHeader
         title={headerTitle}
         subtitle={subtitle}
@@ -236,6 +246,7 @@ function buildInvertedRows(items: Message[]): Row[] {
 
 const styles = StyleSheet.create({
   root: {flex: 1},
+  dim: {backgroundColor: 'rgba(0,0,0,0.45)'},
   center: {flex: 1, alignItems: 'center', justifyContent: 'center'},
   listContent: {
     paddingTop: tm.listPadB,
