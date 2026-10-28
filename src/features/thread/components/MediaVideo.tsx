@@ -225,7 +225,13 @@ export function MediaVideo({messageId, kind, size, compact}: Props): React.JSX.E
 
 const styles = StyleSheet.create({
   box: {backgroundColor: '#000', overflow: 'hidden'},
-  center: {...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center'},
+  center: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    alignItems: 'center', justifyContent: 'center'},
   playBtn: {
     width: 56,
     height: 56,
