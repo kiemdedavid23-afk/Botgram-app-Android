@@ -121,7 +121,12 @@ export function ConversationRow({
               {title}
             </Text>
           </View>
-          <Text style={{color: colors.textHint, fontSize: cm.timeSize}}>
+          <Text
+            style={{
+              color: showBadge ? colors.accent : colors.textHint,
+              fontSize: cm.timeSize,
+              fontWeight: showBadge ? fontWeight.semibold : fontWeight.regular,
+            }}>
             {time}
           </Text>
         </View>
@@ -131,7 +136,7 @@ export function ConversationRow({
             style={[
               styles.preview,
               styles.previewFlex,
-              {color: colors.textSecondary},
+              {color: showBadge ? colors.textPrimary : colors.textSecondary},
             ]}>
             {preview}
           </Text>

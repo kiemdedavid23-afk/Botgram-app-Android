@@ -25,16 +25,18 @@ export function FolderTab({label, count, active, onPress}: Props): React.JSX.Ele
       <Text style={{color: labelColor, fontSize: cm.folderTabFont, fontWeight: weight}}>
         {label}
       </Text>
-      <View style={[styles.count, {backgroundColor: countBg}]}>
-        <Text
-          style={{
-            color: countColor,
-            fontSize: cm.folderCountSize,
-            fontWeight: fontWeight.semibold,
-          }}>
-          {count}
-        </Text>
-      </View>
+      {count > 0 ? (
+        <View style={[styles.count, {backgroundColor: countBg}]}>
+          <Text
+            style={{
+              color: countColor,
+              fontSize: cm.folderCountSize,
+              fontWeight: fontWeight.semibold,
+            }}>
+            {count}
+          </Text>
+        </View>
+      ) : null}
     </Pressable>
   );
 }
