@@ -25,6 +25,7 @@ import kotlin.math.sqrt
  *
  * JS : NativeModules.BotgramMediaTools
  *   videoInfo(path, id) -> {thumbUri, width, height, durationMs}
+ *   mediaDuration(path) -> durationMs (audio ou vidéo ; 0 si inconnue)
  *   waveform(path, id, bars) -> number[bars]  (0..100)   · rejette « waveform_failed » si illisible
  *   clearCaches()
  */
@@ -102,6 +103,26 @@ class MediaToolsModule(private val rc: ReactApplicationContext) : ReactContextBa
         max(1, (src.height * ratio).toInt()),
         true,
     )
+  }
+
+  @ReactMethod
+  fun mediaDuration(path: String, promise: Promise) {
+    executor.execute {
+      val retriever = MediaMetadataRetriever()
+      try {
+        retriever.setDataSource(localFile(path))
+        val ms =
+            retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()
+                ?: 0L
+        promise.resolve(ms.toDouble())
+      } catch (e: Exception) {
+        promise.reject("duration_failed", e.message ?: "Durée inconnue", e)
+      } finally {
+        try {
+          retriever.release()
+        } catch (_: Exception) {}
+      }
+    }
   }
 
   // ---------------------------------------------------------------- Forme d'onde
