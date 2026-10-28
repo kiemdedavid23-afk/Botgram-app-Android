@@ -43,7 +43,7 @@ export const conversationsMetrics = {
   foldersTrackPad: 3,
   /** .folder-tab */
   folderTabPadV: 7,
-  folderTabPadH: 14,
+  folderTabPadH: 11,
   folderTabRadius: 16,
   folderTabFont: 14,
   /** .folder-tab gap 6 — ConversationsPage.css .folder-tab gap: 6px */
@@ -53,6 +53,14 @@ export const conversationsMetrics = {
   folderCountMin: 18,
   /** .folder-tab__count padding 0 5px */
   folderCountPadH: 5,
+  /** pilule des dossiers (style Telegram) : conteneur blanc contour fin, défilement horizontal */
+  foldersPillRadius: 24,
+  foldersPillPad: 4,
+  foldersPillBorder: 1,
+  /** ligne « Échanges archivés » */
+  archiveIconSize: 26,
+  archiveCountMin: 22,
+  archiveRowPadV: 9,
   /** densité */
   densityTwoExtra: 0,
   densityThreeExtra: 4,
