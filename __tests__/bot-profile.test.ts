@@ -488,26 +488,22 @@ describe('L4c-5. lecture en erreur remonte loadError', () => {
     expect(useBotProfileStore.getState().draft).toBeNull();
   });
 
-  it('erreur sur menu -> loadError', async () => {
+  it('menu et droits ne sont plus lus à l\'ouverture : leur erreur ne bloque pas', async () => {
     mockProfileHttp({
       '/menu-button': fail(502, 'TELEGRAM_ERROR'),
-    });
-    const r = await useBotProfileStore
-      .getState()
-      .load('b1', {name: 'X'}, true);
-    expect(r).toBe('error');
-    expect(useBotProfileStore.getState().draft).toBeNull();
-  });
-
-  it('erreur sur rights groups -> loadError', async () => {
-    mockProfileHttp({
       '/default-admin-rights': fail(429, 'RATE_LIMITED'),
     });
     const r = await useBotProfileStore
       .getState()
       .load('b1', {name: 'X'}, true);
-    expect(r).toBe('error');
-    expect(useBotProfileStore.getState().draft).toBeNull();
+    expect(r).toBe('ok');
+    expect(useBotProfileStore.getState().draft).not.toBeNull();
+    const paths = mockHttp.mock.calls.map(c =>
+      String((c[0] as {path: string}).path),
+    );
+    expect(paths.some(p => p.includes('/menu-button'))).toBe(false);
+    expect(paths.some(p => p.includes('/default-admin-rights'))).toBe(false);
+    expect(paths.length).toBe(2);
   });
 });
 
