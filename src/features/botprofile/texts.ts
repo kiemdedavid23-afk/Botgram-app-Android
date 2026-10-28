@@ -17,6 +17,7 @@ export const texts = {
   infoSynced: 'Dernière synchronisation',
   infoResync: 'Resynchroniser',
   save: 'Enregistrer',
+  reportOk: 'Envoyé à Telegram',
   completeFull: 'Profil complet',
   missingPrefix: 'À compléter :',
   confirm: 'Confirmer',
