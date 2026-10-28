@@ -25,3 +25,18 @@ export const USAGES = [
   'éducation',
   'autre',
 ] as const;
+
+/** Emoji associé à chaque usage (écran Profil). */
+export const USAGE_EMOJI: Record<(typeof USAGES)[number], string> = {
+  boutique: '🛍️',
+  support: '🎧',
+  communauté: '👥',
+  contenu: '✍️',
+  éducation: '🎓',
+  autre: '✨',
+};
+
+/** Drapeau emoji à partir d'un code pays ISO (ex. 'BF' -> 🇧🇫). */
+export function flagEmoji(code: string): string {
+  return String.fromCodePoint(...[...code.toUpperCase()].map(c => 127397 + c.charCodeAt(0)));
+}
