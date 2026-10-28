@@ -56,6 +56,7 @@ export type VideoInfo = {
 
 type ToolsModule = {
   videoInfo(path: string, id: string): Promise<VideoInfo>;
+  mediaDuration(path: string): Promise<number>;
   waveform(path: string, id: string, bars: number): Promise<number[]>;
   clearCaches(): Promise<boolean>;
 };
@@ -173,6 +174,16 @@ export async function getVideoInfo(path: string, id: string): Promise<VideoInfo 
     return await toolsModule.videoInfo(path, id);
   } catch {
     return null;
+  }
+}
+
+/** Durée en ms d'un fichier audio/vidéo local (0 si inconnue). */
+export async function getMediaDuration(path: string): Promise<number> {
+  if (!toolsModule) return 0;
+  try {
+    return await toolsModule.mediaDuration(path);
+  } catch {
+    return 0;
   }
 }
 
