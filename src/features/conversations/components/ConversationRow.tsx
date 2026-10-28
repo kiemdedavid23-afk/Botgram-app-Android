@@ -8,7 +8,6 @@ import {stripPreview} from '../../../core/utils/stripPreview';
 import {formatConversationTime} from '../texts';
 import {conversationTitle} from '../store/conversationsStore';
 import type {ConversationSummary} from '../../../core/api/endpoints/conversations';
-import {conversationsTexts as ct} from '../texts';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {ConversationActionsSheet} from './ConversationActionsSheet';
 import {
