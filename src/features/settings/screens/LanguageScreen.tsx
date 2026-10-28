@@ -11,6 +11,11 @@ import {SettingsPage} from '../components/SettingsPage';
 
 type Props = {onBack: () => void};
 
+function Separator(): React.JSX.Element {
+  const {colors} = useTheme();
+  return <View style={[styles.sep, {backgroundColor: colors.borderSoft}]} />;
+}
+
 export function LanguageScreen({onBack}: Props): React.JSX.Element {
   const {colors, appearance, setAppearance} = useTheme();
 
@@ -25,9 +30,7 @@ export function LanguageScreen({onBack}: Props): React.JSX.Element {
               {t.languageHint}
             </Text>
           }
-          ItemSeparatorComponent={() => (
-            <View style={[styles.sep, {backgroundColor: colors.borderSoft}]} />
-          )}
+          ItemSeparatorComponent={Separator}
           renderItem={({item}) => {
             const active = appearance.uiLanguage === item.code;
             return (
