@@ -1,11 +1,12 @@
 import React, {useState} from 'react';
-import {View, Text, TextInput, Pressable, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Modal} from 'react-native';
-import {authColors, authMetrics} from '../../../shared/theme/authColors';
+import {View, Text, TextInput, Pressable, StyleSheet, ScrollView, Modal} from 'react-native';
+import {ChevronDown} from 'lucide-react-native';
+import {authColors, authMetrics, authUi, welcomeMetrics} from '../../../shared/theme/authColors';
 import {texts} from '../texts';
-import {COUNTRIES, USAGES} from '../data/lists';
+import {COUNTRIES, USAGES, USAGE_EMOJI, flagEmoji} from '../data/lists';
 import {verifyCode} from '../../../core/api/endpoints/auth';
 import {useAuthStore} from '../store/authStore';
-import {AuthHeader} from '../components/AuthHeader';
+import {AuthLightScaffold} from '../components/AuthLightScaffold';
 
 type Props = {email: string; code: string; onSuccess: () => void; onBack: () => void};
 
@@ -23,6 +24,36 @@ function fieldMessage(reason: string): string {
   }
 }
 
+const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
+
+type FieldProps = {
+  emoji: string;
+  label: string;
+  hint?: string;
+  focused?: boolean;
+  error?: string;
+  children: React.ReactNode;
+};
+
+/** Champ : libellé au-dessus, pastille emoji à gauche, bordure qui s'active au focus. */
+function Field({emoji, label, hint, focused, error, children}: FieldProps): React.JSX.Element {
+  return (
+    <View style={styles.group}>
+      <Text style={styles.label}>
+        {label}
+        {hint ? <Text style={styles.labelHint}> · {hint}</Text> : null}
+      </Text>
+      <View style={[styles.row, focused ? styles.rowFocused : null, error ? styles.rowError : null]}>
+        <View style={styles.bubble}>
+          <Text style={styles.bubbleEmoji}>{emoji}</Text>
+        </View>
+        {children}
+      </View>
+      {error ? <Text style={styles.fieldError}>⚠️ {error}</Text> : null}
+    </View>
+  );
+}
+
 export function ProfileScreen({email, code, onSuccess, onBack}: Props): React.JSX.Element {
   const [displayName, setDisplayName] = useState('');
   const [country, setCountry] = useState('BF');
@@ -32,7 +63,8 @@ export function ProfileScreen({email, code, onSuccess, onBack}: Props): React.JS
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [fields, setFields] = useState<Record<string, string>>({});
-  const [picker, setPicker] = useState<'country' | 'usage' | null>(null);
+  const [countryOpen, setCountryOpen] = useState(false);
+  const [focus, setFocus] = useState<'name' | 'phone' | 'org' | null>(null);
   const completeVerify = useAuthStore(s => s.completeVerify);
   const setPendingCode = useAuthStore(s => s.setPendingCode);
 
@@ -69,114 +101,261 @@ export function ProfileScreen({email, code, onSuccess, onBack}: Props): React.JS
     }
   };
 
-  const countryName = COUNTRIES.find(c => c.code === country)?.name ?? country;
+  const current = COUNTRIES.find(c => c.code === country);
+  const countryName = current?.name ?? country;
+  const dial = current?.dial ?? '226';
 
   return (
-    <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <AuthHeader title={texts.profileTitle} onBack={onBack} />
-      <ScrollView contentContainerStyle={styles.body}>
+    <AuthLightScaffold step={3} onBack={onBack}>
+      <View style={styles.badge}>
+        <Text style={styles.badgeEmoji}>🎉</Text>
+      </View>
+      <Text style={styles.title} accessibilityRole="header">
+        {texts.profileHeadline}
+      </Text>
+      <Text style={styles.sub}>{texts.profileSub}</Text>
+
+      <Field
+        emoji="👤"
+        label={texts.displayName}
+        focused={focus === 'name'}
+        error={fields.display_name}>
         <TextInput
-          style={styles.field}
+          style={styles.input}
           value={displayName}
           onChangeText={setDisplayName}
-          placeholder={texts.displayName}
+          placeholder={texts.displayNameHint}
           placeholderTextColor={authColors.textMuted}
+          selectionColor={authColors.accent}
+          autoCapitalize="words"
           maxLength={80}
+          onFocus={() => setFocus('name')}
+          onBlur={() => setFocus(null)}
         />
-        {fields.display_name ? <Text style={styles.fieldError}>{fields.display_name}</Text> : null}
+      </Field>
 
-        <Pressable style={styles.field} onPress={() => setPicker('country')}>
-          <Text style={styles.fieldValue}>{countryName}</Text>
+      <Field emoji="🌍" label={texts.country}>
+        <Pressable style={styles.select} onPress={() => setCountryOpen(true)} accessibilityRole="button">
+          <Text style={styles.selectText}>
+            {flagEmoji(country)}  {countryName}
+          </Text>
+          <ChevronDown size={20} color={authColors.textMuted} />
         </Pressable>
+      </Field>
 
-        <Pressable style={styles.field} onPress={() => setPicker('usage')}>
-          <Text style={styles.fieldValue}>{usage}</Text>
-        </Pressable>
+      <View style={styles.group}>
+        <Text style={styles.label}>🎯 {texts.usageQuestion}</Text>
+        <View style={styles.chips}>
+          {USAGES.map(u => {
+            const on = u === usage;
+            return (
+              <Pressable
+                key={u}
+                onPress={() => setUsage(u)}
+                style={[styles.chip, on ? styles.chipOn : null]}
+                accessibilityRole="button"
+                accessibilityState={{selected: on}}>
+                <Text style={[styles.chipText, on ? styles.chipTextOn : null]}>
+                  {USAGE_EMOJI[u]} {cap(u)}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
 
+      <Field emoji="📱" label={texts.phone} focused={focus === 'phone'} error={fields.phone}>
+        <View style={styles.dial}>
+          <Text style={styles.dialText}>+{dial}</Text>
+        </View>
         <TextInput
-          style={styles.field}
+          style={styles.input}
           value={phone}
           onChangeText={setPhone}
-          placeholder={texts.phone}
+          placeholder="70 00 00 00"
           placeholderTextColor={authColors.textMuted}
+          selectionColor={authColors.accent}
           keyboardType="phone-pad"
+          onFocus={() => setFocus('phone')}
+          onBlur={() => setFocus(null)}
         />
-        {fields.phone ? <Text style={styles.fieldError}>{fields.phone}</Text> : null}
+      </Field>
 
+      <Field
+        emoji="🏢"
+        label={texts.organizationLabel}
+        hint={texts.optional}
+        focused={focus === 'org'}>
         <TextInput
-          style={styles.field}
+          style={styles.input}
           value={organization}
           onChangeText={setOrganization}
-          placeholder={texts.organization}
+          placeholder="Ma boutique, mon école…"
           placeholderTextColor={authColors.textMuted}
+          selectionColor={authColors.accent}
           maxLength={80}
+          onFocus={() => setFocus('org')}
+          onBlur={() => setFocus(null)}
         />
+      </Field>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Pressable style={[styles.btn, busy ? styles.btnDisabled : null]} onPress={submit} disabled={busy}>
-          <Text style={styles.btnText}>{texts.finish}</Text>
-        </Pressable>
-      </ScrollView>
+      {error ? (
+        <View style={styles.errorBox}>
+          <Text style={styles.error}>⚠️ {error}</Text>
+        </View>
+      ) : null}
 
-      <Modal visible={picker !== null} transparent animationType="slide">
+      <Pressable
+        style={[styles.btn, busy ? styles.btnDisabled : null]}
+        onPress={submit}
+        disabled={busy}
+        accessibilityRole="button">
+        <Text style={styles.btnText}>{busy ? texts.finishBusy : `${texts.finish} 🚀`}</Text>
+      </Pressable>
+
+      <Modal visible={countryOpen} transparent animationType="slide" onRequestClose={() => setCountryOpen(false)}>
         <View style={styles.sheet}>
           <View style={styles.sheetCard}>
-            <Text style={styles.sheetTitle}>{picker === 'country' ? texts.country : texts.usage}</Text>
+            <Text style={styles.sheetTitle}>🌍 {texts.country}</Text>
             <ScrollView style={styles.pickerScroll}>
-              {(picker === 'country' ? COUNTRIES.map(c => c.code) : [...USAGES]).map(item => (
+              {COUNTRIES.map(c => (
                 <Pressable
-                  key={item}
+                  key={c.code}
                   style={styles.sheetItem}
                   onPress={() => {
-                    if (picker === 'country') setCountry(item);
-                    else setUsage(item as (typeof USAGES)[number]);
-                    setPicker(null);
+                    setCountry(c.code);
+                    setCountryOpen(false);
                   }}>
-                  <Text style={styles.pickerItemText}>
-                    {picker === 'country' ? COUNTRIES.find(c => c.code === item)?.name : item}
+                  <Text style={[styles.pickerItemText, c.code === country ? styles.pickerItemOn : null]}>
+                    {flagEmoji(c.code)}  {c.name}
                   </Text>
                 </Pressable>
               ))}
             </ScrollView>
-            <Pressable style={styles.sheetClose} onPress={() => setPicker(null)}>
+            <Pressable style={styles.sheetClose} onPress={() => setCountryOpen(false)}>
               <Text style={styles.pickerClose}>Fermer</Text>
             </Pressable>
           </View>
         </View>
       </Modal>
-    </KeyboardAvoidingView>
+    </AuthLightScaffold>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {flex: 1, backgroundColor: authColors.bg},
-  body: {paddingHorizontal: authMetrics.bodyPaddingH, paddingTop: 8, paddingBottom: 48},
-  field: {
-    borderBottomWidth: 1,
-    borderBottomColor: authColors.border,
-    paddingVertical: authMetrics.fieldPaddingV,
-    paddingHorizontal: authMetrics.fieldPaddingH,
+  badge: {
+    alignSelf: 'center',
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: authUi.accentSoft,
+    borderWidth: 1,
+    borderColor: authUi.accentBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  badgeEmoji: {fontSize: 34},
+  title: {textAlign: 'center', fontSize: 26, fontWeight: '700', color: authColors.text, marginBottom: 6},
+  sub: {
+    textAlign: 'center',
+    color: authColors.textMuted,
+    fontSize: authMetrics.helpSize,
+    lineHeight: 21,
+    marginBottom: 20,
+    paddingHorizontal: 8,
+  },
+  group: {marginBottom: 14},
+  label: {fontSize: 14, fontWeight: '600', color: authUi.label, marginBottom: 6, marginLeft: 2},
+  labelHint: {fontWeight: '400', color: authColors.textMuted},
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: authUi.surface,
+    borderWidth: 1.5,
+    borderColor: authUi.surfaceBorder,
+    borderRadius: 16,
+    paddingHorizontal: 8,
+    minHeight: 54,
+  },
+  rowFocused: {borderColor: authColors.accent, backgroundColor: authColors.white},
+  rowError: {borderColor: authColors.danger, backgroundColor: authUi.dangerSoft},
+  bubble: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: authUi.accentSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  bubbleEmoji: {fontSize: 18},
+  input: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingRight: 8,
     fontSize: authMetrics.fieldFontSize,
     color: authColors.text,
-    marginTop: 8,
   },
-  fieldError: {color: authColors.danger, fontSize: 13, marginTop: 4},
-  error: {color: authColors.danger, marginTop: 16, textAlign: 'center'},
-  btn: {marginTop: 32, alignSelf: 'center', backgroundColor: authColors.accent, paddingHorizontal: 32, paddingVertical: 12, borderRadius: 20},
-  btnText: {color: authColors.white, fontWeight: '600'},
+  select: {flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingRight: 8},
+  selectText: {fontSize: authMetrics.fieldFontSize, color: authColors.text},
+  dial: {
+    backgroundColor: authUi.accentSoft,
+    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    marginRight: 8,
+  },
+  dialText: {color: authUi.accentStrong, fontWeight: '700', fontSize: 15},
+  fieldError: {color: authColors.danger, fontSize: 13, marginTop: 5, marginLeft: 4},
+  chips: {flexDirection: 'row', flexWrap: 'wrap', gap: 8},
+  chip: {
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    backgroundColor: authUi.surface,
+    borderWidth: 1.5,
+    borderColor: authUi.surfaceBorder,
+  },
+  chipOn: {backgroundColor: authColors.accent, borderColor: authColors.accent},
+  chipText: {fontSize: 15, color: authUi.label, fontWeight: '500'},
+  chipTextOn: {color: authColors.white, fontWeight: '700'},
+  errorBox: {
+    backgroundColor: authUi.dangerSoft,
+    borderWidth: 1,
+    borderColor: authUi.dangerBorder,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 4,
+  },
+  error: {color: authColors.danger, textAlign: 'center', fontSize: 14},
+  btn: {
+    marginTop: 14,
+    height: welcomeMetrics.buttonHeight,
+    borderRadius: welcomeMetrics.buttonRadius,
+    backgroundColor: authColors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: authColors.fabShadow,
+    shadowOpacity: 1,
+    shadowRadius: 14,
+    shadowOffset: {width: 0, height: 4},
+    elevation: 4,
+  },
+  btnText: {color: authColors.white, fontWeight: '700', fontSize: welcomeMetrics.buttonFontSize},
+  // opacity 0.6 — busy (Auth.css)
+  btnDisabled: {opacity: 0.6},
   sheet: {flex: 1, backgroundColor: authColors.sheetOverlay, justifyContent: 'flex-end'},
   sheetCard: {backgroundColor: authColors.sheetBg, borderTopLeftRadius: authMetrics.sheetRadius, borderTopRightRadius: authMetrics.sheetRadius, padding: 18},
   sheetTitle: {fontSize: 18, fontWeight: '600', textAlign: 'center', marginBottom: 12, color: authColors.text},
   sheetItem: {paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: authColors.border},
   sheetClose: {marginTop: 12, padding: authMetrics.sheetButtonPadding, backgroundColor: authColors.sheetButton, borderRadius: authMetrics.sheetButtonRadius, alignItems: 'center'},
-  // opacity 0.6 — busy (Auth.css)
-  btnDisabled: {opacity: 0.6},
-  // maxHeight 360 — liste pays/usages (Auth.css sheet)
+  // maxHeight 360 — liste pays (Auth.css sheet)
   pickerScroll: {maxHeight: 360},
   // fontSize 17 = authMetrics.fieldFontSize (Auth.css)
   pickerItemText: {fontSize: 17, color: authColors.text},
+  pickerItemOn: {color: authColors.accent, fontWeight: '700'},
   // fontWeight 600 — bouton Fermer sheet (Auth.css / Design tokens §4)
   pickerClose: {color: authColors.accent, fontWeight: '600'},
-  // fieldFontSize 17 — Auth.css champ (authMetrics.fieldFontSize)
-  fieldValue: {fontSize: authMetrics.fieldFontSize, color: authColors.text},
 });

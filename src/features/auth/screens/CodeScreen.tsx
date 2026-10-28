@@ -1,11 +1,13 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
-import {View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform} from 'react-native';
-import {authColors, authMetrics} from '../../../shared/theme/authColors';
+import {View, Text, TextInput, Pressable, StyleSheet, AppState} from 'react-native';
+import Clipboard from '@react-native-clipboard/clipboard';
+import {authColors, authMetrics, authUi, welcomeMetrics} from '../../../shared/theme/authColors';
 import {texts} from '../texts';
 import {verifyCode, requestCode} from '../../../core/api/endpoints/auth';
 import {useAuthStore} from '../store/authStore';
-import {AuthHeader} from '../components/AuthHeader';
+import {AuthLightScaffold} from '../components/AuthLightScaffold';
+import {mailTargetFor, openMailApp} from '../utils/openMailApp';
 
 type Props = {
   email: string;
@@ -15,14 +17,20 @@ type Props = {
   onBack: () => void;
 };
 
+const EMPTY = ['', '', '', '', '', ''];
+
 export function CodeScreen({email, expiresIn, onNeedsProfile, onSuccess, onBack}: Props): React.JSX.Element {
-  const [digits, setDigits] = useState(['', '', '', '', '', '']);
+  const [digits, setDigits] = useState(EMPTY);
   const [left, setLeft] = useState(expiresIn);
   const [resendLeft, setResendLeft] = useState(30);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [focused, setFocused] = useState(false);
+  const inputRef = useRef<TextInput>(null);
+  const wentToMail = useRef(false);
   const completeVerify = useAuthStore(s => s.completeVerify);
   const setPendingCode = useAuthStore(s => s.setPendingCode);
+  const mail = mailTargetFor(email);
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -35,15 +43,18 @@ export function CodeScreen({email, expiresIn, onNeedsProfile, onSuccess, onBack}
   const code = digits.join('');
   const expired = left === 0;
 
-  const submit = async () => {
-    if (busy || code.length !== 6 || expired) return;
+  // `codeArg` : code saisi à l'instant (le state n'est pas encore à jour quand on valide
+  // automatiquement au 6e chiffre ou après un collage).
+  const submit = async (codeArg?: string) => {
+    const c = codeArg ?? code;
+    if (busy || c.length !== 6 || expired) return;
     setBusy(true);
     setError('');
-    const res = await verifyCode({email, code});
+    const res = await verifyCode({email, code: c});
     setBusy(false);
     if (res.ok) {
       if ('needs_profile' in res.data) {
-        setPendingCode(code);
+        setPendingCode(c);
         onNeedsProfile();
       } else {
         await completeVerify(res.data);
@@ -64,6 +75,51 @@ export function CodeScreen({email, expiresIn, onNeedsProfile, onSuccess, onBack}
     }
   };
 
+  const applyCode = (raw: string) => {
+    const clean = raw.replace(/\D/g, '').slice(0, 6);
+    const next = [...EMPTY];
+    for (let i = 0; i < clean.length; i += 1) next[i] = clean[i] ?? '';
+    setDigits(next);
+    setError('');
+    if (clean.length === 6 && !expired) fireAndForget(submit(clean));
+  };
+
+  // Dernière version de applyCode, pour l'écouteur AppState (enregistré une seule fois).
+  const applyRef = useRef(applyCode);
+  applyRef.current = applyCode;
+
+  const pasteFromClipboard = async (silent: boolean) => {
+    try {
+      const text = await Clipboard.getString();
+      const m = /(?:^|\D)(\d{6})(?:\D|$)/.exec(text);
+      if (m?.[1]) {
+        applyRef.current(m[1]);
+        return;
+      }
+    } catch {
+      // presse-papiers indisponible : on affiche le message ci-dessous
+    }
+    if (!silent) setError(texts.noCodeInClipboard);
+  };
+
+  // Retour depuis la messagerie : si un code à 6 chiffres vient d'être copié, on le saisit.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', state => {
+      if (state === 'active' && wentToMail.current) {
+        wentToMail.current = false;
+        fireAndForget(pasteFromClipboard(true));
+      }
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const openMail = async () => {
+    wentToMail.current = true;
+    const ok = await openMailApp(email);
+    if (!ok) wentToMail.current = false;
+  };
+
   const resend = async () => {
     if (resendLeft > 0 || busy) return;
     setBusy(true);
@@ -72,7 +128,7 @@ export function CodeScreen({email, expiresIn, onNeedsProfile, onSuccess, onBack}
     if (res.ok) {
       setLeft(res.data.expires_in);
       setResendLeft(30);
-      setDigits(['', '', '', '', '', '']);
+      setDigits(EMPTY);
       setError('');
     } else if (res.error.code === 'RATE_LIMITED') {
       const wait = res.headers.get('retry-after');
@@ -82,77 +138,227 @@ export function CodeScreen({email, expiresIn, onNeedsProfile, onSuccess, onBack}
     }
   };
 
+  const urgent = !expired && left <= 60;
+  const activeIndex = Math.min(code.length, 5);
+  const verifyDisabled = busy || expired || code.length !== 6;
+
   return (
-    <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <AuthHeader title={texts.codeTitle} onBack={onBack} />
-      <View style={styles.body}>
-        <Text style={styles.help}>{email}</Text>
-        <Text style={styles.timer}>{expired ? 'Code expiré' : texts.expiresIn(left)}</Text>
-        <View style={styles.boxes}>
-          {digits.map((d, i) => (
-            <View key={i} style={styles.box}>
-              <Text style={styles.digit}>{d}</Text>
-            </View>
-          ))}
+    <AuthLightScaffold step={2} onBack={onBack}>
+      <View style={styles.badge}>
+        <Text style={styles.badgeEmoji}>📬</Text>
+      </View>
+      <Text style={styles.title} accessibilityRole="header">
+        {texts.codeHeadline}
+      </Text>
+      <Text style={styles.sub}>{texts.codeSentTo}</Text>
+
+      <View style={styles.emailCard}>
+        <Text style={styles.emailIcon}>✉️</Text>
+        <Text style={styles.emailText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+          {email}
+        </Text>
+      </View>
+      <Pressable onPress={onBack} hitSlop={8} accessibilityRole="button">
+        <Text style={styles.wrong}>
+          {texts.codeWrongEmail} <Text style={styles.wrongLink}>{texts.codeChangeEmail}</Text>
+        </Text>
+      </Pressable>
+
+      <View
+        style={[
+          styles.timer,
+          expired ? styles.timerExpired : urgent ? styles.timerUrgent : null,
+        ]}>
+        <Text
+          style={[
+            styles.timerText,
+            expired || urgent ? styles.timerTextAlert : null,
+          ]}>
+          {expired ? `⌛ ${texts.codeExpiredChip}` : `⏳ ${texts.expiresIn(left)}`}
+        </Text>
+      </View>
+
+      <Pressable style={styles.boxes} onPress={() => inputRef.current?.focus()}>
+        {digits.map((d, i) => (
+          <View
+            key={i}
+            style={[
+              styles.box,
+              d ? styles.boxFilled : null,
+              focused && i === activeIndex ? styles.boxActive : null,
+            ]}>
+            <Text style={styles.digit}>{d}</Text>
+          </View>
+        ))}
+      </Pressable>
+      <TextInput
+        ref={inputRef}
+        style={styles.hidden}
+        value={code}
+        onChangeText={applyCode}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        keyboardType="number-pad"
+        autoComplete="one-time-code"
+        textContentType="oneTimeCode"
+        maxLength={6}
+        autoFocus
+        caretHidden
+      />
+
+      {error ? (
+        <View style={styles.errorBox}>
+          <Text style={styles.error}>⚠️ {error}</Text>
         </View>
-        <TextInput
-          style={styles.hidden}
-          value={code}
-          onChangeText={t => {
-            const clean = t.replace(/\D/g, '').slice(0, 6);
-            const next = ['', '', '', '', '', ''];
-            for (let i = 0; i < clean.length; i += 1) next[i] = clean[i] ?? '';
-            setDigits(next);
-            if (clean.length === 6 && !expired) fireAndForget(submit());
-          }}
-          keyboardType="number-pad"
-          autoComplete="one-time-code"
-          maxLength={6}
-          autoFocus
-        />
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Pressable
-          style={[styles.btn, busy || expired || code.length !== 6 ? styles.btnDisabled : null]}
-          onPress={submit}
-          disabled={busy || expired || code.length !== 6}>
-          <Text style={styles.btnText}>{texts.verify}</Text>
+      ) : null}
+
+      <Pressable
+        style={[styles.btn, verifyDisabled ? styles.btnDisabled : null]}
+        onPress={() => fireAndForget(submit())}
+        disabled={verifyDisabled}
+        accessibilityRole="button">
+        <Text style={styles.btnText}>{texts.verify} ✅</Text>
+      </Pressable>
+
+      <View style={styles.actions}>
+        <Pressable style={styles.action} onPress={() => fireAndForget(openMail())} accessibilityRole="button">
+          <Text style={styles.actionText}>📬 {mail.label}</Text>
         </Pressable>
         <Pressable
-          style={[styles.resend, resendLeft > 0 ? styles.resendDisabled : null]}
-          onPress={resend}
-          disabled={resendLeft > 0 || busy}>
-          <Text style={styles.resendText}>
-            {resendLeft > 0 ? texts.resendIn(resendLeft) : texts.resend}
-          </Text>
+          style={styles.action}
+          onPress={() => fireAndForget(pasteFromClipboard(false))}
+          accessibilityRole="button">
+          <Text style={styles.actionText}>📋 {texts.pasteCode}</Text>
         </Pressable>
       </View>
-    </KeyboardAvoidingView>
+
+      <Text style={styles.tip}>💡 {texts.codeSpamTip}</Text>
+
+      <Pressable
+        style={[styles.resend, resendLeft > 0 ? styles.resendDisabled : null]}
+        onPress={() => fireAndForget(resend())}
+        disabled={resendLeft > 0 || busy}>
+        <Text style={styles.resendText}>
+          {resendLeft > 0 ? texts.resendIn(resendLeft) : `🔄 ${texts.resend}`}
+        </Text>
+      </Pressable>
+    </AuthLightScaffold>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {flex: 1, backgroundColor: authColors.bg},
-  body: {flex: 1, paddingHorizontal: authMetrics.bodyPaddingH, paddingTop: 16, alignItems: 'center'},
-  help: {color: authColors.textMuted, fontSize: authMetrics.helpSize, marginBottom: 8},
-  timer: {color: authColors.textMuted, marginBottom: 24},
-  boxes: {flexDirection: 'row', gap: authMetrics.codeGap},
+  badge: {
+    alignSelf: 'center',
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: authUi.accentSoft,
+    borderWidth: 1,
+    borderColor: authUi.accentBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  badgeEmoji: {fontSize: 36},
+  title: {
+    textAlign: 'center',
+    fontSize: 26,
+    fontWeight: '700',
+    color: authColors.text,
+    marginBottom: 6,
+  },
+  sub: {textAlign: 'center', color: authColors.textMuted, fontSize: authMetrics.helpSize, marginBottom: 14},
+  emailCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    maxWidth: '100%',
+    gap: 10,
+    backgroundColor: authUi.accentSoft,
+    borderWidth: 1.5,
+    borderColor: authUi.accentBorder,
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    shadowColor: authColors.fabShadow,
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    shadowOffset: {width: 0, height: 4},
+    elevation: 2,
+  },
+  emailIcon: {fontSize: 22},
+  emailText: {flexShrink: 1, fontSize: 18, fontWeight: '700', color: authUi.accentStrong},
+  wrong: {textAlign: 'center', color: authColors.textMuted, fontSize: 14, marginTop: 10},
+  wrongLink: {color: authColors.accent, fontWeight: '600'},
+  timer: {
+    alignSelf: 'center',
+    backgroundColor: authUi.surface,
+    borderRadius: 14,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    marginTop: 18,
+    marginBottom: 20,
+  },
+  timerUrgent: {backgroundColor: authUi.warnSoft},
+  timerExpired: {backgroundColor: authUi.dangerSoft},
+  timerText: {color: authUi.label, fontSize: 14, fontWeight: '500'},
+  timerTextAlert: {color: authUi.warn, fontWeight: '600'},
+  boxes: {flexDirection: 'row', justifyContent: 'center', gap: authMetrics.codeGap},
   box: {
     width: authMetrics.codeBoxWidth,
-    height: authMetrics.codeBoxHeight,
-    borderBottomWidth: authMetrics.codeBorderWidth,
-    borderBottomColor: authColors.codeBorder,
+    height: authMetrics.codeBoxHeight + 8,
+    borderRadius: 12,
+    backgroundColor: authUi.surface,
+    borderWidth: 1.5,
+    borderColor: authUi.surfaceBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  digit: {fontSize: authMetrics.codeFontSize, color: authColors.text, fontWeight: '600'},
+  boxFilled: {backgroundColor: authUi.accentSoft, borderColor: authUi.accentBorder},
+  boxActive: {borderColor: authColors.accent, backgroundColor: authColors.white},
+  digit: {fontSize: authMetrics.codeFontSize, color: authColors.text, fontWeight: '700'},
   hidden: {position: 'absolute', opacity: 0, height: 1, width: 1},
-  error: {color: authColors.danger, marginTop: 16, textAlign: 'center'},
-  btn: {marginTop: 32, backgroundColor: authColors.accent, paddingHorizontal: 32, paddingVertical: 12, borderRadius: 20},
-  btnText: {color: authColors.white, fontWeight: '600'},
+  errorBox: {
+    backgroundColor: authUi.dangerSoft,
+    borderWidth: 1,
+    borderColor: authUi.dangerBorder,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginTop: 16,
+  },
+  error: {color: authColors.danger, textAlign: 'center', fontSize: 14},
+  btn: {
+    marginTop: 24,
+    height: welcomeMetrics.buttonHeight,
+    borderRadius: welcomeMetrics.buttonRadius,
+    backgroundColor: authColors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: authColors.fabShadow,
+    shadowOpacity: 1,
+    shadowRadius: 14,
+    shadowOffset: {width: 0, height: 4},
+    elevation: 4,
+  },
+  btnText: {color: authColors.white, fontWeight: '700', fontSize: welcomeMetrics.buttonFontSize},
   // opacity 0.5 — état désactivé (Auth.css bouton verify disabled)
   btnDisabled: {opacity: 0.5},
-  // marginTop 20 — espacement sous le bouton (Auth.css resend)
-  resend: {marginTop: 20},
+  actions: {flexDirection: 'row', gap: 10, marginTop: 14},
+  action: {
+    flex: 1,
+    height: 46,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: authUi.accentBorder,
+    backgroundColor: authColors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  actionText: {color: authUi.accentStrong, fontWeight: '600', fontSize: 14},
+  tip: {textAlign: 'center', color: authColors.textMuted, fontSize: 13, marginTop: 14},
+  resend: {marginTop: 14, alignSelf: 'center', paddingVertical: 6},
   resendDisabled: {opacity: 0.5},
-  resendText: {color: authColors.accent, textAlign: 'center'},
+  resendText: {color: authColors.accent, textAlign: 'center', fontWeight: '600'},
 });
