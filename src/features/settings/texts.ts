@@ -100,6 +100,8 @@ export const settingsTexts = {
   permissionsTitle: 'Permissions',
   permNotifications: 'Notifications',
   permNotificationsSub: 'Alertes pour les nouveaux messages',
+  permMicrophone: 'Micro',
+  permMicrophoneSub: 'Enregistrer et envoyer des messages vocaux',
   permAllow: 'Autoriser',
   permOpenSettings: 'Ouvrir les réglages système',
   permStatusGranted: 'Autorisée',
