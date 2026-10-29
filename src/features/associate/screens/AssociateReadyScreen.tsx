@@ -8,11 +8,17 @@ import {useTheme, associateMetrics as m} from '../../../shared/theme';
 import {AssociateShell} from '../components/AssociateShell';
 import {texts} from '../texts';
 
-type Props = {onNext: () => void; onBack: () => void};
+type Props = {
+  onNext: () => void;
+  onBack: () => void;
+  /** Ouvre le guide sur la section « Récupérer votre jeton ». */
+  onOpenGuide: () => void;
+};
 
 export function AssociateReadyScreen({
   onNext,
   onBack,
+  onOpenGuide,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
 
@@ -32,9 +38,15 @@ export function AssociateReadyScreen({
         <Text style={[styles.body, {color: colors.textSecondary}]}>
           {texts.readyBody}
         </Text>
-        <Text style={[styles.link, {color: colors.accent}]}>
-          {texts.readyGuide}
-        </Text>
+        <Pressable
+          accessibilityRole="link"
+          onPress={onOpenGuide}
+          hitSlop={8}
+          style={styles.linkBtn}>
+          <Text style={[styles.link, {color: colors.accent}]}>
+            {texts.readyGuide}
+          </Text>
+        </Pressable>
       </View>
       <Pressable
         onPress={onNext}
@@ -64,6 +76,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {fontSize: m.cardTitleSize, fontWeight: m.cardTitleWeight},
   body: {fontSize: m.cardTextSize, lineHeight: m.cardTextLine},
+  linkBtn: {alignSelf: 'flex-start'},
   link: {fontSize: m.linkFont, fontWeight: m.weight500},
   btn: {
     borderRadius: m.btnRadius,
