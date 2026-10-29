@@ -36,6 +36,9 @@ type Props = {
   size?: number | null;
   /** Cellule d'album : demi-largeur de bulle. */
   compact?: boolean;
+  /** Cellule de mosaïque : dimensions imposées. */
+  forceWidth?: number;
+  forceHeight?: number;
 };
 
 function formatDuration(ms: number): string {
@@ -50,7 +53,14 @@ function sizeLabel(size?: number | null): string {
   return size >= 1024 * 1024 ? t.mediaSizeMb(size) : t.mediaSizeKb(size);
 }
 
-export function MediaVideo({messageId, kind, size, compact}: Props): React.JSX.Element {
+export function MediaVideo({
+  messageId,
+  kind,
+  size,
+  compact,
+  forceWidth,
+  forceHeight,
+}: Props): React.JSX.Element {
   const {colors} = useTheme();
   const {width: screenW} = useWindowDimensions();
   const isGif = kind === 'animation';
@@ -99,10 +109,11 @@ export function MediaVideo({messageId, kind, size, compact}: Props): React.JSX.E
     : info && info.width > 0 && info.height > 0
       ? Math.min(2, Math.max(0.5, info.width / info.height))
       : 16 / 9;
+  const forced = forceWidth !== undefined && forceHeight !== undefined;
   const boxStyle = {
-    width: boxW,
-    height: Math.round(boxW / ratio),
-    borderRadius: isRound ? boxW / 2 : tm.mediaPhotoRadius,
+    width: forced ? forceWidth : boxW,
+    height: forced ? forceHeight : Math.round(boxW / ratio),
+    borderRadius: forced ? 0 : isRound ? boxW / 2 : tm.mediaPhotoRadius,
   };
 
   const onPressPlay = useCallback(() => {

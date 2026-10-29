@@ -1,5 +1,6 @@
 /**
- * Photo dans une bulle — auto DL si size <= 2 Mo, sinon bouton.
+ * Photo dans une bulle — proportions réelles respectées (pas de recadrage),
+ * auto DL si size <= 2 Mo, sinon bouton.
  */
 import React, {useEffect, useRef, useState, useCallback} from 'react';
 import {
@@ -28,12 +29,20 @@ type Props = {
   messageId: string;
   size?: number | null;
   caption?: string | null;
+  /** Cellule d'album : dimensions imposées. */
+  fixedWidth?: number;
+  fixedHeight?: number;
+  /** Rayon des coins (0 dans un album). */
+  radius?: number;
 };
 
 export function MediaPhoto({
   messageId,
   size,
   caption,
+  fixedWidth,
+  fixedHeight,
+  radius,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
   const {width, height} = useWindowDimensions();
@@ -43,6 +52,7 @@ export function MediaPhoto({
   const [full, setFull] = useState(false);
   const [needTap, setNeedTap] = useState(false);
   const alive = useRef(true);
+  const [natural, setNatural] = useState<{w: number; h: number} | null>(null);
 
   // Visionneuse native (zoom, glisser entre les photos, enregistrer, partager).
   // Si elle n'est pas disponible, on garde l'ancien affichage plein écran.
@@ -121,6 +131,44 @@ export function MediaPhoto({
     };
   }, [bootstrap]);
 
+  // Dimensions réelles de l'image, pour une bulle à ses proportions.
+  useEffect(() => {
+    if (!uri || fixedWidth !== undefined) return undefined;
+    Image.getSize(
+      uri,
+      (w, h) => {
+        if (alive.current && w > 0 && h > 0) setNatural({w, h});
+      },
+      () => {},
+    );
+    return undefined;
+  }, [uri, fixedWidth]);
+
+  const maxW = Math.min(
+    Math.round(width * tm.bubbleMaxWidthPct) - 2 * tm.mediaBubblePad,
+    tm.mediaMaxWidth,
+  );
+  let boxW: number;
+  let boxH: number;
+  if (fixedWidth !== undefined && fixedHeight !== undefined) {
+    boxW = fixedWidth;
+    boxH = fixedHeight;
+  } else if (natural) {
+    const ratio = natural.w / natural.h;
+    boxW = maxW;
+    boxH = Math.round(boxW / ratio);
+    if (boxH > tm.mediaMaxHeight) {
+      boxH = tm.mediaMaxHeight;
+      boxW = Math.max(tm.mediaMinWidth, Math.round(boxH * ratio));
+    }
+    boxH = Math.max(boxH, tm.mediaMinHeight);
+  } else {
+    boxW = Math.round(maxW * 0.7);
+    boxH = Math.round(boxW * 0.75);
+  }
+  const corner = radius ?? tm.mediaPhotoRadius;
+  const boxStyle = {width: boxW, height: boxH};
+
   const sizeLabel =
     size && size >= 1024 * 1024
       ? t.mediaSizeMb(size)
@@ -129,9 +177,9 @@ export function MediaPhoto({
         : '';
 
   return (
-    <View>
+    <View style={{width: boxW}}>
       {loading ? (
-        <View style={styles.box}>
+        <View style={[styles.box, boxStyle]}>
           <ActivityIndicator color={colors.accent} />
           <Text style={{color: colors.textHint}}>{t.mediaLoading}</Text>
         </View>
@@ -139,7 +187,7 @@ export function MediaPhoto({
       {needTap ? (
         <Pressable
           onPress={() => fireAndForget(runDownload())}
-          style={styles.box}>
+          style={[styles.box, boxStyle]}>
           <Text style={{color: colors.accent}}>
             {t.mediaDownload(sizeLabel)}
           </Text>
@@ -148,7 +196,7 @@ export function MediaPhoto({
       {error ? (
         <Pressable
           onPress={() => fireAndForget(runDownload())}
-          style={styles.box}>
+          style={[styles.box, boxStyle]}>
           <Text style={{color: colors.danger}}>{error}</Text>
           <Text style={{color: colors.accent}}>{t.mediaRetry}</Text>
         </Pressable>
@@ -157,14 +205,18 @@ export function MediaPhoto({
         <Pressable onPress={() => fireAndForget(openViewer())}>
           <Image
             source={{uri}}
-            style={styles.photo}
+            style={[boxStyle, {borderRadius: corner}]}
             resizeMode="cover"
             resizeMethod="resize"
           />
         </Pressable>
       ) : null}
       {caption ? (
-        <Text style={{color: colors.textPrimary, marginTop: tm.timeMarginT}}>
+        <Text
+          style={[
+            styles.caption,
+            {color: colors.textPrimary, width: boxW},
+          ]}>
           {caption}
         </Text>
       ) : null}
@@ -191,14 +243,11 @@ export function MediaPhoto({
 }
 
 const styles = StyleSheet.create({
-  photo: {
-    width: '100%' as const,
-    maxHeight: tm.mediaPhotoMaxH,
-    height: tm.mediaPhotoMaxH,
-    borderRadius: tm.mediaPhotoRadius,
+  caption: {
+    paddingHorizontal: tm.bubblePadH - tm.mediaBubblePad,
+    paddingTop: 4,
   },
   box: {
-    minHeight: tm.mediaBoxMinH,
     alignItems: 'center',
     justifyContent: 'center',
     gap: tm.mediaBoxGap,

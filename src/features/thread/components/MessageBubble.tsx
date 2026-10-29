@@ -41,6 +41,19 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
     message.kind === 'animation' ||
     message.kind === 'video_note';
   const isAudioKind = message.kind === 'audio' || message.kind === 'voice';
+  // Photo / album : médias collés au bord de la bulle (rendu type Telegram).
+  const isMediaMsg =
+    message.kind === 'photo' ||
+    (message.kind === 'album' && !!message.album && message.album.length > 0);
+  // Heure en surimpression sur le média (messages reçus, sans légende).
+  const overlayTime = isMediaMsg && !caption && !isOut;
+  const showStatus = !!(
+    isOut &&
+    onRetry &&
+    onResendSame &&
+    onResendNew &&
+    onResendMedia
+  );
   // Retient le nom et le type du fichier : la notification de téléchargement les affiche.
   if (message.attachment && message.kind) {
     rememberDownloadMeta(message.id, message.kind, message.attachment.name);
@@ -71,6 +84,7 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
       <View
         style={[
           styles.bubble,
+          isMediaMsg ? styles.bubbleMedia : null,
           {
             backgroundColor: bubbleBg,
             borderRadius: appearance.cornerRadius,
@@ -89,11 +103,13 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
             name={message.attachment?.name}
             size={message.attachment?.size}
             mime={message.attachment?.mime}
+            isOut={isOut}
           />
         ) : null}
         {message.kind === 'album' && message.album && message.album.length > 0 ? (
           <MediaAlbum
             items={message.album}
+            isOut={isOut}
             caption={caption}
             parseMode={message.parse_mode}
           />
@@ -146,18 +162,26 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
         {message.buttons && message.buttons.length > 0 ? (
           <InlineButtons rows={message.buttons} />
         ) : null}
-        <Text style={[styles.time, {color: timeColor}]}>
-          {formatMessageTime(ts)}
-        </Text>
-        {isOut && onRetry && onResendSame && onResendNew && onResendMedia ? (
-          <MessageStatus
-            message={message}
-            onRetry={onRetry}
-            onResendSame={onResendSame}
-            onResendNew={onResendNew}
-            onResendMedia={onResendMedia}
-          />
-        ) : null}
+        {overlayTime ? (
+          <View style={styles.timeOverlay}>
+            <Text style={styles.timeOverlayText}>{formatMessageTime(ts)}</Text>
+          </View>
+        ) : (
+          <View style={isMediaMsg ? styles.mediaFooter : undefined}>
+            <Text style={[styles.time, {color: timeColor}]}>
+              {formatMessageTime(ts)}
+            </Text>
+            {showStatus && onRetry && onResendSame && onResendNew && onResendMedia ? (
+              <MessageStatus
+                message={message}
+                onRetry={onRetry}
+                onResendSame={onResendSame}
+                onResendNew={onResendNew}
+                onResendMedia={onResendMedia}
+              />
+            ) : null}
+          </View>
+        )}
       </View>
     </Pressable>
   );
@@ -172,6 +196,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: tm.bubblePadH,
     paddingBottom: tm.bubblePadB,
   },
+  bubbleMedia: {
+    paddingTop: tm.mediaBubblePad,
+    paddingHorizontal: tm.mediaBubblePad,
+    paddingBottom: tm.mediaBubblePad,
+    overflow: 'hidden',
+  },
+  mediaFooter: {
+    paddingHorizontal: tm.bubblePadH - tm.mediaBubblePad,
+    paddingBottom: 2,
+  },
+  timeOverlay: {
+    position: 'absolute',
+    right: tm.mediaBubblePad + 6,
+    bottom: tm.mediaBubblePad + 6,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  timeOverlayText: {color: '#fff', fontSize: tm.timeSize},
   time: {
     fontSize: tm.timeSize,
     alignSelf: 'flex-end',

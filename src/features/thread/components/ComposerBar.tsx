@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import {Send, Paperclip, X} from 'lucide-react-native';
 import {pick, types, isErrorWithCode, errorCodes} from '@react-native-documents/picker';
-import {useTheme} from '../../../shared/theme';
+import {useTheme, getShadow} from '../../../shared/theme';
 import {threadMetrics as tm} from '../../../shared/theme/threadMetrics';
 import {threadTexts as t} from '../texts';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
@@ -36,7 +36,7 @@ export function ComposerBar({
   onSend,
   onSendMedia,
 }: Props): React.JSX.Element {
-  const {colors, appearance} = useTheme();
+  const {colors, mode, appearance} = useTheme();
   const sendWithEnter = appearance.sendWithEnter;
   const [text, setText] = useState('');
   const [pending, setPending] = useState<PickedFile[]>([]);
@@ -100,17 +100,17 @@ export function ComposerBar({
     abortRef.current = null;
   }, []);
 
+  const canSubmit = canSendText || canSendMedia;
+
   return (
-    <View
-      style={[
-        styles.bar,
-        {
-          backgroundColor: colors.bgPrimary,
-          borderTopColor: colors.border,
-        },
-      ]}>
+    <View style={styles.bar}>
       {pending.length > 0 ? (
-        <View style={styles.pending}>
+        <View
+          style={[
+            styles.pending,
+            {backgroundColor: colors.bgPrimary},
+            getShadow('sm', mode),
+          ]}>
           <Text style={{color: colors.textSecondary, fontSize: tm.retryBtnFont}}>
             {t.mediaFilesPending(pending.length)}
           </Text>
@@ -122,41 +122,47 @@ export function ComposerBar({
         </View>
       ) : null}
       <View style={styles.row}>
-        <Pressable
-          onPress={onAttach}
-          disabled={disabled || sending}
-          accessibilityLabel={t.mediaAttach}
-          style={styles.iconBtn}>
-          <Paperclip
-            size={tm.composerSendIconSize}
-            color={disabled ? colors.textHint : colors.accent}
-            strokeWidth={2}
-          />
-        </Pressable>
-        <TextInput
-          value={text}
-          onChangeText={setText}
-          placeholder={t.composerPlaceholder}
-          placeholderTextColor={colors.textHint}
-          editable={!disabled}
-          multiline={!sendWithEnter}
-          blurOnSubmit={sendWithEnter}
-          returnKeyType={sendWithEnter ? 'send' : 'default'}
-          onSubmitEditing={sendWithEnter ? submit : undefined}
-          maxLength={
-            pending.length > 0
-              ? MEDIA_CAPTION_MAX + 1
-              : tm.maxMessageLength + 1
-          }
+        <View
           style={[
-            styles.input,
-            {
-              color: colors.textPrimary,
-              backgroundColor: colors.bgSecondary,
-              maxHeight: tm.composerInputMaxH,
-            },
-          ]}
-        />
+            styles.pill,
+            {backgroundColor: colors.bgPrimary},
+            getShadow('sm', mode),
+          ]}>
+          <TextInput
+            value={text}
+            onChangeText={setText}
+            placeholder={t.composerPlaceholder}
+            placeholderTextColor={colors.textHint}
+            editable={!disabled}
+            multiline={!sendWithEnter}
+            blurOnSubmit={sendWithEnter}
+            returnKeyType={sendWithEnter ? 'send' : 'default'}
+            onSubmitEditing={sendWithEnter ? submit : undefined}
+            maxLength={
+              pending.length > 0
+                ? MEDIA_CAPTION_MAX + 1
+                : tm.maxMessageLength + 1
+            }
+            style={[
+              styles.input,
+              {
+                color: colors.textPrimary,
+                maxHeight: tm.composerInputMaxH,
+              },
+            ]}
+          />
+          <Pressable
+            onPress={onAttach}
+            disabled={disabled || sending}
+            accessibilityLabel={t.mediaAttach}
+            style={styles.iconBtn}>
+            <Paperclip
+              size={tm.composerSendIconSize}
+              color={disabled ? colors.textHint : colors.textSecondary}
+              strokeWidth={2}
+            />
+          </Pressable>
+        </View>
         {sending ? (
           <View style={styles.sendingRow}>
             <ActivityIndicator color={colors.accent} />
@@ -174,25 +180,16 @@ export function ComposerBar({
         ) : (
           <Pressable
             onPress={submit}
-            disabled={!(canSendText || canSendMedia)}
+            disabled={!canSubmit}
             accessibilityLabel={t.send}
             style={[
               styles.send,
-              canSendText || canSendMedia
-                ? styles.sendEnabled
-                : styles.sendDisabled,
-              {
-                backgroundColor:
-                  canSendText || canSendMedia
-                    ? colors.accent
-                    : colors.bgTertiary,
-              },
+              {backgroundColor: canSubmit ? colors.accent : colors.bgPrimary},
+              getShadow('sm', mode),
             ]}>
             <Send
               size={tm.composerSendIconSize}
-              color={
-                canSendText || canSendMedia ? colors.white : colors.textHint
-              }
+              color={canSubmit ? colors.white : colors.textHint}
               strokeWidth={2}
             />
           </Pressable>
@@ -203,9 +200,9 @@ export function ComposerBar({
 }
 
 const styles = StyleSheet.create({
+  // Transparent : le fond d'écran de la conversation reste visible autour.
   bar: {
     padding: tm.composerPad,
-    borderTopWidth: StyleSheet.hairlineWidth,
     gap: tm.composerGap,
   },
   row: {
@@ -213,34 +210,42 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     gap: tm.composerGap,
   },
+  pill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    minHeight: tm.composerRound,
+    borderRadius: tm.composerPillRadius,
+  },
   pending: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: tm.composerInputPadH + 4,
+    borderRadius: tm.composerPillRadius,
   },
   iconBtn: {
-    width: tm.composerSendSize,
-    height: tm.composerSendSize,
+    width: tm.composerSendSize + 4,
+    height: tm.composerRound,
     alignItems: 'center',
     justifyContent: 'center',
   },
   input: {
     flex: 1,
-    minHeight: tm.composerInputMinH,
-    paddingVertical: tm.composerInputPadV,
-    paddingHorizontal: tm.composerInputPadH,
-    borderRadius: tm.composerInputRadius,
+    minHeight: tm.composerRound,
+    paddingVertical: tm.composerInputPadV + 2,
+    paddingLeft: tm.composerInputPadH + 6,
+    paddingRight: 0,
     fontSize: tm.composerFontSize,
   },
   send: {
-    width: tm.composerSendSize,
-    height: tm.composerSendSize,
-    borderRadius: tm.composerSendSize / 2,
+    width: tm.composerRound,
+    height: tm.composerRound,
+    borderRadius: tm.composerRound / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sendEnabled: {opacity: tm.composerSendEnabledOpacity},
-  sendDisabled: {opacity: tm.composerSendDisabledOpacity},
   sendingRow: {
     flexDirection: 'row',
     alignItems: 'center',
