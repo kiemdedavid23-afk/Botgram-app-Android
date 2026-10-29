@@ -1,5 +1,5 @@
 /**
- * Permissions — état réel de l'autorisation de notifications (Android 13+),
+ * Permissions — état réel des autorisations (notifications Android 13+, micro),
  * demande directe, puis réglages système si elle est refusée définitivement.
  */
 import React, {useCallback, useEffect, useState} from 'react';
@@ -11,8 +11,9 @@ import {
   Platform,
   AppState,
   PermissionsAndroid,
+  type Permission,
 } from 'react-native';
-import {Bell, Settings} from 'lucide-react-native';
+import {Bell, Mic, Settings, type LucideIcon} from 'lucide-react-native';
 import {useTheme, fontWeight} from '../../../shared/theme';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {settingsTexts as t} from '../texts';
@@ -24,28 +25,53 @@ type Props = {onBack: () => void};
 type PermStatus = 'granted' | 'denied' | 'unknown';
 
 const NOTIF_MIN_API = 33;
+const MIC_MIN_API = 23;
 
-async function readNotificationStatus(): Promise<PermStatus> {
-  if (Platform.OS !== 'android' || Number(Platform.Version) < NOTIF_MIN_API) {
+async function readStatus(
+  permission: Permission,
+  minApi: number,
+): Promise<PermStatus> {
+  if (Platform.OS !== 'android' || Number(Platform.Version) < minApi) {
     return 'unknown';
   }
   try {
-    const ok = await PermissionsAndroid.check(
-      PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
-    );
+    const ok = await PermissionsAndroid.check(permission);
     return ok ? 'granted' : 'denied';
   } catch {
     return 'unknown';
   }
 }
 
-export function PermissionsScreen({onBack}: Props): React.JSX.Element {
+function openSystemSettings(): void {
+  fireAndForget(
+    Platform.OS === 'android'
+      ? Linking.openSettings()
+      : Linking.openURL('app-settings:'),
+  );
+}
+
+type BlockProps = {
+  permission: Permission;
+  minApi: number;
+  title: string;
+  subtitle: string;
+  Icon: LucideIcon;
+};
+
+/** Une permission : titre, ligne d'état (touchable si refusée) et sous-titre. */
+function PermissionBlock({
+  permission,
+  minApi,
+  title,
+  subtitle,
+  Icon,
+}: BlockProps): React.JSX.Element {
   const {colors} = useTheme();
   const [status, setStatus] = useState<PermStatus>('unknown');
 
   const refresh = useCallback(() => {
-    fireAndForget(readNotificationStatus().then(setStatus));
-  }, []);
+    fireAndForget(readStatus(permission, minApi).then(setStatus));
+  }, [permission, minApi]);
 
   useEffect(() => {
     refresh();
@@ -57,18 +83,8 @@ export function PermissionsScreen({onBack}: Props): React.JSX.Element {
     return () => sub.remove();
   }, [refresh]);
 
-  const openSystemSettings = () => {
-    fireAndForget(
-      Platform.OS === 'android'
-        ? Linking.openSettings()
-        : Linking.openURL('app-settings:'),
-    );
-  };
-
   const allow = async () => {
-    const res = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
-    );
+    const res = await PermissionsAndroid.request(permission);
     if (res === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
       openSystemSettings();
     }
@@ -89,18 +105,43 @@ export function PermissionsScreen({onBack}: Props): React.JSX.Element {
         : colors.textHint;
 
   return (
+    <>
+      <SettingsCard>
+        <CardTitle>{title}</CardTitle>
+        <LinkRow
+          Icon={Icon}
+          label={status === 'denied' ? t.permAllow : title}
+          last
+          onPress={status === 'denied' ? () => fireAndForget(allow()) : undefined}
+          trailing={
+            <Text style={[styles.status, {color: statusColor}]}>{label}</Text>
+          }
+        />
+      </SettingsCard>
+      <Text style={[styles.hint, {color: colors.textSecondary}]}>{subtitle}</Text>
+    </>
+  );
+}
+
+export function PermissionsScreen({onBack}: Props): React.JSX.Element {
+  return (
     <SettingsPage title={t.permissionsTitle} onBack={onBack}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <PermissionBlock
+          permission={PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS}
+          minApi={NOTIF_MIN_API}
+          title={t.permNotifications}
+          subtitle={t.permNotificationsSub}
+          Icon={Bell}
+        />
+        <PermissionBlock
+          permission={PermissionsAndroid.PERMISSIONS.RECORD_AUDIO}
+          minApi={MIC_MIN_API}
+          title={t.permMicrophone}
+          subtitle={t.permMicrophoneSub}
+          Icon={Mic}
+        />
         <SettingsCard>
-          <CardTitle>{t.permNotifications}</CardTitle>
-          <LinkRow
-            Icon={Bell}
-            label={status === 'denied' ? t.permAllow : t.permNotifications}
-            onPress={status === 'denied' ? () => fireAndForget(allow()) : undefined}
-            trailing={
-              <Text style={[styles.status, {color: statusColor}]}>{label}</Text>
-            }
-          />
           <LinkRow
             Icon={Settings}
             label={t.permOpenSettings}
@@ -108,9 +149,6 @@ export function PermissionsScreen({onBack}: Props): React.JSX.Element {
             onPress={openSystemSettings}
           />
         </SettingsCard>
-        <Text style={[styles.hint, {color: colors.textSecondary}]}>
-          {t.permNotificationsSub}
-        </Text>
       </ScrollView>
     </SettingsPage>
   );
