@@ -159,4 +159,3 @@ const styles = StyleSheet.create({
   status: {fontSize: 15, fontWeight: fontWeight.semibold},
   hint: {fontSize: 13, paddingHorizontal: 32, marginTop: -4},
 });
-
