@@ -53,6 +53,13 @@ import type {VerifyResult} from '../features/associate';
 import {BotSpaceScreen} from './BotSpaceScreen';
 import {ContextSwitcher} from './ContextSwitcher';
 import {useMemberSectionStore, type MemberSection} from './memberSectionStore';
+import {useBotsStore} from '../features/bots/store/botsStore';
+import {readLastSpace, saveLastSpace} from './lastSpaceStore';
+
+/** Reprise du dernier espace : une seule fois par lancement de l'app. */
+let restoreAttempted = false;
+/** Ouverture de reprise sans animation (pas de flash du tableau de bord). */
+let skipNextAnimation = false;
 
 function Booting(): React.JSX.Element {
   const {colors} = useTheme();
@@ -145,6 +152,27 @@ function MemberTabs({
   const offline = useAuthStore(s => s.offline);
   const member = useAuthStore(s => s.member);
 
+  // Relance de l'app : retour direct dans l'espace bot si c'est là qu'on l'avait quittée.
+  // Lecture du cache local seulement : aucune connexion nécessaire.
+  useEffect(() => {
+    if (restoreAttempted) {
+      return;
+    }
+    restoreAttempted = true;
+    fireAndForget(
+      (async () => {
+        if ((await readLastSpace()) !== 'bot') {
+          return;
+        }
+        await useBotsStore.getState().hydrate();
+        if (useBotsStore.getState().bots.length > 0) {
+          skipNextAnimation = true;
+          navigation.navigate('BotSpace');
+        }
+      })(),
+    );
+  }, [navigation]);
+
   // Au démontage (déconnexion), on repart du Tableau de bord.
   useEffect(() => {
     return () => {
@@ -224,7 +252,11 @@ function MemberShell(): React.JSX.Element {
     <MemberStack.Navigator screenOptions={{headerShown: false}}>
       <MemberStack.Screen name="Tabs" component={MemberTabs} />
       <MemberStack.Screen name="AddBot" component={AddBotScreenWrapper} />
-      <MemberStack.Screen name="BotSpace" component={BotSpaceScreenWrapper} />
+      <MemberStack.Screen
+        name="BotSpace"
+        component={BotSpaceScreenWrapper}
+        options={() => ({animation: skipNextAnimation ? 'none' : 'default'})}
+      />
       <MemberStack.Screen
         name="AssociateIntro"
         component={AssociateIntroWrapper}
@@ -258,6 +290,13 @@ function BotSpaceScreenWrapper({
 }: {
   navigation: {goBack: () => void; navigate: (name: 'AddBot') => void};
 }): React.JSX.Element {
+  useEffect(() => {
+    skipNextAnimation = false;
+    saveLastSpace('bot');
+    return () => {
+      saveLastSpace('member');
+    };
+  }, []);
   return (
     <BotSpaceScreen
       onExit={() => navigation.goBack()}
