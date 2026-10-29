@@ -1,7 +1,7 @@
 /**
  * Barre de saisie + pièce jointe (L5d / L6c).
  */
-import React, {useState, useCallback, useRef} from 'react';
+import React, {useState, useCallback, useRef, useEffect} from 'react';
 import {
   View,
   TextInput,
@@ -10,7 +10,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import {Send, Paperclip, X} from 'lucide-react-native';
+import {Send, Paperclip, X, Mic} from 'lucide-react-native';
 import {pick, types, isErrorWithCode, errorCodes} from '@react-native-documents/picker';
 import {useTheme, getShadow} from '../../../shared/theme';
 import {threadMetrics as tm} from '../../../shared/theme/threadMetrics';
@@ -18,6 +18,14 @@ import {threadTexts as t} from '../texts';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 import type {PickedFile} from '../store/sendMediaActions';
 import {MEDIA_CAPTION_MAX} from '../mediaLimits';
+import {useVoiceRecorder} from './useVoiceRecorder';
+
+function formatClock(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const m = Math.floor(total / 60);
+  const sec = (total % 60).toString().padStart(2, '0');
+  return `${m}:${sec}`;
+}
 
 type Props = {
   disabled: boolean;
@@ -41,6 +49,26 @@ export function ComposerBar({
   const [text, setText] = useState('');
   const [pending, setPending] = useState<PickedFile[]>([]);
   const abortRef = useRef<AbortController | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showNotice = useCallback((message: string) => {
+    setNotice(message);
+    if (noticeTimer.current) clearTimeout(noticeTimer.current);
+    noticeTimer.current = setTimeout(() => setNotice(null), 2500);
+  }, []);
+  useEffect(
+    () => () => {
+      if (noticeTimer.current) clearTimeout(noticeTimer.current);
+    },
+    [],
+  );
+  const voice = useVoiceRecorder({
+    enabled: !disabled && !sending,
+    onFinished: file => {
+      fireAndForget(onSendMedia([file], ''));
+    },
+    onNotice: showNotice,
+  });
   const len = text.length;
   const trimmedEmpty = text.trim().length === 0;
   const tooLong = len > tm.maxMessageLength;
@@ -101,9 +129,24 @@ export function ComposerBar({
   }, []);
 
   const canSubmit = canSendText || canSendMedia;
+  // Champ vide, rien en attente : le micro prend la place du bouton d'envoi.
+  const showMic =
+    voice.available && trimmedEmpty && pending.length === 0 && !sending && !disabled;
 
   return (
     <View style={styles.bar}>
+      {notice ? (
+        <View
+          style={[
+            styles.notice,
+            {backgroundColor: colors.bgPrimary},
+            getShadow('sm', mode),
+          ]}>
+          <Text style={{color: colors.textSecondary, fontSize: tm.retryBtnFont}}>
+            {notice}
+          </Text>
+        </View>
+      ) : null}
       {pending.length > 0 ? (
         <View
           style={[
@@ -122,6 +165,43 @@ export function ComposerBar({
         </View>
       ) : null}
       <View style={styles.row}>
+        {voice.ui.recording ? (
+          <View
+            style={[
+              styles.pill,
+              styles.recPill,
+              {backgroundColor: colors.bgPrimary},
+              getShadow('sm', mode),
+            ]}>
+            <View style={[styles.recDot, {backgroundColor: colors.danger}]} />
+            <Text style={[styles.recTimer, {color: colors.textPrimary}]}>
+              {formatClock(voice.ui.elapsedMs)}
+            </Text>
+            <View
+              style={[
+                styles.recLevel,
+                {
+                  backgroundColor: colors.accent,
+                  width: 6 + Math.round(voice.ui.level * 36),
+                },
+              ]}
+            />
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.recHint,
+                {
+                  color: voice.ui.cancelling
+                    ? colors.danger
+                    : colors.textSecondary,
+                },
+              ]}>
+              {voice.ui.cancelling
+                ? t.voiceReleaseCancel
+                : `‹ ${t.voiceSlideCancel}`}
+            </Text>
+          </View>
+        ) : (
         <View
           style={[
             styles.pill,
@@ -163,6 +243,7 @@ export function ComposerBar({
             />
           </Pressable>
         </View>
+        )}
         {sending ? (
           <View style={styles.sendingRow}>
             <ActivityIndicator color={colors.accent} />
@@ -176,6 +257,26 @@ export function ComposerBar({
                 strokeWidth={2}
               />
             </Pressable>
+          </View>
+        ) : showMic ? (
+          <View
+            {...voice.handlers}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t.voiceMic}
+            style={[
+              styles.send,
+              {
+                backgroundColor: colors.accent,
+                transform: [{scale: voice.ui.recording ? 1.25 : 1}],
+              },
+              getShadow('sm', mode),
+            ]}>
+            <Mic
+              size={tm.composerSendIconSize}
+              color={colors.white}
+              strokeWidth={2}
+            />
           </View>
         ) : (
           <Pressable
@@ -246,6 +347,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  notice: {
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: tm.composerPillRadius,
+  },
+  recPill: {
+    alignItems: 'center',
+    paddingHorizontal: tm.composerInputPadH + 4,
+    gap: 10,
+  },
+  recDot: {width: 10, height: 10, borderRadius: 5},
+  recTimer: {fontSize: tm.composerFontSize, minWidth: 40},
+  recLevel: {height: 6, borderRadius: 3},
+  recHint: {flex: 1, textAlign: 'right', fontSize: tm.retryBtnFont + 1},
   sendingRow: {
     flexDirection: 'row',
     alignItems: 'center',
