@@ -22,26 +22,38 @@ import {useReducedMotion} from '../../../shared/hooks/useReducedMotion';
 import type {ConversationSummary} from '../../../core/api/endpoints/conversations';
 import {ContactHero} from '../components/ContactHero';
 import {ContactSections} from '../components/ContactSections';
+import {ContactActions} from '../components/ContactActions';
+import {ContactSharedTabs} from '../components/ContactSharedTabs';
+import {useConversationsStore} from '../../conversations/store/conversationsStore';
 import {
   contactDisplayName,
   contactUsername,
 } from '../utils/format';
 import {contactsTexts as t} from '../texts';
+import {fireAndForget} from '../../../core/utils/fireAndForget';
 
 type Props = {
   conversation: ConversationSummary;
   onBack: () => void;
+  /** Retour à la discussion avec ce contact. */
+  onMessage: () => void;
 };
 
 export function ContactProfileScreen({
   conversation,
   onBack,
+  onMessage,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
   const reduce = useReducedMotion();
   const insets = useSafeAreaInsets();
   const displayName = contactDisplayName(conversation);
   const username = contactUsername(conversation);
+  const pinned = useConversationsStore(
+    s => s.items.find(i => i.id === conversation.id)?.pinned ?? conversation.pinned ?? false,
+  );
+  const offline = useConversationsStore(s => s.offline);
+  const pinConversation = useConversationsStore(s => s.pinConversation);
 
   const fade = React.useRef(new Animated.Value(reduce ? 1 : 0)).current;
   useEffect(() => {
@@ -94,7 +106,16 @@ export function ContactProfileScreen({
             username={username}
             chatType={conversation.chat_type}
           />
+          <ContactActions
+            pinned={pinned}
+            pinDisabled={offline}
+            onMessage={onMessage}
+            onTogglePin={() => {
+              fireAndForget(pinConversation(conversation.id, !pinned));
+            }}
+          />
           <ContactSections conversation={conversation} />
+          <ContactSharedTabs conversationId={conversation.id} />
         </Animated.View>
       </ScrollView>
     </View>
