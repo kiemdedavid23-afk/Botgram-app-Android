@@ -21,6 +21,8 @@ import type {HttpResult} from '../../../core/api/session';
 import {useBotPhotoStore} from '../../../shared/botPhoto/botPhotoStore';
 
 const CACHE_KEY = 'bots.list';
+/** Bot choisi hors ligne, à confirmer auprès du serveur dès le retour du réseau. */
+const PENDING_SELECT_KEY = 'bots.pendingSelect';
 const TTL_MS = 3 * 60 * 1000;
 
 type BotsStore = {
@@ -30,6 +32,8 @@ type BotsStore = {
   lastFetch: number;
   generation: number;
   busy: Record<string, boolean>;
+  /** Charge la liste depuis le cache local uniquement (aucun réseau). */
+  hydrate: () => Promise<void>;
   load: (force?: boolean) => Promise<void>;
   setMuted: (id: string, muted: boolean) => Promise<HttpResult<{bot: Bot}>>;
   select: (id: string) => Promise<HttpResult<{bot: Bot}>>;
@@ -118,6 +122,14 @@ export const useBotsStore = create<BotsStore>((set, get) => {
     generation: 0,
     busy: {},
 
+    hydrate: async () => {
+      if (get().bots.length > 0) return;
+      const gen = get().generation;
+      const parsed = parseBotsCache(await cacheGetString(CACHE_KEY));
+      if (!current(gen) || get().bots.length > 0) return;
+      if (parsed?.length) set({bots: parsed});
+    },
+
     load: async (force = false) => {
       await withSingleFlight('load', async () => {
         const gen = get().generation;
@@ -135,8 +147,24 @@ export const useBotsStore = create<BotsStore>((set, get) => {
         const res = await listBots();
         if (!current(gen)) return;
         if (res.ok) {
-          set({bots: res.data.bots, lastFetch: Date.now(), offline: false, loading: false});
-          await persistBots(res.data.bots);
+          let list = res.data.bots;
+          // Choix fait hors ligne : il prime sur la valeur du serveur, puis on le lui envoie.
+          const pending = await cacheGetString(PENDING_SELECT_KEY);
+          if (!current(gen)) return;
+          if (pending && list.some(b => b.id === pending)) {
+            list = list.map(b => ({...b, selected: b.id === pending}));
+            fireAndForget(
+              apiSelectBot(pending).then(r => {
+                if (r.ok || (r.status > 0 && r.status < 500)) {
+                  fireAndForget(cacheDelete(PENDING_SELECT_KEY));
+                }
+              }),
+            );
+          } else if (pending) {
+            fireAndForget(cacheDelete(PENDING_SELECT_KEY));
+          }
+          set({bots: list, lastFetch: Date.now(), offline: false, loading: false});
+          await persistBots(list);
         } else if (res.status === 0 || res.status >= 500) {
           set({offline: true, loading: false});
         } else set({loading: false});
@@ -146,10 +174,51 @@ export const useBotsStore = create<BotsStore>((set, get) => {
     setMuted: (id, muted) =>
       runBotAction(`muted:${id}:${muted}`, () => apiSetMuted(id, muted)),
 
+    /**
+     * Sélection locale d'abord (instantanée, fonctionne hors ligne), puis
+     * confirmation serveur. Sans réseau, le choix est gardé et renvoyé plus tard.
+     */
     select: id =>
-      runBotAction(`select:${id}`, () => apiSelectBot(id), (bots, bot) =>
-        bots.map(b => (b.id === bot.id ? bot : {...b, selected: false})),
-      ),
+      withSingleFlight(`select:${id}`, async () => {
+        const key = `select:${id}`;
+        const gen = get().generation;
+        const previous = get().bots;
+        const target = previous.find(b => b.id === id);
+        if (!target) return apiSelectBot(id);
+        const optimistic = previous.map(b => ({...b, selected: b.id === id}));
+        markBusy(key, true);
+        try {
+          set({bots: optimistic});
+          await persistBots(optimistic);
+          const res = await apiSelectBot(id);
+          if (!current(gen)) return res;
+          if (res.ok) {
+            const next = get().bots.map(b =>
+              b.id === res.data.bot.id ? res.data.bot : {...b, selected: false},
+            );
+            set({bots: next});
+            await persistBots(next);
+            await cacheDelete(PENDING_SELECT_KEY);
+            return res;
+          }
+          if (res.status === 0 || res.status >= 500) {
+            await cacheSetString(PENDING_SELECT_KEY, id);
+            return {
+              ok: true as const,
+              data: {bot: {...target, selected: true}},
+              requestId: null,
+              status: 0,
+              headers: new Headers(),
+            };
+          }
+          // Refus réel du serveur : on annule le choix local.
+          set({bots: previous});
+          await persistBots(previous);
+          return res;
+        } finally {
+          if (current(gen)) markBusy(key, false);
+        }
+      }),
 
     retryWebhook: id =>
       runBotAction(`retry:${id}`, () => apiRetryWebhook(id)),
@@ -190,6 +259,7 @@ export const useBotsStore = create<BotsStore>((set, get) => {
       }));
       inflight.clear();
       fireAndForget(cacheDelete(CACHE_KEY));
+      fireAndForget(cacheDelete(PENDING_SELECT_KEY));
     },
   };
 });
