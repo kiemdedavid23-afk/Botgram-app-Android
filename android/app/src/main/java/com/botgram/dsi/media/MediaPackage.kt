@@ -6,7 +6,7 @@ import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.uimanager.ViewManager
 
-/** Modules médias natifs : téléchargement, audio, miniatures/forme d'onde, vue vidéo, visionneuse d'images. */
+/** Modules médias natifs : téléchargement, audio, miniatures/forme d'onde, vue vidéo, visionneuse d'images, enregistrement vocal. */
 class MediaPackage : ReactPackage {
   override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> =
       listOf(
@@ -14,6 +14,7 @@ class MediaPackage : ReactPackage {
           AudioPlayerModule(reactContext),
           MediaToolsModule(reactContext),
           ImageViewerModule(reactContext),
+          VoiceRecorderModule(reactContext),
       )
 
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> =
