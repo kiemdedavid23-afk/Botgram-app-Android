@@ -3,16 +3,19 @@
  * Dégradé gradients.avatar ; initiales si pas de photo.
  */
 import React from 'react';
-import {View, Text, Image, StyleSheet} from 'react-native';
+import {View, Text, Image, Pressable, StyleSheet} from 'react-native';
 import {useTheme, gradients, fontWeight} from '../theme';
 import {GradientView} from './GradientView';
 import {conversationsMetrics as cm} from '../theme/conversationsMetrics';
+import {openImageViewer} from '../../core/media/imageViewer';
 
 type Props = {
   size?: number;
   photoUrl?: string | null;
   initials?: string | null;
   title?: string;
+  /** Un appui ouvre la photo en plein écran (visionneuse). À activer sur les écrans de profil, pas dans les listes. */
+  viewable?: boolean;
 };
 
 function initialsFrom(title: string | undefined, initials: string | null | undefined): string {
@@ -30,18 +33,28 @@ export function Avatar({
   photoUrl,
   initials,
   title,
+  viewable = false,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
   const label = initialsFrom(title, initials ?? null);
   const r = size / 2;
 
   if (photoUrl) {
-    return (
+    const image = (
       <Image
         source={{uri: photoUrl}}
         style={{width: size, height: size, borderRadius: r}}
         accessibilityIgnoresInvertColors
       />
+    );
+    if (!viewable) return image;
+    return (
+      <Pressable
+        onPress={() => openImageViewer([{uri: photoUrl}], 0)}
+        accessibilityRole="imagebutton"
+        accessibilityLabel={title}>
+        {image}
+      </Pressable>
     );
   }
 
