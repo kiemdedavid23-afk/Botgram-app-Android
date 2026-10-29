@@ -15,7 +15,9 @@ class MainActivity : ReactActivity() {
   override fun getMainComponentName(): String = "Botgram"
 
   override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
+    // react-native-screens refuse qu'Android restaure d'anciens fragments d'écran (ce qui arrive
+    // quand le système a tué l'app, par exemple après un changement de permission) : on repart à neuf.
+    super.onCreate(null)
     // Diagnostic temporaire : explique une fermeture inattendue au lancement précédent.
     CrashDiagnostics.showIfAny(this)
   }
