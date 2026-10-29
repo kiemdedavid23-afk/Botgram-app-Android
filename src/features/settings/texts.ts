@@ -108,3 +108,4 @@ export const settingsTexts = {
   permStatusDenied: 'Refusée',
   permStatusUnknown: 'Non déterminé',
 } as const;
+
