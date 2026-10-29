@@ -13,6 +13,9 @@
       android:name="android.permission.WRITE_EXTERNAL_STORAGE"
       android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Enregistrer un message vocal (demandée au premier appui sur le micro) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
 
     <!-- Android 11+ : visibilité des apps de messagerie que le bouton « Ouvrir ma messagerie » peut lancer -->
     <queries>
