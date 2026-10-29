@@ -47,13 +47,6 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
     (message.kind === 'album' && !!message.album && message.album.length > 0);
   // Heure en surimpression sur le média (messages reçus, sans légende).
   const overlayTime = isMediaMsg && !caption && !isOut;
-  const showStatus = !!(
-    isOut &&
-    onRetry &&
-    onResendSame &&
-    onResendNew &&
-    onResendMedia
-  );
   // Retient le nom et le type du fichier : la notification de téléchargement les affiche.
   if (message.attachment && message.kind) {
     rememberDownloadMeta(message.id, message.kind, message.attachment.name);
@@ -171,7 +164,7 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
             <Text style={[styles.time, {color: timeColor}]}>
               {formatMessageTime(ts)}
             </Text>
-            {showStatus && onRetry && onResendSame && onResendNew && onResendMedia ? (
+            {isOut && onRetry && onResendSame && onResendNew && onResendMedia ? (
               <MessageStatus
                 message={message}
                 onRetry={onRetry}
