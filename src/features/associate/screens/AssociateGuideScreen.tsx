@@ -210,7 +210,7 @@ export function AssociateGuideScreen({
   section,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const ys = useRef<Partial<Record<GuideSectionId, number>>>({});
   const jumped = useRef(false);
   const [progress, setProgress] = React.useState(0);
