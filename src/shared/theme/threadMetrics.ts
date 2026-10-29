@@ -115,5 +115,15 @@ export const threadMetrics = {
   composerSendingGap: 8,
   /** MessageStatus row margin-top — MessageBubble.css */
   statusMarginT: 4,
-
+  /** Médias plein cadre dans la bulle (rendu type Telegram) */
+  mediaBubblePad: 3,
+  mediaMaxWidth: 300,
+  mediaMaxHeight: 360,
+  mediaMinWidth: 120,
+  mediaMinHeight: 80,
+  mediaFileMaxWidth: 280,
+  mediaFileCircle: 48,
+  /** Barre de saisie en pilule flottante */
+  composerPillRadius: 24,
+  composerRound: 48,
 } as const;
