@@ -124,6 +124,7 @@ export function BotChatsStack({
         <ContactProfileScreen
           conversation={profile.conversation}
           onBack={closeProfile}
+          onMessage={() => onOpenConversation(profile.conversation.id)}
         />
       </View>
     );
