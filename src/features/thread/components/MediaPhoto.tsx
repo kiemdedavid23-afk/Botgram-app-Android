@@ -17,6 +17,8 @@ import {useTheme} from '../../../shared/theme';
 import {threadMetrics as tm} from '../../../shared/theme/threadMetrics';
 import {loadAttachmentToStorage} from '../../../core/media/loadAttachment';
 import {rememberDownloadMeta} from '../../../core/media/downloadMeta';
+import {openImageViewer} from '../../../core/media/imageViewer';
+import {buildPhotoGallery} from '../photoGallery';
 import {getMediaStorage} from '../../../core/media/MediaStorage';
 import {threadTexts as t} from '../texts';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
@@ -41,6 +43,14 @@ export function MediaPhoto({
   const [full, setFull] = useState(false);
   const [needTap, setNeedTap] = useState(false);
   const alive = useRef(true);
+
+  // Visionneuse native (zoom, glisser entre les photos, enregistrer, partager).
+  // Si elle n'est pas disponible, on garde l'ancien affichage plein écran.
+  const openViewer = useCallback(async () => {
+    if (!uri) return;
+    const gallery = await buildPhotoGallery(messageId, uri);
+    if (!openImageViewer(gallery.items, gallery.index)) setFull(true);
+  }, [messageId, uri]);
 
   const runDownload = useCallback(
     async (signal?: AbortSignal) => {
@@ -144,7 +154,7 @@ export function MediaPhoto({
         </Pressable>
       ) : null}
       {uri ? (
-        <Pressable onPress={() => setFull(true)}>
+        <Pressable onPress={() => fireAndForget(openViewer())}>
           <Image
             source={{uri}}
             style={styles.photo}
