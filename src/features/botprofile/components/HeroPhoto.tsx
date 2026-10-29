@@ -8,6 +8,7 @@ import {useTheme, botProfileMetrics as m} from '../../../shared/theme';
 import {botHeroMetrics as h} from '../../../shared/theme/botHeroMetrics';
 import {BotPhoto} from '../../../shared/components/BotPhoto';
 import {useBotPhotoStore} from '../../../shared/botPhoto/botPhotoStore';
+import {openImageViewer} from '../../../core/media/imageViewer';
 import {useBotProfileStore} from '../store/botProfileStore';
 import {texts} from '../texts';
 
@@ -27,7 +28,8 @@ export function HeroPhoto({
   const {colors} = useTheme();
   const setPhotoPresent = useBotProfileStore(s => s.setPhotoPresent);
   const known = useBotPhotoStore(s => s.photos[botId]?.known ?? false);
-  const hasUri = useBotPhotoStore(s => (s.photos[botId]?.uri ?? null) !== null);
+  const photoUri = useBotPhotoStore(s => s.photos[botId]?.uri ?? null);
+  const hasUri = photoUri !== null;
 
   // Le profil (complétude, bouton « supprimer la photo ») suit l'état réel de la photo.
   useEffect(() => {
@@ -36,7 +38,12 @@ export function HeroPhoto({
 
   return (
     <View style={styles.wrap}>
-      <View style={[styles.avatar, {borderColor: colors.heroChipBorder}]}>
+      <Pressable
+        disabled={!photoUri}
+        onPress={() => {
+          if (photoUri) openImageViewer([{uri: photoUri}], 0);
+        }}
+        style={[styles.avatar, {borderColor: colors.heroChipBorder}]}>
         <BotPhoto
           botId={botId}
           style={styles.img}
@@ -48,7 +55,7 @@ export function HeroPhoto({
             </View>
           }
         />
-      </View>
+      </Pressable>
       <Pressable
         onPress={onChangePhoto}
         disabled={busy}
