@@ -25,6 +25,8 @@ class MainApplication : Application(), ReactApplication {
 
   override fun onCreate() {
     super.onCreate()
+    // Diagnostic temporaire : garde la trace d'un plantage pour l'expliquer au lancement suivant.
+    CrashDiagnostics.install(this)
     loadReactNative(this)
   }
 }
