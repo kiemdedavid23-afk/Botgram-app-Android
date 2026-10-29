@@ -67,7 +67,7 @@ function cleanUrl(raw: string): string {
 
 function hostOf(url: string): string {
   const m = /^https?:\/\/([^/?#]+)/i.exec(url);
-  return (m ? m[1] : url).replace(/^www\./i, '');
+  return (m?.[1] ?? url).replace(/^www\./i, '');
 }
 
 export function extractLinks(text: string | null | undefined): string[] {
@@ -77,7 +77,7 @@ export function extractLinks(text: string | null | undefined): string[] {
     re.lastIndex = 0;
     let match: RegExpExecArray | null = re.exec(text);
     while (match) {
-      found.push(cleanUrl(re === HREF_RE ? match[1] : match[0]));
+      found.push(cleanUrl((re === HREF_RE ? match[1] : match[0]) ?? ''));
       match = re.exec(text);
     }
   }
