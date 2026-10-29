@@ -80,6 +80,14 @@ export const threadTexts = {
   mediaAttach: 'Joindre',
   mediaSending: 'Envoi du média…',
   cancelSend: 'Annuler',
+  // Message vocal
+  voiceMic: 'Enregistrer un message vocal',
+  voiceSlideCancel: 'Glisser pour annuler',
+  voiceReleaseCancel: 'Relâcher pour annuler',
+  voiceHoldHint: 'Maintiens le micro pour enregistrer',
+  voiceMicDenied:
+    "Autorise le micro dans les réglages de l'app pour envoyer un vocal.",
+  voiceFailed: 'Enregistrement impossible',
   mediaResendPickAgain: 'Rechoisis le fichier pour le renvoyer',
   mediaAlbumTypes: "Un album n'accepte que des photos et des vidéos",
   deleteMessage: 'Supprimer',
