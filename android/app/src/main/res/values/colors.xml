@@ -1,0 +1,4 @@
+<resources>
+    <!-- Bleu Botgram : couleur d'accent des notifications -->
+    <color name="notification_accent">#1E9BFF</color>
+</resources>

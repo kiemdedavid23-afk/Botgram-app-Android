@@ -1,3 +1,34 @@
 <resources>
     <string name="app_name">Botgram</string>
+
+    <!-- Canaux de notification (visibles dans les réglages Android) -->
+    <string name="notif_channel_downloads">Téléchargements</string>
+    <string name="notif_channel_downloads_desc">Progression des fichiers reçus dans les conversations</string>
+    <string name="notif_channel_playback">Lecture audio</string>
+
+    <!-- Téléchargement -->
+    <string name="notif_dl_progress">%1$d %% · %2$s sur %3$s</string>
+    <string name="notif_dl_progress_unknown">Téléchargement… %1$s</string>
+    <string name="notif_dl_waiting">Téléchargement en cours…</string>
+    <string name="notif_dl_done">Téléchargé · %1$s</string>
+    <string name="notif_dl_done_nosize">Téléchargé</string>
+    <string name="notif_dl_cancel">Annuler</string>
+    <string name="notif_dl_failed">Échec du téléchargement</string>
+    <string name="notif_dl_failed_network">Connexion interrompue</string>
+    <string name="notif_dl_failed_size">Fichier trop volumineux</string>
+    <string name="notif_dl_failed_storage">Espace de stockage insuffisant</string>
+    <string name="notif_dl_idle">Téléchargement terminé</string>
+
+    <!-- Lecture audio -->
+    <string name="notif_audio_default_title">Message audio</string>
+
+    <!-- Types de fichiers -->
+    <string name="kind_photo">Photo</string>
+    <string name="kind_video">Vidéo</string>
+    <string name="kind_video_note">Vidéo ronde</string>
+    <string name="kind_animation">GIF</string>
+    <string name="kind_audio">Audio</string>
+    <string name="kind_voice">Message vocal</string>
+    <string name="kind_document">Document</string>
+    <string name="kind_file">Fichier</string>
 </resources>
