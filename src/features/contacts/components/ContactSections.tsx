@@ -1,119 +1,82 @@
 /**
- * Sections infos profil contact — style ProfileSections membre.
+ * Carte d'informations du profil contact : la valeur en grand,
+ * son libellé en gris juste dessous (comme dans Telegram).
+ * Les champs vides ne sont pas affichés.
  */
 import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
-import {
-  User,
-  AtSign,
-  Hash,
-  MessagesSquare,
-  Fingerprint,
-} from 'lucide-react-native';
 import {
   useTheme,
   memberProfileMetrics as m,
   getShadow,
 } from '../../../shared/theme';
 import type {ConversationSummary} from '../../../core/api/endpoints/conversations';
-import {ContactRow} from './ContactRow';
 import {contactsTexts as texts} from '../texts';
-import {
-  contactUsername,
-  chatTypeLabel,
-} from '../utils/format';
+import {contactUsername, chatTypeLabel} from '../utils/format';
 
 type Props = {
   conversation: ConversationSummary;
 };
 
-export function ContactSections({conversation}: Props): React.JSX.Element {
+type Field = {key: string; label: string; value: string};
+
+export function ContactSections({conversation}: Props): React.JSX.Element | null {
   const {colors, mode} = useTheme();
+
+  const fullName = [conversation.first_name, conversation.last_name]
+    .map(p => p?.trim())
+    .filter(Boolean)
+    .join(' ');
   const username = contactUsername(conversation);
-  const empty = texts.emptyValue;
+  const contactId = conversation.contact_id?.trim();
 
-  const cardStyle = [
-    styles.card,
+  const fields: Field[] = [
+    {key: 'name', label: texts.labelFullName, value: fullName},
+    {key: 'username', label: texts.labelUsername, value: username ?? ''},
     {
-      backgroundColor: colors.bgPrimary,
-      borderColor: colors.borderSoft,
+      key: 'type',
+      label: texts.labelChatType,
+      value: chatTypeLabel(conversation.chat_type),
     },
-    getShadow('sm', mode),
-  ];
+    {key: 'contact', label: texts.labelContactId, value: contactId ?? ''},
+    {
+      key: 'conv',
+      label: texts.labelConversationId,
+      value: conversation.id ?? '',
+    },
+  ].filter(f => f.value.length > 0);
 
-  const first = conversation.first_name?.trim() || empty;
-  const last = conversation.last_name?.trim() || empty;
-  const contactId = conversation.contact_id?.trim() || empty;
-  const chatType = chatTypeLabel(conversation.chat_type);
+  if (fields.length === 0) return null;
 
   return (
-    <View style={styles.section}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          styles.sectionTitleSolo,
-          {color: colors.textHint},
-        ]}>
-        {texts.sectionInfo}
-      </Text>
-      <View style={cardStyle}>
-        <ContactRow icon={<User />} label={texts.labelFirstName} value={first} />
-        <Divider />
-        <ContactRow icon={<User />} label={texts.labelLastName} value={last} />
-        <Divider />
-        <ContactRow
-          icon={<AtSign />}
-          label={texts.labelUsername}
-          value={username ?? empty}
-        />
-        <Divider />
-        <ContactRow
-          icon={<MessagesSquare />}
-          label={texts.labelChatType}
-          value={chatType}
-        />
-        <Divider />
-        <ContactRow
-          icon={<Fingerprint />}
-          label={texts.labelContactId}
-          value={contactId}
-        />
-        <Divider />
-        <ContactRow
-          icon={<Hash />}
-          label={texts.labelConversationId}
-          value={conversation.id || empty}
-        />
-      </View>
+    <View
+      style={[
+        styles.card,
+        {backgroundColor: colors.bgPrimary, borderColor: colors.borderSoft},
+        getShadow('sm', mode),
+      ]}>
+      {fields.map(f => (
+        <View key={f.key} style={styles.field}>
+          <Text selectable style={[styles.value, {color: colors.textPrimary}]}>
+            {f.value}
+          </Text>
+          <Text style={[styles.label, {color: colors.textSecondary}]}>
+            {f.label}
+          </Text>
+        </View>
+      ))}
     </View>
   );
 }
 
-function Divider(): React.JSX.Element {
-  const {colors} = useTheme();
-  return (
-    <View style={[styles.divider, {backgroundColor: colors.bgSecondary}]} />
-  );
-}
-
 const styles = StyleSheet.create({
-  section: {gap: m.sectionInnerGap},
-  sectionTitle: {
-    fontSize: m.sectionTitleSize,
-    fontWeight: '700',
-    letterSpacing: m.sectionTitleLetter * m.sectionTitleSize,
-    textTransform: 'uppercase',
-  },
-  sectionTitleSolo: {
-    paddingHorizontal: m.sectionHeadPadH,
-  },
   card: {
     borderRadius: m.cardRadius,
     borderWidth: 1,
-    overflow: 'hidden',
+    paddingVertical: 8,
+    paddingHorizontal: 18,
   },
-  divider: {
-    height: 1,
-    marginHorizontal: 16,
-  },
+  field: {paddingVertical: 10, gap: 3},
+  value: {fontSize: 17, fontWeight: '500'},
+  label: {fontSize: 14},
 });
