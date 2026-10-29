@@ -147,6 +147,7 @@ export function ContactHero({
           photoUrl={photoUrl}
           initials={initials}
           title={displayName}
+          viewable
         />
       </View>
 
