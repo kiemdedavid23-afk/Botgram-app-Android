@@ -141,3 +141,4 @@ export function confirmError(
       return texts.genericError;
   }
 }
+
