@@ -17,6 +17,25 @@ export const contactsTexts = {
   chatTypeChannel: 'Canal',
   chatTypeUnknown: 'Inconnu',
   back: 'Retour',
+  // Boutons d'action
+  actionMessage: 'Message',
+  actionPin: 'Épingler',
+  actionUnpin: 'Désépingler',
+  // Partagés
+  tabMedia: 'Médias',
+  tabDocs: 'Documents',
+  tabLinks: 'Liens',
+  emptyMedia: 'Aucune photo ni vidéo échangée.',
+  emptyDocs: 'Aucun document échangé.',
+  emptyLinks: 'Aucun lien partagé.',
+  sharedNote: 'Seuls les derniers messages enregistrés sur ce téléphone sont pris en compte.',
+  docFallbackName: 'Document',
+  offline: 'Indisponible hors ligne',
+  tooLarge: 'Fichier trop volumineux (max. 20 Mo)',
+  loadError: 'Chargement impossible',
+  noHandler: 'Aucune application pour ouvrir ce fichier',
+  // Informations
+  labelFullName: 'Nom',
 } as const;
 
 export type ContactsTextKey = keyof typeof contactsTexts;
