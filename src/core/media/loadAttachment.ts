@@ -12,6 +12,7 @@ import {ATTACHMENT_MAX_BYTES} from '../api/http';
 import {env} from '../config/env';
 import {getAccessToken} from '../storage';
 import {isNativeDownloadAvailable, nativeDownload} from './native/nativeMedia';
+import {describeDownload} from './downloadMeta';
 
 export type LoadAttachmentResult =
   | {ok: true; path: string}
@@ -52,6 +53,8 @@ async function doLoadNative(
   if (access) headers.Authorization = `Bearer ${access}`;
 
   const url = `${env.apiUrl.replace(/\/$/, '')}/messages/${messageId}/attachment`;
+  // Nom et type du fichier pour la notification de téléchargement (barre + pourcentage).
+  describeDownload(messageId);
   const res = await nativeDownload({
     id: messageId,
     url,
