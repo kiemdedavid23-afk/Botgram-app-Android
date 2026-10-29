@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -32,10 +33,12 @@
       <!-- Icône et couleur des notifications push (au lieu de l'icône générique) -->
       <meta-data
         android:name="com.google.firebase.messaging.default_notification_icon"
-        android:resource="@drawable/ic_stat_botgram" />
+        android:resource="@drawable/ic_stat_botgram"
+        tools:replace="android:resource" />
       <meta-data
         android:name="com.google.firebase.messaging.default_notification_color"
-        android:resource="@color/notification_accent" />
+        android:resource="@color/notification_accent"
+        tools:replace="android:resource" />
 
       <activity
         android:name=".MainActivity"
