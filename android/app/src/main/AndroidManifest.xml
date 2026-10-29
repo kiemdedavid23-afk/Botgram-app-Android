@@ -5,6 +5,8 @@
     <!-- Lecture audio en arrière-plan (service média Media3) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <!-- Téléchargements de fichiers avec notification de progression -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!-- Android 11+ : visibilité des apps de messagerie que le bouton « Ouvrir ma messagerie » peut lancer -->
@@ -23,6 +25,14 @@
       android:theme="@style/AppTheme"
       android:usesCleartextTraffic="${usesCleartextTraffic}"
       android:supportsRtl="true">
+      <!-- Icône et couleur des notifications push (au lieu de l'icône générique) -->
+      <meta-data
+        android:name="com.google.firebase.messaging.default_notification_icon"
+        android:resource="@drawable/ic_stat_botgram" />
+      <meta-data
+        android:name="com.google.firebase.messaging.default_notification_color"
+        android:resource="@color/notification_accent" />
+
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"
@@ -44,5 +54,11 @@
           <action android:name="androidx.media3.session.MediaSessionService" />
         </intent-filter>
       </service>
+
+      <!-- Notification de téléchargement (barre + pourcentage) ; garde le processus en vie -->
+      <service
+        android:name=".media.DownloadService"
+        android:exported="false"
+        android:foregroundServiceType="dataSync" />
     </application>
 </manifest>
