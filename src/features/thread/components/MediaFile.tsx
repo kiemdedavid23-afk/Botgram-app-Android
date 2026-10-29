@@ -8,6 +8,7 @@ import {openMediaFile} from '../../../core/storage/mediaFiles';
 import {getMediaStorage} from '../../../core/media/MediaStorage';
 import {threadTexts as t} from '../texts';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
+import {rememberDownloadMeta} from '../../../core/media/downloadMeta';
 import NetInfo from '@react-native-community/netinfo';
 
 type Props = {
@@ -46,14 +47,18 @@ export function MediaFile({
             setLoading(false);
             return;
           }
+          rememberDownloadMeta(messageId, 'document', name);
           const res = await loadAttachmentToStorage(messageId);
           if (!res.ok) {
             setLoading(false);
-            setError(
-              res.code === 'PAYLOAD_TOO_LARGE'
-                ? t.mediaTooLarge
-                : t.mediaLoadError,
-            );
+            // Annulé depuis la notification : pas de message d'erreur.
+            if (res.code !== 'cancelled') {
+              setError(
+                res.code === 'PAYLOAD_TOO_LARGE'
+                  ? t.mediaTooLarge
+                  : t.mediaLoadError,
+              );
+            }
             return;
           }
         }

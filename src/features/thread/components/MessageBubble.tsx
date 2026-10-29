@@ -13,6 +13,7 @@ import {MediaAlbum} from './MediaAlbum';
 import {MediaVideo} from './MediaVideo';
 import {MediaAudio} from './MediaAudio';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
+import {rememberDownloadMeta} from '../../../core/media/downloadMeta';
 import {threadTexts as t} from '../texts';
 
 type Props = {
@@ -40,6 +41,10 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
     message.kind === 'animation' ||
     message.kind === 'video_note';
   const isAudioKind = message.kind === 'audio' || message.kind === 'voice';
+  // Retient le nom et le type du fichier : la notification de téléchargement les affiche.
+  if (message.attachment && message.kind) {
+    rememberDownloadMeta(message.id, message.kind, message.attachment.name);
+  }
 
   const confirmDelete = () => {
     if (!onDelete || !isOut) return;

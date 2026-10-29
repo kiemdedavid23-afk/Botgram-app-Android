@@ -16,6 +16,7 @@ import {
 import {useTheme} from '../../../shared/theme';
 import {threadMetrics as tm} from '../../../shared/theme/threadMetrics';
 import {loadAttachmentToStorage} from '../../../core/media/loadAttachment';
+import {rememberDownloadMeta} from '../../../core/media/downloadMeta';
 import {getMediaStorage} from '../../../core/media/MediaStorage';
 import {threadTexts as t} from '../texts';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
@@ -56,10 +57,16 @@ export function MediaPhoto({
         }
         return;
       }
+      rememberDownloadMeta(messageId, 'photo');
       const res = await loadAttachmentToStorage(messageId, signal);
       if (!alive.current) return;
       setLoading(false);
       if (!res.ok) {
+        // Annulé depuis la notification : on propose de relancer, sans message d'erreur.
+        if (res.code === 'cancelled') {
+          setNeedTap(true);
+          return;
+        }
         setError(
           res.code === 'PAYLOAD_TOO_LARGE'
             ? t.mediaTooLarge

@@ -64,9 +64,12 @@ export function useMediaDownload(
       if (!alive.current) return res.ok ? res.path : null;
       setLoading(false);
       if (!res.ok) {
-        setError(
-          res.code === 'PAYLOAD_TOO_LARGE' ? t.mediaTooLarge : t.mediaLoadError,
-        );
+        // Annulé depuis la notification : retour à l'état de départ, sans message d'erreur.
+        if (res.code !== 'cancelled') {
+          setError(
+            res.code === 'PAYLOAD_TOO_LARGE' ? t.mediaTooLarge : t.mediaLoadError,
+          );
+        }
         return null;
       }
       setProgress(1);
