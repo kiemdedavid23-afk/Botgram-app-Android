@@ -9,7 +9,12 @@ import {AssociateShell} from '../components/AssociateShell';
 import {useAssociateStore} from '../store/associateStore';
 import {texts} from '../texts';
 
-type Props = {onNext: () => void; onBack: () => void};
+type Props = {
+  onNext: () => void;
+  onBack: () => void;
+  /** Ouvre le guide complet. */
+  onOpenGuide: () => void;
+};
 
 const POINTS: ReadonlyArray<{Icon: typeof Key; text: string}> = [
   {Icon: Key, text: texts.point1},
@@ -21,6 +26,7 @@ const POINTS: ReadonlyArray<{Icon: typeof Key; text: string}> = [
 export function AssociateIntroScreen({
   onNext,
   onBack,
+  onOpenGuide,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
   const acknowledged = useAssociateStore(s => s.acknowledged);
@@ -54,9 +60,15 @@ export function AssociateIntroScreen({
             </Text>
           </View>
         ))}
-        <Text style={[styles.link, {color: colors.accent}]}>
-          {texts.guideLink}
-        </Text>
+        <Pressable
+          accessibilityRole="link"
+          onPress={onOpenGuide}
+          hitSlop={8}
+          style={styles.linkBtn}>
+          <Text style={[styles.link, {color: colors.accent}]}>
+            {texts.guideLink}
+          </Text>
+        </Pressable>
       </View>
 
       <Pressable
@@ -141,8 +153,8 @@ const styles = StyleSheet.create({
     fontSize: m.cardTextSize,
     lineHeight: m.cardTextLine,
   },
+  linkBtn: {marginTop: m.linkMarginTop, alignSelf: 'flex-start'},
   link: {
-    marginTop: m.linkMarginTop,
     fontSize: m.linkFont,
     fontWeight: m.weight500,
   },
