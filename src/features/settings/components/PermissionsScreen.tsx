@@ -13,7 +13,7 @@ import {
   PermissionsAndroid,
   type Permission,
 } from 'react-native';
-import {Bell, Mic, Settings} from 'lucide-react-native';
+import {Bell, Mic, Settings, type LucideIcon} from 'lucide-react-native';
 import {useTheme, fontWeight} from '../../../shared/theme';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {settingsTexts as t} from '../texts';
@@ -55,7 +55,7 @@ type BlockProps = {
   minApi: number;
   title: string;
   subtitle: string;
-  Icon: React.ComponentType<{size?: number; color?: string; strokeWidth?: number}>;
+  Icon: LucideIcon;
 };
 
 /** Une permission : titre, ligne d'état (touchable si refusée) et sous-titre. */
