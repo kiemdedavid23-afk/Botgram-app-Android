@@ -13,6 +13,11 @@ export const texts = {
   point4:
     'Vérifiez le bot avant de confirmer, et ne partagez jamais le jeton.',
   guideLink: 'Consulter le guide complet →',
+  // Guide (page de lecture)
+  guideTitle: 'Guide complet',
+  guideHeading: 'Associer son bot Telegram à Botgram',
+  guideToc: 'Sommaire',
+  guideBack: 'J’ai compris, retour',
   acknowledge:
     'J’ai pris connaissance des consignes et je souhaite continuer.',
   acknowledgeOk:

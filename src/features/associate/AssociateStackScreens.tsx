@@ -9,6 +9,8 @@ import {AssociateTokenScreen} from './screens/AssociateTokenScreen';
 import {AssociateVerifyScreen} from './screens/AssociateVerifyScreen';
 import {AssociateConfirmScreen} from './screens/AssociateConfirmScreen';
 import {AssociateDoneScreen} from './screens/AssociateDoneScreen';
+import {AssociateGuideScreen} from './screens/AssociateGuideScreen';
+import type {GuideSectionId} from './guideContent';
 import {
   useAssociateStore,
   type VerifyResult,
@@ -21,6 +23,7 @@ const ASSOCIATE_ROUTES = new Set([
   'AssociateVerify',
   'AssociateConfirm',
   'AssociateDone',
+  'AssociateGuide',
 ]);
 
 type Nav = {
@@ -59,6 +62,7 @@ export function AssociateIntroWrapper({
   useResetOnLeaveFlow(navigation);
   return (
     <AssociateIntroScreen
+      onOpenGuide={() => navigation.navigate('AssociateGuide')}
       onBack={() => {
         useAssociateStore.getState().reset();
         navigation.goBack();
@@ -76,6 +80,9 @@ export function AssociateReadyWrapper({
   useResetOnLeaveFlow(navigation);
   return (
     <AssociateReadyScreen
+      onOpenGuide={() =>
+        navigation.navigate('AssociateGuide', {section: 'jeton'})
+      }
       onBack={() => navigation.goBack()}
       onNext={() => navigation.navigate('AssociateToken')}
     />
@@ -134,6 +141,21 @@ export function AssociateConfirmWrapper({
       onBack={() => navigation.goBack()}
       onDone={() => navigation.navigate('AssociateDone')}
       onNeedToken={onNeedToken}
+    />
+  );
+}
+
+export function AssociateGuideWrapper({
+  navigation,
+  route,
+}: {
+  navigation: Nav;
+  route: {params?: {section?: GuideSectionId}};
+}): React.JSX.Element {
+  return (
+    <AssociateGuideScreen
+      section={route.params?.section}
+      onBack={() => navigation.goBack()}
     />
   );
 }
