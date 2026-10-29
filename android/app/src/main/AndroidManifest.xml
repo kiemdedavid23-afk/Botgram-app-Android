@@ -7,6 +7,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <!-- Téléchargements de fichiers avec notification de progression -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- Enregistrer une image dans la galerie : nécessaire seulement avant Android 10 -->
+    <uses-permission
+      android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+      android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!-- Android 11+ : visibilité des apps de messagerie que le bouton « Ouvrir ma messagerie » peut lancer -->
@@ -54,6 +58,24 @@
           <action android:name="androidx.media3.session.MediaSessionService" />
         </intent-filter>
       </service>
+
+      <!-- Visionneuse d'images plein écran de toute l'app -->
+      <activity
+        android:name=".viewer.ImageViewerActivity"
+        android:exported="false"
+        android:theme="@style/Theme.BotgramViewer"
+        android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden" />
+
+      <!-- Partage d'images vers d'autres applications -->
+      <provider
+        android:name=".viewer.BotgramFileProvider"
+        android:authorities="${applicationId}.botgram.fileprovider"
+        android:exported="false"
+        android:grantUriPermissions="true">
+        <meta-data
+          android:name="android.support.FILE_PROVIDER_PATHS"
+          android:resource="@xml/botgram_file_paths" />
+      </provider>
 
       <!-- Notification de téléchargement (barre + pourcentage) ; garde le processus en vie -->
       <service
