@@ -16,6 +16,8 @@ buildscript {
         classpath("com.facebook.react:react-native-gradle-plugin")
         classpath("com.google.gms:google-services:4.5.0")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+        // Compilateur Jetpack Compose (visionneuse d'images) : même version que Kotlin
+        classpath("org.jetbrains.kotlin:compose-compiler-gradle-plugin:$kotlinVersion")
     }
 }
 
