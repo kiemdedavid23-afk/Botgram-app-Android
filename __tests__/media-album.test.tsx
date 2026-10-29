@@ -8,7 +8,10 @@ jest.mock('../src/shared/theme/ThemeProvider', () => {
   ) as typeof import('../src/shared/theme/colors');
   return {
     ThemeProvider: ({children}: {children: unknown}) => children,
-    useTheme: () => ({colors: palette.getColors('light')}),
+    useTheme: () => ({
+      colors: palette.getColors('light'),
+      appearance: {cornerRadius: 14, fontSize: 15},
+    }),
   };
 });
 
