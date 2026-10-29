@@ -387,7 +387,11 @@ const styles = StyleSheet.create({
   center: {alignItems: 'center', justifyContent: 'center', gap: 4, padding: 4},
   tileSub: {fontSize: 10, textAlign: 'center'},
   playWrap: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
