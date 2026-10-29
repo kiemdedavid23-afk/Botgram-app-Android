@@ -31,4 +31,14 @@
     <string name="kind_voice">Message vocal</string>
     <string name="kind_document">Document</string>
     <string name="kind_file">Fichier</string>
+
+    <!-- Visionneuse d'images -->
+    <string name="viewer_close">Fermer</string>
+    <string name="viewer_save">Enregistrer dans la galerie</string>
+    <string name="viewer_share">Partager</string>
+    <string name="viewer_share_title">Partager l’image</string>
+    <string name="viewer_saved">Image enregistrée dans la galerie</string>
+    <string name="viewer_save_failed">Impossible d’enregistrer l’image</string>
+    <string name="viewer_share_failed">Impossible de partager l’image</string>
+    <string name="viewer_permission_denied">Autorisation refusée : image non enregistrée</string>
 </resources>
