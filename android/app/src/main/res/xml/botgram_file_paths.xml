@@ -1,1 +1,5 @@
-
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Copies temporaires créées pour le partage (cache/shared/) -->
+    <cache-path name="botgram_shared" path="shared/" />
+</paths>
