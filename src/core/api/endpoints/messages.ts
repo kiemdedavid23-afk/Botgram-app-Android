@@ -41,6 +41,23 @@ export async function sendMessage(
   });
 }
 
+/** POST /conversations/:id/contact (Worker v15.6). */
+export async function sendContact(
+  conversationId: string,
+  body: {
+    phone_number: string;
+    first_name: string;
+    last_name?: string;
+    client_message_id: string;
+  },
+): Promise<HttpResult<{message: Message}>> {
+  return authedHttp<{message: Message}>({
+    method: 'POST',
+    path: `/conversations/${conversationId}/contact`,
+    body,
+  });
+}
+
 export async function retryMessage(
   messageId: string,
 ): Promise<HttpResult<{message: Message; retried: boolean}>> {
