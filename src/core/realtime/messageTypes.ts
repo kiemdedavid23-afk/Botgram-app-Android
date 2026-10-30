@@ -28,6 +28,26 @@ export type Message = {
   client_message_id?: string | null;
   /** Album entrant regroupé (Worker v15.5). */
   album?: AlbumItem[] | null;
+  /** Carte de contact (kind `contact`, Worker v15.6). */
+  contact?: ContactPayload | null;
+  /** Position (kind `location` / `venue`, Worker v15.6). */
+  location?: LocationPayload | null;
+};
+
+export type ContactPayload = {
+  phone_number: string;
+  first_name: string;
+  last_name?: string | null;
+  user_id?: number | null;
+  vcard?: string | null;
+};
+
+export type LocationPayload = {
+  latitude: number;
+  longitude: number;
+  live_period?: number | null;
+  live_until?: number | null;
+  stopped_at?: number | null;
 };
 
 export type AlbumItem = {
