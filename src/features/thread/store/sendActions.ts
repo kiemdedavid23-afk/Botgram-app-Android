@@ -4,6 +4,7 @@
 import {
   sendMessage,
   sendContact,
+  sendLocation,
   retryMessage,
   markConversationRead,
 } from '../../../core/api/endpoints/messages';
@@ -106,6 +107,76 @@ export async function doSend(
     return;
   }
 
+  const serverMsg = {
+    ...res.data.message,
+    client_message_id: res.data.message.client_message_id ?? clientId,
+  };
+  ctx.set(s => ({
+    items: dropLocalNetworkDupes(upsertOutgoing(s.items, serverMsg)),
+    sending: false,
+    sendError: null,
+  }));
+}
+
+export type LocationDraft = {
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+};
+
+/** Envoi d'une position fixe : même circuit que le texte. */
+export async function doSendLocation(
+  loc: LocationDraft,
+  existingClientId: string | undefined,
+  ctx: SetGet,
+): Promise<void> {
+  const {conversationId, offline} = ctx.get();
+  if (!conversationId || offline) return;
+  if (
+    !Number.isFinite(loc.latitude) ||
+    !Number.isFinite(loc.longitude) ||
+    Math.abs(loc.latitude) > 90 ||
+    Math.abs(loc.longitude) > 180
+  ) {
+    return;
+  }
+  const clientId = existingClientId ?? uuidV4();
+  const optimistic: Message = {
+    id: `local:${clientId}`,
+    conversation_id: conversationId,
+    direction: 'out',
+    kind: 'location',
+    text: null,
+    location: {latitude: loc.latitude, longitude: loc.longitude},
+    status: 'sending',
+    client_message_id: clientId,
+    created_at: Date.now(),
+  };
+  ctx.set(s => ({
+    items: upsertOutgoing(s.items, optimistic),
+    sending: true,
+    sendError: null,
+  }));
+
+  const res = await sendLocation(conversationId, {
+    latitude: loc.latitude,
+    longitude: loc.longitude,
+    ...(loc.accuracy != null && loc.accuracy > 0
+      ? {horizontal_accuracy: Math.min(loc.accuracy, 1500)}
+      : {}),
+    client_message_id: clientId,
+  });
+  if (ctx.get().conversationId !== conversationId) return;
+
+  if (!res.ok) {
+    const failed = applySendError(optimistic, res.status, res.error.code);
+    ctx.set(s => ({
+      items: upsertOutgoing(s.items, failed),
+      sending: false,
+      sendError: mapSendError(res.error.code, res.status),
+    }));
+    return;
+  }
   const serverMsg = {
     ...res.data.message,
     client_message_id: res.data.message.client_message_id ?? clientId,
@@ -265,6 +336,10 @@ export async function doResendAsNew(
     await doSendContact(contactToDraft(message.contact), undefined, ctx);
     return;
   }
+  if (message.kind === 'location' && message.location) {
+    await doSendLocation(message.location, undefined, ctx);
+    return;
+  }
   if (message.kind !== 'text') return;
   if (!message.text) return;
   await doSend(message.text, undefined, ctx);
@@ -277,6 +352,14 @@ export async function doResendSameId(
   if (message.kind === 'contact' && message.contact) {
     await doSendContact(
       contactToDraft(message.contact),
+      message.client_message_id ?? undefined,
+      ctx,
+    );
+    return;
+  }
+  if (message.kind === 'location' && message.location) {
+    await doSendLocation(
+      message.location,
       message.client_message_id ?? undefined,
       ctx,
     );
