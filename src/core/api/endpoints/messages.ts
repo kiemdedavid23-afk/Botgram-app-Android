@@ -58,6 +58,23 @@ export async function sendContact(
   });
 }
 
+/** POST /conversations/:id/location (Worker v15.6) — position fixe. */
+export async function sendLocation(
+  conversationId: string,
+  body: {
+    latitude: number;
+    longitude: number;
+    horizontal_accuracy?: number;
+    client_message_id: string;
+  },
+): Promise<HttpResult<{message: Message}>> {
+  return authedHttp<{message: Message}>({
+    method: 'POST',
+    path: `/conversations/${conversationId}/location`,
+    body,
+  });
+}
+
 export async function retryMessage(
   messageId: string,
 ): Promise<HttpResult<{message: Message; retried: boolean}>> {
