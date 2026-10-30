@@ -20,6 +20,7 @@ import type {PickedFile} from '../store/sendMediaActions';
 import {MEDIA_CAPTION_MAX} from '../mediaLimits';
 import {useVoiceRecorder} from './useVoiceRecorder';
 import {AttachSheet} from '../attach/AttachSheet';
+import type {ContactDraft} from '../store/sendActions';
 
 function formatClock(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000));
@@ -37,6 +38,7 @@ type Props = {
     caption: string,
     signal?: AbortSignal,
   ) => Promise<void>;
+  onSendContact: (contact: ContactDraft) => Promise<void>;
 };
 
 export function ComposerBar({
@@ -44,6 +46,7 @@ export function ComposerBar({
   sending,
   onSend,
   onSendMedia,
+  onSendContact,
 }: Props): React.JSX.Element {
   const {colors, mode, appearance} = useTheme();
   const sendWithEnter = appearance.sendWithEnter;
@@ -303,6 +306,7 @@ export function ComposerBar({
         onClose={() => setSheetOpen(false)}
         onSend={sendFromSheet}
         onPickFiles={addPending}
+        onSendContact={c => fireAndForget(onSendContact(c))}
       />
     </View>
   );

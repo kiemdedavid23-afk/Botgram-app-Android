@@ -12,6 +12,7 @@ import {MediaFile} from './MediaFile';
 import {MediaAlbum} from './MediaAlbum';
 import {MediaVideo} from './MediaVideo';
 import {MediaAudio} from './MediaAudio';
+import {ContactBubble} from './ContactBubble';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {rememberDownloadMeta} from '../../../core/media/downloadMeta';
 import {threadTexts as t} from '../texts';
@@ -107,6 +108,13 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
             parseMode={message.parse_mode}
           />
         ) : null}
+        {message.kind === 'contact' && message.contact ? (
+          <ContactBubble
+            contact={message.contact}
+            textColor={textColor}
+            subColor={timeColor}
+          />
+        ) : null}
         {isVideoKind ? (
           <MediaVideo
             messageId={message.id}
@@ -127,6 +135,7 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
         message.kind !== 'photo' &&
         message.kind !== 'document' &&
         message.kind !== 'album' &&
+        !(message.kind === 'contact' && message.contact) &&
         !isVideoKind &&
         !isAudioKind ? (
           <Text style={{color: textColor, fontSize: tm.kindLabelSize}}>
