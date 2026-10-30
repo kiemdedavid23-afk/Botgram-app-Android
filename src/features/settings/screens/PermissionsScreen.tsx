@@ -13,7 +13,14 @@ import {
   PermissionsAndroid,
   type Permission,
 } from 'react-native';
-import {Bell, Mic, Settings, type LucideIcon} from 'lucide-react-native';
+import {
+  Bell,
+  Mic,
+  Camera,
+  Image as ImageIcon,
+  Settings,
+  type LucideIcon,
+} from 'lucide-react-native';
 import {useTheme, fontWeight} from '../../../shared/theme';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {settingsTexts as t} from '../texts';
@@ -26,6 +33,14 @@ type PermStatus = 'granted' | 'denied' | 'unknown';
 
 const NOTIF_MIN_API = 33;
 const MIC_MIN_API = 23;
+const CAMERA_MIN_API = 23;
+const PHOTOS_MIN_API = 23;
+/** Android 13+ : permission photos ; avant : stockage. */
+const PHOTOS_PERMISSION: Permission = (
+  Number(Platform.Version) >= 33
+    ? 'android.permission.READ_MEDIA_IMAGES'
+    : 'android.permission.READ_EXTERNAL_STORAGE'
+) as Permission;
 
 async function readStatus(
   permission: Permission,
@@ -140,6 +155,20 @@ export function PermissionsScreen({onBack}: Props): React.JSX.Element {
           title={t.permMicrophone}
           subtitle={t.permMicrophoneSub}
           Icon={Mic}
+        />
+        <PermissionBlock
+          permission={PermissionsAndroid.PERMISSIONS.CAMERA}
+          minApi={CAMERA_MIN_API}
+          title={t.permCamera}
+          subtitle={t.permCameraSub}
+          Icon={Camera}
+        />
+        <PermissionBlock
+          permission={PHOTOS_PERMISSION}
+          minApi={PHOTOS_MIN_API}
+          title={t.permPhotos}
+          subtitle={t.permPhotosSub}
+          Icon={ImageIcon}
         />
         <SettingsCard>
           <LinkRow
