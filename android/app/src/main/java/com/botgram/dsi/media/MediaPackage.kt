@@ -17,6 +17,7 @@ class MediaPackage : ReactPackage {
           VoiceRecorderModule(reactContext),
           GalleryModule(reactContext),
           CameraModule(reactContext),
+          ContactPickerModule(reactContext),
       )
 
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> =
