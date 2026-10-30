@@ -229,14 +229,14 @@ export function GalleryTab({
           ListFooterComponent={
             gallery.loading ? (
               <ActivityIndicator color={colors.accent} style={styles.loader} />
-            ) : null
+            ) : undefined
           }
           ListEmptyComponent={
             !gallery.loading ? (
               <Text style={[styles.empty, {color: colors.textSecondary}]}>
                 {t.galleryEmpty}
               </Text>
-            ) : null
+            ) : undefined
           }
         />
       ) : null}
