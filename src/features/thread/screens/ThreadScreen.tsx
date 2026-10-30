@@ -64,6 +64,7 @@ export function ThreadScreen({
   const loadOlder = useThreadStore(s => s.loadOlder);
   const send = useThreadStore(s => s.send);
   const sendMedia = useThreadStore(s => s.sendMedia);
+  const sendContact = useThreadStore(s => s.sendContact);
   const retry = useThreadStore(s => s.retry);
   const resendAsNew = useThreadStore(s => s.resendAsNew);
   const resendMedia = useThreadStore(s => s.resendMedia);
@@ -232,6 +233,7 @@ export function ThreadScreen({
           sending={sending}
           onSend={send}
           onSendMedia={sendMedia}
+          onSendContact={sendContact}
         />
       </KeyboardAvoidingView>
     </View>
@@ -270,4 +272,3 @@ const styles = StyleSheet.create({
     padding: tm.composerPad,
   },
 });
-
