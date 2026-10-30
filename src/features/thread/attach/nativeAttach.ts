@@ -53,6 +53,23 @@ export async function pickContact(): Promise<PickedContact | null> {
   return contactPicker.pickContact();
 }
 
+export type DevicePosition = {
+  latitude: number;
+  longitude: number;
+  /** Précision horizontale en mètres (0 si inconnue). */
+  accuracy: number;
+};
+type LocationModule = {getCurrentPosition(): Promise<DevicePosition>};
+const locationModule = NativeModules.BotgramLocation as
+  | LocationModule
+  | undefined;
+
+/** Lève `permission_denied`, `location_disabled`, `unavailable` : l'appelant décide. */
+export async function getCurrentPosition(): Promise<DevicePosition> {
+  if (!locationModule) throw new Error('unavailable');
+  return locationModule.getCurrentPosition();
+}
+
 export const isGalleryAvailable = (): boolean => gallery != null;
 
 /** Lève une erreur (`permission_denied`, `query_failed`) : l'appelant décide. */

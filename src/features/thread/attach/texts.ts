@@ -37,6 +37,17 @@ export const attachTexts = {
   contactSend: 'Envoyer ce contact',
   contactChange: 'Changer de contact',
   contactFailed: 'Impossible de lire ce contact.',
+  // Position
+  locAccessTitle: 'Partager votre position',
+  locAccessBody:
+    'Autorisez Botgram à lire votre position pour l’envoyer. Elle n’est partagée que lorsque vous appuyez sur Envoyer.',
+  locAllow: 'Autoriser la position',
+  locOpenSettings: 'Ouvrir les réglages',
+  locSearching: 'Recherche de votre position…',
+  locFailed: 'Position introuvable. Activez la localisation du téléphone puis réessayez.',
+  locRetry: 'Réessayer',
+  locSend: 'Envoyer cette position',
+  locAccuracy: (m: number) => `Précision : environ ${m} m`,
   // Barre du bas
   captionPlaceholder: 'Ajouter une légende…',
   send: 'Envoyer',

@@ -39,7 +39,8 @@ import {attachTexts as t} from './texts';
 import {GalleryTab} from './GalleryTab';
 import {FileTab} from './FileTab';
 import {ContactTab} from './ContactTab';
-import type {ContactDraft} from '../store/sendActions';
+import {LocationTab} from './LocationTab';
+import type {ContactDraft, LocationDraft} from '../store/sendActions';
 import {pickFiles} from './pickFiles';
 import type {CameraPhoto, GalleryAsset} from './nativeAttach';
 import type {SelectedItem} from './types';
@@ -55,6 +56,8 @@ type Props = {
   onPickFiles: (files: PickedFile[]) => void;
   /** Contact choisi dans l'onglet Contact : envoi immédiat. */
   onSendContact: (contact: ContactDraft) => void;
+  /** Position choisie dans l'onglet Position : envoi immédiat. */
+  onSendLocation: (loc: LocationDraft) => void;
 };
 
 const TABS: ReadonlyArray<{
@@ -65,7 +68,7 @@ const TABS: ReadonlyArray<{
 }> = [
   {id: 'gallery', label: t.tabGallery, Icon: ImageIcon, enabled: true},
   {id: 'file', label: t.tabFile, Icon: FileIcon, enabled: true},
-  {id: 'location', label: t.tabLocation, Icon: MapPin, enabled: false},
+  {id: 'location', label: t.tabLocation, Icon: MapPin, enabled: true},
   {id: 'contact', label: t.tabContact, Icon: UserRound, enabled: true},
 ];
 
@@ -77,6 +80,7 @@ export function AttachSheet({
   onSend,
   onPickFiles,
   onSendContact,
+  onSendLocation,
 }: Props): React.JSX.Element {
   const {colors, mode} = useTheme();
   const {height} = useWindowDimensions();
@@ -241,6 +245,15 @@ export function AttachSheet({
               />
             ) : tab === 'file' ? (
               <FileTab onBrowse={() => browse(false)} />
+            ) : tab === 'location' ? (
+              <LocationTab
+                active={visible && tab === 'location'}
+                bottomSpace={BAR_SPACE + insets.bottom}
+                onSend={l => {
+                  onSendLocation(l);
+                  onClose();
+                }}
+              />
             ) : tab === 'contact' ? (
               <ContactTab
                 bottomSpace={BAR_SPACE + insets.bottom}
