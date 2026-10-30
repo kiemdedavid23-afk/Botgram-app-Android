@@ -16,6 +16,17 @@
     <!-- Enregistrer un message vocal (demandée au premier appui sur le micro) -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
+    <!-- Panneau de pièces jointes : caméra intégrée et galerie (demandées à l'ouverture de l'onglet) -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <!-- Android 14 : accès partiel (« certaines photos seulement ») -->
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
+    <!-- Android 12 et moins -->
+    <uses-permission
+      android:name="android.permission.READ_EXTERNAL_STORAGE"
+      android:maxSdkVersion="32" />
 
     <!-- Android 11+ : visibilité des apps de messagerie que le bouton « Ouvrir ma messagerie » peut lancer -->
     <queries>
