@@ -28,6 +28,11 @@
       android:name="android.permission.READ_EXTERNAL_STORAGE"
       android:maxSdkVersion="32" />
 
+    <!-- Partage de position (demandée à l'ouverture de l'onglet Position) -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-feature android:name="android.hardware.location" android:required="false" />
+
     <!-- Android 11+ : visibilité des apps de messagerie que le bouton « Ouvrir ma messagerie » peut lancer -->
     <queries>
         <package android:name="com.google.android.gm" />
