@@ -9,9 +9,9 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
+  Keyboard,
 } from 'react-native';
 import {Send, Paperclip, X, Mic} from 'lucide-react-native';
-import {pick, types, isErrorWithCode, errorCodes} from '@react-native-documents/picker';
 import {useTheme, getShadow} from '../../../shared/theme';
 import {threadMetrics as tm} from '../../../shared/theme/threadMetrics';
 import {threadTexts as t} from '../texts';
@@ -19,6 +19,7 @@ import {fireAndForget} from '../../../core/utils/fireAndForget';
 import type {PickedFile} from '../store/sendMediaActions';
 import {MEDIA_CAPTION_MAX} from '../mediaLimits';
 import {useVoiceRecorder} from './useVoiceRecorder';
+import {AttachSheet} from '../attach/AttachSheet';
 
 function formatClock(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000));
@@ -48,6 +49,7 @@ export function ComposerBar({
   const sendWithEnter = appearance.sendWithEnter;
   const [text, setText] = useState('');
   const [pending, setPending] = useState<PickedFile[]>([]);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -100,27 +102,27 @@ export function ComposerBar({
   }, [canSendText, canSendMedia, text, pending, onSend, onSendMedia]);
 
   const onAttach = useCallback(() => {
-    fireAndForget(
-      (async () => {
-        try {
-          const results = await pick({
-            allowMultiSelection: true,
-            type: [types.allFiles],
-          });
-          const mapped: PickedFile[] = results.map(r => ({
-            uri: r.uri,
-            name: r.name ?? 'file',
-            mime: r.type ?? 'application/octet-stream',
-            size: typeof r.size === 'number' ? r.size : 0,
-          }));
-          setPending(mapped);
-        } catch (e) {
-          if (isErrorWithCode(e) && e.code === errorCodes.OPERATION_CANCELED) {
-            return;
-          }
-        }
-      })(),
-    );
+    Keyboard.dismiss();
+    setSheetOpen(true);
+  }, []);
+
+  // Photos / vidéos choisies dans le tiroir : envoi direct avec leur légende.
+  const sendFromSheet = useCallback(
+    (files: PickedFile[], captionText: string) => {
+      const ac = new AbortController();
+      abortRef.current = ac;
+      fireAndForget(
+        onSendMedia(files, captionText, ac.signal).finally(() => {
+          abortRef.current = null;
+        }),
+      );
+    },
+    [onSendMedia],
+  );
+
+  // Fichiers de l'onglet Fichier : ajoutés au message en cours.
+  const addPending = useCallback((files: PickedFile[]) => {
+    setPending(files);
   }, []);
 
   const cancel = useCallback(() => {
@@ -296,6 +298,12 @@ export function ComposerBar({
           </Pressable>
         )}
       </View>
+      <AttachSheet
+        visible={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        onSend={sendFromSheet}
+        onPickFiles={addPending}
+      />
     </View>
   );
 }
