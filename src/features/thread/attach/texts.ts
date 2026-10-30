@@ -30,6 +30,13 @@ export const attachTexts = {
   fileBrowse: 'Choisir un fichier',
   fileBrowseSub: 'Parcourir les fichiers de votre téléphone',
   fileHint: 'Vous pouvez en choisir plusieurs. Ils seront ajoutés à votre message.',
+  // Contact
+  contactPick: 'Choisir un contact',
+  contactPickSub: 'Depuis le carnet d’adresses de votre téléphone',
+  contactHint: 'Aucune autorisation n’est nécessaire : seul le contact que vous choisissez est partagé.',
+  contactSend: 'Envoyer ce contact',
+  contactChange: 'Changer de contact',
+  contactFailed: 'Impossible de lire ce contact.',
   // Barre du bas
   captionPlaceholder: 'Ajouter une légende…',
   send: 'Envoyer',

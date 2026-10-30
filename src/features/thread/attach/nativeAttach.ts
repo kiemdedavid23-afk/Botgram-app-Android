@@ -33,8 +33,25 @@ type GalleryModule = {
 };
 type CameraModule = {takePhoto(): Promise<CameraPhoto>};
 
+export type PickedContact = {
+  phone_number: string;
+  first_name: string;
+  last_name?: string;
+};
+type ContactPickerModule = {pickContact(): Promise<PickedContact | null>};
+
 const gallery = NativeModules.BotgramGallery as GalleryModule | undefined;
 const camera = NativeModules.BotgramCamera as CameraModule | undefined;
+
+const contactPicker = NativeModules.BotgramContactPicker as
+  | ContactPickerModule
+  | undefined;
+
+/** Ouvre le carnet d'adresses du système. null = annulé ou indisponible. Aucune permission. */
+export async function pickContact(): Promise<PickedContact | null> {
+  if (!contactPicker) return null;
+  return contactPicker.pickContact();
+}
 
 export const isGalleryAvailable = (): boolean => gallery != null;
 

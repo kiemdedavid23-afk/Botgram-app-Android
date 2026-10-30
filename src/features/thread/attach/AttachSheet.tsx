@@ -38,6 +38,8 @@ import type {PickedFile} from '../store/sendMediaActions';
 import {attachTexts as t} from './texts';
 import {GalleryTab} from './GalleryTab';
 import {FileTab} from './FileTab';
+import {ContactTab} from './ContactTab';
+import type {ContactDraft} from '../store/sendActions';
 import {pickFiles} from './pickFiles';
 import type {CameraPhoto, GalleryAsset} from './nativeAttach';
 import type {SelectedItem} from './types';
@@ -51,6 +53,8 @@ type Props = {
   onSend: (files: PickedFile[], caption: string) => void;
   /** Fichiers de l'onglet Fichier : ajoutés au message en cours. */
   onPickFiles: (files: PickedFile[]) => void;
+  /** Contact choisi dans l'onglet Contact : envoi immédiat. */
+  onSendContact: (contact: ContactDraft) => void;
 };
 
 const TABS: ReadonlyArray<{
@@ -62,7 +66,7 @@ const TABS: ReadonlyArray<{
   {id: 'gallery', label: t.tabGallery, Icon: ImageIcon, enabled: true},
   {id: 'file', label: t.tabFile, Icon: FileIcon, enabled: true},
   {id: 'location', label: t.tabLocation, Icon: MapPin, enabled: false},
-  {id: 'contact', label: t.tabContact, Icon: UserRound, enabled: false},
+  {id: 'contact', label: t.tabContact, Icon: UserRound, enabled: true},
 ];
 
 const BAR_SPACE = 96;
@@ -72,6 +76,7 @@ export function AttachSheet({
   onClose,
   onSend,
   onPickFiles,
+  onSendContact,
 }: Props): React.JSX.Element {
   const {colors, mode} = useTheme();
   const {height} = useWindowDimensions();
@@ -236,6 +241,14 @@ export function AttachSheet({
               />
             ) : tab === 'file' ? (
               <FileTab onBrowse={() => browse(false)} />
+            ) : tab === 'contact' ? (
+              <ContactTab
+                bottomSpace={BAR_SPACE + insets.bottom}
+                onSend={c => {
+                  onSendContact(c);
+                  onClose();
+                }}
+              />
             ) : null}
           </View>
 
