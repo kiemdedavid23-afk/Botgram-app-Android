@@ -22,6 +22,8 @@ export const threadTexts = {
   kindOther: 'Message',
   kindContact: 'Contact',
   kindLocation: 'Position',
+  locationLive: 'Position en direct',
+  locationOpen: 'Ouvrir dans Cartes',
   yesterday: 'Hier',
   weekdays: [
     'Dimanche',
