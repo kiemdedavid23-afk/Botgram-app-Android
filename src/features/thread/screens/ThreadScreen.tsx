@@ -9,6 +9,7 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
+  KeyboardAvoidingView,
 } from 'react-native';
 import {useTheme, useChatTheme} from '../../../shared/theme';
 import {GradientView} from '../../../shared/components/GradientView';
@@ -151,79 +152,88 @@ export function ThreadScreen({
         />
         {chat.dim ? <View style={[StyleSheet.absoluteFill, styles.dim]} /> : null}
       </View>
-      <ThreadHeader
-        title={headerTitle}
-        subtitle={subtitle}
-        photoUrl={photoUrl}
-        initials={initials}
-        offline={offline}
-        onBack={onBack}
-        onPressAvatar={onPressAvatar}
-        right={
-          <ThreadMenu
-            pinned={!!conversation?.pinned}
-            archived={archived}
-            offline={offline}
-            onViewProfile={onPressAvatar}
-            onTogglePin={onTogglePin}
-            onToggleArchive={onToggleArchive}
-            onDelete={onDeleteConversation}
-          />
-        }
-      />
-      {loading && items.length === 0 ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={colors.accent} />
-        </View>
-      ) : (
-        <FlatList
-          data={rows}
-          inverted
-          keyExtractor={r => (r.type === 'day' ? r.key : r.message.id)}
-          renderItem={renderItem}
-          maintainVisibleContentPosition={{
-            minIndexForVisible: tm.mvcMinIndex,
-            autoscrollToTopThreshold: tm.mvcAutoscrollThreshold,
-          }}
-          onEndReached={() => {
-            fireAndForget(loadOlder());
-          }}
-          onEndReachedThreshold={0.3}
-          contentContainerStyle={[
-            styles.listContent,
-            {paddingBottom: tm.listPadT + headerHeight},
-          ]}
-          ListFooterComponent={
-            loadingOlder ? (
-              <ActivityIndicator color={colors.accent} style={styles.older} />
-            ) : undefined
-          }
-          ListEmptyComponent={
-            !loading ? (
-              <View style={styles.center}>
-                <Text style={{color: colors.textSecondary}}>
-                  {t.emptyTitle}
-                </Text>
-              </View>
-            ) : undefined
+      {/*
+        Clavier : seul le premier plan (en-tête flottant, messages, barre de saisie) remonte,
+        et uniquement quand le clavier est ouvert. Le fond d'écran reste derrière, jamais
+        redimensionné. En mode bord à bord, Android ne rétrécit plus la fenêtre : sans ceci,
+        le clavier recouvre la barre de saisie. 'padding' se base sur le chevauchement réel
+        clavier/écran, donc rien n'est ajouté quand le clavier est fermé.
+      */}
+      <KeyboardAvoidingView style={styles.avoid} behavior="padding">
+        <ThreadHeader
+          title={headerTitle}
+          subtitle={subtitle}
+          photoUrl={photoUrl}
+          initials={initials}
+          offline={offline}
+          onBack={onBack}
+          onPressAvatar={onPressAvatar}
+          right={
+            <ThreadMenu
+              pinned={!!conversation?.pinned}
+              archived={archived}
+              offline={offline}
+              onViewProfile={onPressAvatar}
+              onTogglePin={onTogglePin}
+              onToggleArchive={onToggleArchive}
+              onDelete={onDeleteConversation}
+            />
           }
         />
-      )}
-      {sendError ? (
-        <Text
-          style={[
-            styles.sendError,
-            {color: colors.danger, fontSize: tm.retryBtnFont},
-          ]}>
-          {sendError}
-        </Text>
-      ) : null}
-      <ComposerBar
-        disabled={offline}
-        sending={sending}
-        onSend={send}
-        onSendMedia={sendMedia}
-      />
+        {loading && items.length === 0 ? (
+          <View style={styles.center}>
+            <ActivityIndicator color={colors.accent} />
+          </View>
+        ) : (
+          <FlatList
+            data={rows}
+            inverted
+            keyExtractor={r => (r.type === 'day' ? r.key : r.message.id)}
+            renderItem={renderItem}
+            maintainVisibleContentPosition={{
+              minIndexForVisible: tm.mvcMinIndex,
+              autoscrollToTopThreshold: tm.mvcAutoscrollThreshold,
+            }}
+            onEndReached={() => {
+              fireAndForget(loadOlder());
+            }}
+            onEndReachedThreshold={0.3}
+            contentContainerStyle={[
+              styles.listContent,
+              {paddingBottom: tm.listPadT + headerHeight},
+            ]}
+            ListFooterComponent={
+              loadingOlder ? (
+                <ActivityIndicator color={colors.accent} style={styles.older} />
+              ) : undefined
+            }
+            ListEmptyComponent={
+              !loading ? (
+                <View style={styles.center}>
+                  <Text style={{color: colors.textSecondary}}>
+                    {t.emptyTitle}
+                  </Text>
+                </View>
+              ) : undefined
+            }
+          />
+        )}
+        {sendError ? (
+          <Text
+            style={[
+              styles.sendError,
+              {color: colors.danger, fontSize: tm.retryBtnFont},
+            ]}>
+            {sendError}
+          </Text>
+        ) : null}
+        <ComposerBar
+          disabled={offline}
+          sending={sending}
+          onSend={send}
+          onSendMedia={sendMedia}
+        />
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -246,6 +256,7 @@ function buildInvertedRows(items: Message[]): Row[] {
 
 const styles = StyleSheet.create({
   root: {flex: 1},
+  avoid: {flex: 1},
   dim: {backgroundColor: 'rgba(0,0,0,0.45)'},
   center: {flex: 1, alignItems: 'center', justifyContent: 'center'},
   listContent: {
