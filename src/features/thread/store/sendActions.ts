@@ -3,6 +3,7 @@
  */
 import {
   sendMessage,
+  sendContact,
   retryMessage,
   markConversationRead,
 } from '../../../core/api/endpoints/messages';
@@ -116,6 +117,79 @@ export async function doSend(
   }));
 }
 
+function contactToDraft(c: NonNullable<Message['contact']>): ContactDraft {
+  return {
+    phone_number: c.phone_number,
+    first_name: c.first_name,
+    last_name: c.last_name ?? undefined,
+  };
+}
+
+export type ContactDraft = {
+  phone_number: string;
+  first_name: string;
+  last_name?: string;
+};
+
+/** Envoi d'une carte de contact : même circuit que le texte (optimiste → serveur). */
+export async function doSendContact(
+  contact: ContactDraft,
+  existingClientId: string | undefined,
+  ctx: SetGet,
+): Promise<void> {
+  const {conversationId, offline} = ctx.get();
+  if (!conversationId || offline) return;
+  const phone = contact.phone_number.trim();
+  const first = contact.first_name.trim();
+  if (!phone || !first) return;
+  const last = contact.last_name?.trim() || undefined;
+
+  const clientId = existingClientId ?? uuidV4();
+  const optimistic: Message = {
+    id: `local:${clientId}`,
+    conversation_id: conversationId,
+    direction: 'out',
+    kind: 'contact',
+    text: null,
+    contact: {phone_number: phone, first_name: first, last_name: last ?? null},
+    status: 'sending',
+    client_message_id: clientId,
+    created_at: Date.now(),
+  };
+  ctx.set(s => ({
+    items: upsertOutgoing(s.items, optimistic),
+    sending: true,
+    sendError: null,
+  }));
+
+  const res = await sendContact(conversationId, {
+    phone_number: phone,
+    first_name: first,
+    ...(last ? {last_name: last} : {}),
+    client_message_id: clientId,
+  });
+  if (ctx.get().conversationId !== conversationId) return;
+
+  if (!res.ok) {
+    const failed = applySendError(optimistic, res.status, res.error.code);
+    ctx.set(s => ({
+      items: upsertOutgoing(s.items, failed),
+      sending: false,
+      sendError: mapSendError(res.error.code, res.status),
+    }));
+    return;
+  }
+  const serverMsg = {
+    ...res.data.message,
+    client_message_id: res.data.message.client_message_id ?? clientId,
+  };
+  ctx.set(s => ({
+    items: dropLocalNetworkDupes(upsertOutgoing(s.items, serverMsg)),
+    sending: false,
+    sendError: null,
+  }));
+}
+
 function applySendError(
   base: Message,
   status: number,
@@ -187,6 +261,10 @@ export async function doResendAsNew(
   message: Message,
   ctx: SetGet,
 ): Promise<void> {
+  if (message.kind === 'contact' && message.contact) {
+    await doSendContact(contactToDraft(message.contact), undefined, ctx);
+    return;
+  }
   if (message.kind !== 'text') return;
   if (!message.text) return;
   await doSend(message.text, undefined, ctx);
@@ -196,6 +274,14 @@ export async function doResendSameId(
   message: Message,
   ctx: SetGet,
 ): Promise<void> {
+  if (message.kind === 'contact' && message.contact) {
+    await doSendContact(
+      contactToDraft(message.contact),
+      message.client_message_id ?? undefined,
+      ctx,
+    );
+    return;
+  }
   if (message.kind !== 'text') return;
   if (!message.text || !message.client_message_id) return;
   await doSend(message.text, message.client_message_id, ctx);

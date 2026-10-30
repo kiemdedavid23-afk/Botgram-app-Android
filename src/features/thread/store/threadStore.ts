@@ -17,6 +17,8 @@ import {threadTexts} from '../texts';
 import {threadMetrics} from '../../../shared/theme/threadMetrics';
 import {
   doSend,
+  doSendContact,
+  type ContactDraft,
   doRetry,
   doResendAsNew,
   doResendSameId,
@@ -66,6 +68,7 @@ type ThreadStore = {
   resendSameId: (message: Message) => Promise<void>;
   markRead: () => Promise<void>;
   sendMedia: (files: PickedFile[], caption: string, signal?: AbortSignal) => Promise<void>;
+  sendContact: (contact: ContactDraft) => Promise<void>;
   resendMedia: (message: Message) => Promise<void>;
   deleteOutgoing: (message: Message) => Promise<void>;
 };
@@ -260,6 +263,10 @@ export const useThreadStore = create<ThreadStore>((set, get) => ({
 
   async markRead() {
     await doMarkRead({get, set});
+  },
+
+  async sendContact(contact: ContactDraft) {
+    await doSendContact(contact, undefined, {get, set});
   },
 
   async sendMedia(files, caption, signal) {
