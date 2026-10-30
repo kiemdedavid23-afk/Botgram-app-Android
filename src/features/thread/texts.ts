@@ -20,6 +20,8 @@ export const threadTexts = {
   mediaFullscreen: 'Plein écran',
   kindCallback: 'Action',
   kindOther: 'Message',
+  kindContact: 'Contact',
+  kindLocation: 'Position',
   yesterday: 'Hier',
   weekdays: [
     'Dimanche',
@@ -163,6 +165,11 @@ export function kindLabel(kind: string): string {
       return threadTexts.kindVideoNote;
     case 'sticker':
       return threadTexts.kindSticker;
+    case 'contact':
+      return threadTexts.kindContact;
+    case 'location':
+    case 'venue':
+      return threadTexts.kindLocation;
     case 'callback_query':
       return threadTexts.kindCallback;
     default:
