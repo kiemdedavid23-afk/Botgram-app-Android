@@ -192,7 +192,7 @@ describe('session C1', () => {
   it('426 → upgradeRequired avec latest', async () => {
     mockGetAccess.mockResolvedValue('a');
     mockGetRefresh.mockResolvedValue('r');
-    const events: Array<{type: string; latest?: string}> = [];
+    const events: Array<{type: string; latest?: unknown}> = [];
     const unsub = onSessionEvent(e => {
       if (e.type === 'upgrade_required') events.push(e);
     });
@@ -204,7 +204,54 @@ describe('session C1', () => {
       requestId: null,
     });
     await authedHttp({path: '/x'});
-    expect(events).toEqual([{type: 'upgrade_required', latest: '1.2.0'}]);
+    // Ancien format (texte seul) : converti en objet avec la version.
+    expect(events).toEqual([
+      {type: 'upgrade_required', latest: {version_name: '1.2.0'}},
+    ]);
+    unsub();
+  });
+
+  it('426 → latest objet complet du Worker (lien, empreinte, notes)', async () => {
+    mockGetAccess.mockResolvedValue('a');
+    mockGetRefresh.mockResolvedValue('r');
+    const events: Array<{type: string; latest?: unknown}> = [];
+    const unsub = onSessionEvent(e => {
+      if (e.type === 'upgrade_required') events.push(e);
+    });
+    mockHttp.mockResolvedValueOnce({
+      ok: false,
+      error: {
+        code: 'UPGRADE_REQUIRED',
+        message: '',
+        details: {
+          latest: {
+            version_code: 7,
+            version_name: '1.2.0',
+            download_url: 'https://example.invalid/botgram.apk',
+            sha256: 'abc',
+            size_bytes: 1234,
+            notes: 'Correctifs',
+          },
+        },
+      },
+      status: 426,
+      headers: new Headers(),
+      requestId: null,
+    });
+    await authedHttp({path: '/x'});
+    expect(events).toEqual([
+      {
+        type: 'upgrade_required',
+        latest: {
+          version_code: 7,
+          version_name: '1.2.0',
+          download_url: 'https://example.invalid/botgram.apk',
+          sha256: 'abc',
+          size_bytes: 1234,
+          notes: 'Correctifs',
+        },
+      },
+    ]);
     unsub();
   });
 
