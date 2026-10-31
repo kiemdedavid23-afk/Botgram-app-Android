@@ -14,21 +14,22 @@ export function UpgradeScreen(): React.JSX.Element {
   const latest = useUpdateStore(s => s.latest);
   const checking = useUpdateStore(s => s.checking);
   const check = useUpdateStore(s => s.check);
-  const openDownload = useUpdateStore(s => s.openDownload);
+  const startUpdate = useUpdateStore(s => s.startUpdate);
+  const cancelUpdate = useUpdateStore(s => s.cancelUpdate);
+  const phase = useUpdateStore(s => s.installPhase);
+  const progress = useUpdateStore(s => s.progress);
+  const installError = useUpdateStore(s => s.installError);
   const {colors} = useTheme();
   const [message, setMessage] = useState<string | null>(null);
 
   const version = latest?.version_name ?? upgradeLatest;
   const hasLink = !!latest?.download_url;
 
+  const busy = phase === 'downloading' || phase === 'installing';
   const onUpdate = useCallback(() => {
     setMessage(null);
-    fireAndForget(
-      openDownload().then(ok => {
-        if (!ok) setMessage(t.openFailed);
-      }),
-    );
-  }, [openDownload]);
+    fireAndForget(startUpdate());
+  }, [startUpdate]);
 
   const onCheckAgain = useCallback(() => {
     setMessage(null);
@@ -64,16 +65,47 @@ export function UpgradeScreen(): React.JSX.Element {
         {hasLink ? (
           <Pressable
             accessibilityRole="button"
-            onPress={onUpdate}
+            onPress={phase === 'downloading' ? cancelUpdate : onUpdate}
+            disabled={phase === 'installing'}
             style={[styles.primary, {backgroundColor: colors.accent}]}>
             <Download size={18} color={colors.white} />
-            <Text style={[styles.primaryText, {color: colors.white}]}>{t.update}</Text>
+            <Text style={[styles.primaryText, {color: colors.white}]}>
+              {phase === 'downloading'
+                ? t.cancel
+                : phase === 'error'
+                  ? t.retry
+                  : t.update}
+            </Text>
           </Pressable>
+        ) : null}
+        {phase === 'downloading' ? (
+          <View style={styles.progressWrap}>
+            <View style={[styles.track, {backgroundColor: colors.bgPrimary}]}>
+              <View
+                style={[
+                  styles.fill,
+                  {backgroundColor: colors.accent, width: `${Math.round(progress * 100)}%`},
+                ]}
+              />
+            </View>
+            <Text style={[styles.message, {color: colors.textSecondary}]}>
+              {t.downloading(progress > 0 ? Math.round(progress * 100) : null)}
+            </Text>
+          </View>
+        ) : null}
+        {phase === 'installing' ? (
+          <Text style={[styles.message, {color: colors.textSecondary}]}>{t.installing}</Text>
+        ) : null}
+        {phase === 'needsPermission' ? (
+          <Text style={[styles.message, {color: colors.textSecondary}]}>{t.needsPermission}</Text>
+        ) : null}
+        {phase === 'error' && installError ? (
+          <Text style={[styles.message, {color: colors.textSecondary}]}>{installError}</Text>
         ) : null}
         <Pressable
           accessibilityRole="button"
           onPress={onCheckAgain}
-          disabled={checking}
+          disabled={checking || busy}
           style={styles.secondary}>
           <Text style={{color: colors.accent, fontSize: fontSize.listSubtitle}}>
             {checking ? t.checking : t.checkAgain}
@@ -108,4 +140,7 @@ const styles = StyleSheet.create({
   primaryText: {fontSize: fontSize.listSubtitle, fontWeight: '700'},
   secondary: {marginTop: 16, padding: 8},
   message: {marginTop: 8, textAlign: 'center', fontSize: 13},
+  progressWrap: {alignSelf: 'stretch', marginTop: 16},
+  track: {height: 6, borderRadius: 3, overflow: 'hidden'},
+  fill: {height: 6, borderRadius: 3},
 });
