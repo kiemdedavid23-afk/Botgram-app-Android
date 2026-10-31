@@ -65,6 +65,9 @@ export async function sendLocation(
     latitude: number;
     longitude: number;
     horizontal_accuracy?: number;
+    /** 60–86400 s : position en direct. */
+    live_period?: number;
+    heading?: number;
     client_message_id: string;
   },
 ): Promise<HttpResult<{message: Message}>> {
@@ -72,6 +75,33 @@ export async function sendLocation(
     method: 'POST',
     path: `/conversations/${conversationId}/location`,
     body,
+  });
+}
+
+/** PATCH /messages/:id/location — met à jour une position en direct (40/min, 409 si arrêtée). */
+export async function updateLiveLocation(
+  messageId: string,
+  body: {
+    latitude: number;
+    longitude: number;
+    horizontal_accuracy?: number;
+    heading?: number;
+  },
+): Promise<HttpResult<{message?: Message}>> {
+  return authedHttp<{message?: Message}>({
+    method: 'PATCH',
+    path: `/messages/${messageId}/location`,
+    body,
+  });
+}
+
+/** POST /messages/:id/location/stop — arrête le partage en direct. */
+export async function stopLiveLocation(
+  messageId: string,
+): Promise<HttpResult<{message?: Message}>> {
+  return authedHttp<{message?: Message}>({
+    method: 'POST',
+    path: `/messages/${messageId}/location/stop`,
   });
 }
 
