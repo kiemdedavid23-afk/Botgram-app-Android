@@ -75,6 +75,17 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+// Source unique : fichier .env (react-native-config) ou variable d'environnement du CI.
+// Le build et la version envoyés au Worker (X-App-Build / X-App-Version) sont ainsi
+// exactement ceux inscrits dans l'APK (indispensable pour les mises à jour).
+def envValue = { String key ->
+    def fromEnv = System.getenv(key)
+    if (fromEnv) return fromEnv
+    return project.hasProperty("env") ? project.env.get(key) : null
+}
+def releaseKeystorePath = System.getenv("RELEASE_KEYSTORE_FILE")
+def hasReleaseKey = releaseKeystorePath != null && file(releaseKeystorePath).exists()
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -85,8 +96,8 @@ android {
         applicationId "com.botgram.dsi"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode((envValue("APP_BUILD") ?: "1").toInteger())
+        versionName(envValue("APP_VERSION") ?: "1.0")
     }
     signingConfigs {
         debug {
@@ -95,15 +106,24 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        // Clé de publication (canal direct) : fournie par le CI, jamais dans le dépôt.
+        if (hasReleaseKey) {
+            release {
+                storeFile file(releaseKeystorePath)
+                storePassword System.getenv("RELEASE_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword System.getenv("RELEASE_KEY_PASSWORD")
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            // Sans clé de publication (build de test), on retombe sur la clé de debug.
+            // Une mise à jour ne s'installe QUE si elle est signée avec la même clé que la version installée.
+            signingConfig hasReleaseKey ? signingConfigs.release : signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
