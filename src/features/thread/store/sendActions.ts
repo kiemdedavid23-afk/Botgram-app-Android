@@ -122,6 +122,9 @@ export type LocationDraft = {
   latitude: number;
   longitude: number;
   accuracy?: number;
+  /** Secondes (60–86400) : position en direct. */
+  livePeriod?: number;
+  heading?: number;
 };
 
 /** Envoi d'une position fixe : même circuit que le texte. */
@@ -129,16 +132,16 @@ export async function doSendLocation(
   loc: LocationDraft,
   existingClientId: string | undefined,
   ctx: SetGet,
-): Promise<void> {
+): Promise<Message | null> {
   const {conversationId, offline} = ctx.get();
-  if (!conversationId || offline) return;
+  if (!conversationId || offline) return null;
   if (
     !Number.isFinite(loc.latitude) ||
     !Number.isFinite(loc.longitude) ||
     Math.abs(loc.latitude) > 90 ||
     Math.abs(loc.longitude) > 180
   ) {
-    return;
+    return null;
   }
   const clientId = existingClientId ?? uuidV4();
   const optimistic: Message = {
@@ -147,7 +150,11 @@ export async function doSendLocation(
     direction: 'out',
     kind: 'location',
     text: null,
-    location: {latitude: loc.latitude, longitude: loc.longitude},
+    location: {
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+      live_period: loc.livePeriod ?? null,
+    },
     status: 'sending',
     client_message_id: clientId,
     created_at: Date.now(),
@@ -164,9 +171,11 @@ export async function doSendLocation(
     ...(loc.accuracy != null && loc.accuracy > 0
       ? {horizontal_accuracy: Math.min(loc.accuracy, 1500)}
       : {}),
+    ...(loc.livePeriod ? {live_period: loc.livePeriod} : {}),
+    ...(loc.heading ? {heading: loc.heading} : {}),
     client_message_id: clientId,
   });
-  if (ctx.get().conversationId !== conversationId) return;
+  if (ctx.get().conversationId !== conversationId) return null;
 
   if (!res.ok) {
     const failed = applySendError(optimistic, res.status, res.error.code);
@@ -175,7 +184,7 @@ export async function doSendLocation(
       sending: false,
       sendError: mapSendError(res.error.code, res.status),
     }));
-    return;
+    return null;
   }
   const serverMsg = {
     ...res.data.message,
@@ -186,6 +195,7 @@ export async function doSendLocation(
     sending: false,
     sendError: null,
   }));
+  return serverMsg;
 }
 
 function contactToDraft(c: NonNullable<Message['contact']>): ContactDraft {

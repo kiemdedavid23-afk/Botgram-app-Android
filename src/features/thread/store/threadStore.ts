@@ -4,6 +4,7 @@
 import {create} from 'zustand';
 import {listMessages} from '../../../core/api/endpoints/messages';
 import type {Message} from '../../../core/realtime/events';
+import {startLive} from '../live/liveLocation';
 import type {RealtimeEvent} from '../../../core/realtime';
 import {
   cacheGetString,
@@ -72,6 +73,7 @@ type ThreadStore = {
   sendMedia: (files: PickedFile[], caption: string, signal?: AbortSignal) => Promise<void>;
   sendContact: (contact: ContactDraft) => Promise<void>;
   sendLocation: (loc: LocationDraft) => Promise<void>;
+  sendLiveLocation: (loc: LocationDraft, periodSec: number) => Promise<void>;
   resendMedia: (message: Message) => Promise<void>;
   deleteOutgoing: (message: Message) => Promise<void>;
 };
@@ -266,6 +268,18 @@ export const useThreadStore = create<ThreadStore>((set, get) => ({
 
   async markRead() {
     await doMarkRead({get, set});
+  },
+
+  async sendLiveLocation(loc: LocationDraft, periodSec: number) {
+    const sent = await doSendLocation(
+      {...loc, livePeriod: periodSec},
+      undefined,
+      {get, set},
+    );
+    // Message confirmé par le serveur (id non local) : le service peut démarrer.
+    if (sent && !sent.id.startsWith('local:') && sent.status !== 'failed') {
+      await startLive(sent.id, periodSec);
+    }
   },
 
   async sendLocation(loc: LocationDraft) {
