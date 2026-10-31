@@ -19,15 +19,28 @@ type Props = {
   active: boolean;
   bottomSpace: number;
   onSend: (pos: DevicePosition) => void;
+  onSendLive: (pos: DevicePosition, periodSec: number) => void;
 };
 
 type Phase = 'idle' | 'searching' | 'ready' | 'failed';
 
-export function LocationTab({active, bottomSpace, onSend}: Props): React.JSX.Element {
+const DURATIONS: ReadonlyArray<{sec: number; label: string}> = [
+  {sec: 900, label: t.liveDur15},
+  {sec: 3600, label: t.liveDur60},
+  {sec: 28800, label: t.liveDur480},
+];
+
+export function LocationTab({
+  active,
+  bottomSpace,
+  onSend,
+  onSendLive,
+}: Props): React.JSX.Element {
   const {colors} = useTheme();
   const [access, setAccess] = useState<LocationAccess>('unknown');
   const [phase, setPhase] = useState<Phase>('idle');
   const [pos, setPos] = useState<DevicePosition | null>(null);
+  const [duration, setDuration] = useState(3600);
 
   const locate = useCallback(() => {
     setPhase('searching');
@@ -103,6 +116,33 @@ export function LocationTab({active, bottomSpace, onSend}: Props): React.JSX.Ele
               <Send size={16} color={colors.white} />
               <Text style={[styles.btnText, {color: colors.white}]}>{t.locSend}</Text>
             </Pressable>
+            <View style={styles.chips}>
+              {DURATIONS.map(d => {
+                const on = d.sec === duration;
+                return (
+                  <Pressable
+                    key={d.sec}
+                    accessibilityRole="button"
+                    accessibilityState={{selected: on}}
+                    onPress={() => setDuration(d.sec)}
+                    style={[
+                      styles.chip,
+                      {backgroundColor: on ? colors.accentSoft : colors.bgSecondary},
+                    ]}>
+                    <Text style={{color: on ? colors.accent : colors.textPrimary, fontSize: 13}}>
+                      {d.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => onSendLive(pos, duration)}
+              style={[styles.btnOutline, {borderColor: colors.accent}]}>
+              <Text style={[styles.btnText, {color: colors.accent}]}>{t.locSendLive}</Text>
+            </Pressable>
+            <Text style={[styles.body, {color: colors.textHint}]}>{t.locLiveHint}</Text>
           </>
         ) : phase === 'failed' ? (
           <>
@@ -145,6 +185,16 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 22,
     marginTop: 4,
+  },
+  chips: {flexDirection: 'row', gap: 8, marginTop: 6},
+  chip: {paddingHorizontal: 14, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center'},
+  btnOutline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1.5,
   },
   btnText: {fontSize: fontSize.message, fontWeight: fontWeight.bold},
 });

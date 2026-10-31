@@ -58,6 +58,8 @@ type Props = {
   onSendContact: (contact: ContactDraft) => void;
   /** Position choisie dans l'onglet Position : envoi immédiat. */
   onSendLocation: (loc: LocationDraft) => void;
+  /** Position en direct (durée en secondes). */
+  onSendLiveLocation: (loc: LocationDraft, periodSec: number) => void;
 };
 
 const TABS: ReadonlyArray<{
@@ -81,6 +83,7 @@ export function AttachSheet({
   onPickFiles,
   onSendContact,
   onSendLocation,
+  onSendLiveLocation,
 }: Props): React.JSX.Element {
   const {colors, mode} = useTheme();
   const {height} = useWindowDimensions();
@@ -251,6 +254,10 @@ export function AttachSheet({
                 bottomSpace={BAR_SPACE + insets.bottom}
                 onSend={l => {
                   onSendLocation(l);
+                  onClose();
+                }}
+                onSendLive={(l, p) => {
+                  onSendLiveLocation(l, p);
                   onClose();
                 }}
               />
