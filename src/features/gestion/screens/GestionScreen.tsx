@@ -15,6 +15,7 @@ import {ConfirmDialog} from '../components/ConfirmDialog';
 import {GestionToast} from '../components/GestionToast';
 import {DevicesSection} from '../components/DevicesSection';
 import {PrefsSection} from '../components/PrefsSection';
+import {UpdateRow} from '../../update/UpdateRow';
 import {texts} from '../texts';
 import {gestionErrorMessage} from '../utils/errors';
 import {TIMEZONES} from '../utils/format';
@@ -175,6 +176,8 @@ export function GestionScreen(): React.JSX.Element {
           onTimezoneCycle={cycleTimezone}
           onLanguagePress={() => showToast(texts.languageFr)}
         />
+
+        <UpdateRow />
       </ScrollView>
 
       <ConfirmDialog
