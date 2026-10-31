@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
-import {Pin} from 'lucide-react-native';
+import {Pin, Check} from 'lucide-react-native';
 import {useTheme, fontWeight} from '../../../shared/theme';
 import {Avatar} from '../../../shared/components/Avatar';
 import {conversationsMetrics as cm} from '../../../shared/theme/conversationsMetrics';
@@ -30,6 +30,10 @@ type Props = {
   archived?: boolean;
   /** Action préférée (réglage Discussions) — mise en avant dans le menu. */
   swipeAction?: 'archive' | 'folder' | 'pin';
+  /** Mode sélection : un appui coche / décoche la ligne. */
+  selectionMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
 };
 
 export function ConversationRow({
@@ -44,6 +48,9 @@ export function ConversationRow({
   onUnarchive,
   archived = false,
   swipeAction = 'folder',
+  selectionMode = false,
+  selected = false,
+  onToggleSelect,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
   const title = conversationTitle(item);
@@ -73,35 +80,51 @@ export function ConversationRow({
   return (
     <>
     <Pressable
-      onPress={onPress}
-      onLongPress={() => setMenuOpen(true)}
+      onPress={selectionMode ? onToggleSelect : onPress}
+      onLongPress={selectionMode ? onToggleSelect : () => setMenuOpen(true)}
+      accessibilityState={{selected}}
       style={({pressed}) => [
         styles.item,
         {
           paddingVertical: cm.itemPaddingV + densityPad,
           paddingHorizontal: cm.itemPaddingH,
-          backgroundColor: pressed ? colors.bgTertiary : 'transparent',
+          backgroundColor: selected
+            ? colors.accentSoft
+            : pressed
+              ? colors.bgTertiary
+              : 'transparent',
         },
       ]}>
-      {onPressAvatar ? (
-        <Pressable
-          onPress={onPressAvatar}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={title}>
+      <View>
+        {onPressAvatar ? (
+          <Pressable
+            onPress={selectionMode ? onToggleSelect : onPressAvatar}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={title}>
+            <Avatar
+              photoUrl={item.photo_url}
+              initials={item.initials}
+              title={title}
+            />
+          </Pressable>
+        ) : (
           <Avatar
             photoUrl={item.photo_url}
             initials={item.initials}
             title={title}
           />
-        </Pressable>
-      ) : (
-        <Avatar
-          photoUrl={item.photo_url}
-          initials={item.initials}
-          title={title}
-        />
-      )}
+        )}
+        {selected ? (
+          <View
+            style={[
+              styles.check,
+              {backgroundColor: colors.accent, borderColor: colors.bgPrimary},
+            ]}>
+            <Check size={12} color={colors.white} strokeWidth={3} />
+          </View>
+        ) : null}
+      </View>
       <View style={styles.content}>
         <View style={styles.row}>
           <View style={styles.titleRow}>
@@ -184,6 +207,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: cm.itemGap,
+  },
+  check: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {flex: 1, minWidth: 0, gap: cm.contentGap},
   row: {

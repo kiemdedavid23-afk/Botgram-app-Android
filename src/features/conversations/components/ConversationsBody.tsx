@@ -31,6 +31,9 @@ type Props = {
   onUnarchive?: (id: string) => void;
   isArchived?: (id: string) => boolean;
   swipeAction?: 'archive' | 'folder' | 'pin';
+  selectionMode?: boolean;
+  selectedIds?: Record<string, true>;
+  onToggleSelect?: (id: string) => void;
 };
 
 export function ConversationsBody({
@@ -50,6 +53,9 @@ export function ConversationsBody({
   onUnarchive,
   isArchived,
   swipeAction,
+  selectionMode = false,
+  selectedIds,
+  onToggleSelect,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
   const hideBadge = searchQuery.trim().length >= 1;
@@ -68,6 +74,9 @@ export function ConversationsBody({
         onUnarchive={onUnarchive}
         archived={isArchived?.(item.id) ?? false}
         swipeAction={swipeAction}
+        selectionMode={selectionMode}
+        selected={!!selectedIds?.[item.id]}
+        onToggleSelect={() => onToggleSelect?.(item.id)}
       />
     ),
     [
@@ -81,6 +90,9 @@ export function ConversationsBody({
       onUnarchive,
       isArchived,
       swipeAction,
+      selectionMode,
+      selectedIds,
+      onToggleSelect,
     ],
   );
 
@@ -111,6 +123,7 @@ export function ConversationsBody({
       data={filtered}
       keyExtractor={item => item.id}
       renderItem={renderItem}
+      extraData={selectedIds}
       onEndReached={() => {
         if (!searchQuery) onLoadMore();
       }}
