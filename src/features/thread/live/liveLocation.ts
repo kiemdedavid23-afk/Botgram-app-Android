@@ -56,7 +56,9 @@ function subscribe(): void {
   if (subscribed || !native) return;
   subscribed = true;
   const em = new NativeEventEmitter(NativeModules.BotgramLiveLocation);
-  em.addListener('BotgramLiveLocationUpdate', (ev: UpdateEvent) => onUpdate(ev));
+  em.addListener('BotgramLiveLocationUpdate', (ev: unknown) =>
+    onUpdate(ev as UpdateEvent),
+  );
   em.addListener('BotgramLiveLocationStop', () => {
     if (session) fireAndForget(stopLive(session.messageId));
   });
