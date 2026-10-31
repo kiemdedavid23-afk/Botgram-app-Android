@@ -1,1 +1,35 @@
-
+/** Textes français — mises à jour de l'application. */
+export const updateTexts = {
+  blockedTitle: 'Mise à jour requise',
+  blockedBody: 'Une nouvelle version de Botgram est nécessaire pour continuer.',
+  version: (v: string) => `Version : ${v}`,
+  notes: 'Nouveautés',
+  update: 'Mettre à jour',
+  checkAgain: 'Vérifier de nouveau',
+  checking: 'Vérification…',
+  noLink: 'Le lien de téléchargement est momentanément indisponible. Réessayez dans un instant.',
+  openFailed: "Impossible d'ouvrir le lien de téléchargement.",
+  bannerTitle: 'Nouvelle version disponible',
+  bannerVersion: (v: string) => `Botgram ${v} est prête.`,
+  bannerBody: 'Une mise à jour est disponible.',
+  later: 'Plus tard',
+  downloading: (percent: number | null) =>
+    percent == null ? 'Téléchargement…' : `Téléchargement… ${percent} %`,
+  needsPermission:
+    "Autorisez Botgram à installer des mises à jour dans les réglages qui s'ouvrent, puis revenez ici.",
+  installing: "Ouverture de l'installateur…",
+  cancel: 'Annuler',
+  retry: 'Réessayer',
+  errInvalidFile: 'Le fichier téléchargé est invalide. Réessayez.',
+  errWrongPackage: "Le fichier téléchargé n'est pas une mise à jour de Botgram.",
+  errNetwork: 'Téléchargement impossible. Vérifiez votre connexion.',
+  errPermission: "L'autorisation d'installation n'a pas été accordée.",
+  errGeneric: 'La mise à jour a échoué. Réessayez.',
+  settingsTitle: 'Mises à jour',
+  settingsCurrent: (v: string, b: number) => `Version ${v} (build ${b})`,
+  settingsChecking: 'Recherche en cours…',
+  settingsUpToDate: (v: string) => `Vous avez la dernière version (${v})`,
+  settingsAvailable: (v: string | null) =>
+    v ? `Version ${v} disponible — appuyez pour mettre à jour` : 'Mise à jour disponible — appuyez pour mettre à jour',
+  settingsFailed: 'Impossible de vérifier. Appuyez pour réessayer.',
+} as const;
