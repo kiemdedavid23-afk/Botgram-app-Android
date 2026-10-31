@@ -19,6 +19,7 @@ class MediaPackage : ReactPackage {
           CameraModule(reactContext),
           ContactPickerModule(reactContext),
           LocationModule(reactContext),
+          LiveLocationModule(reactContext),
       )
 
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> =
