@@ -20,6 +20,7 @@ class MediaPackage : ReactPackage {
           ContactPickerModule(reactContext),
           LocationModule(reactContext),
           LiveLocationModule(reactContext),
+          AppUpdateModule(reactContext),
       )
 
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> =
