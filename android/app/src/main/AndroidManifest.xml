@@ -8,6 +8,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <!-- Téléchargements de fichiers avec notification de progression -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- Position en direct : service au premier plan démarré depuis l'app visible (pas de permission « arrière-plan ») -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <!-- Enregistrer une image dans la galerie : nécessaire seulement avant Android 10 -->
     <uses-permission
       android:name="android.permission.WRITE_EXTERNAL_STORAGE"
@@ -104,5 +106,11 @@
         android:name=".media.DownloadService"
         android:exported="false"
         android:foregroundServiceType="dataSync" />
+
+      <!-- Partage de position en direct -->
+      <service
+        android:name=".media.LiveLocationService"
+        android:exported="false"
+        android:foregroundServiceType="location" />
     </application>
 </manifest>
