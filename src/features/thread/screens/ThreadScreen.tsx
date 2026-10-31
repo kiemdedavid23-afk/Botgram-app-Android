@@ -66,6 +66,7 @@ export function ThreadScreen({
   const sendMedia = useThreadStore(s => s.sendMedia);
   const sendContact = useThreadStore(s => s.sendContact);
   const sendLocation = useThreadStore(s => s.sendLocation);
+  const sendLiveLocation = useThreadStore(s => s.sendLiveLocation);
   const retry = useThreadStore(s => s.retry);
   const resendAsNew = useThreadStore(s => s.resendAsNew);
   const resendMedia = useThreadStore(s => s.resendMedia);
@@ -236,6 +237,7 @@ export function ThreadScreen({
           onSendMedia={sendMedia}
           onSendContact={sendContact}
           onSendLocation={sendLocation}
+          onSendLiveLocation={sendLiveLocation}
         />
       </KeyboardAvoidingView>
     </View>
