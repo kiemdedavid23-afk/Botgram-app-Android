@@ -80,7 +80,7 @@ async function doRefresh(): Promise<{ok: true} | {ok: false; end?: SessionEndRea
         return {ok: true};
       }
       if (retry.status === 426) {
-        const latest = (retry.error.details as {latest?: string} | undefined)?.latest;
+        const latest = parseLatest((retry.error.details as {latest?: unknown} | undefined)?.latest);
         emit({type: 'upgrade_required', latest});
         return {ok: false};
       }
