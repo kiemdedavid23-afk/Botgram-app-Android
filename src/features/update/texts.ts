@@ -25,6 +25,7 @@ export const updateTexts = {
   errNetwork: 'Téléchargement impossible. Vérifiez votre connexion.',
   errPermission: "L'autorisation d'installation n'a pas été accordée.",
   errGeneric: 'La mise à jour a échoué. Réessayez.',
+  sectionTitle: 'Application',
   settingsTitle: 'Mises à jour',
   settingsCurrent: (v: string, b: number) => `Version ${v} (build ${b})`,
   settingsChecking: 'Recherche en cours…',
