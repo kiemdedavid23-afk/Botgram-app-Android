@@ -24,6 +24,8 @@ export const threadTexts = {
   kindLocation: 'Position',
   locationLive: 'Position en direct',
   locationOpen: 'Ouvrir dans Cartes',
+  locationStop: 'Arrêter le partage',
+  locationEnded: 'Partage terminé',
   yesterday: 'Hier',
   weekdays: [
     'Dimanche',
