@@ -7,3 +7,5 @@ export {
   conversationTitle,
 } from './store/conversationsStore';
 export {conversationsTexts, formatConversationTime} from './texts';
+export {useSelectionStore} from './store/selectionStore';
+export {markAllConversationsRead} from './store/bulkActions';
