@@ -177,7 +177,7 @@ onSessionEvent(event => {
   if (event.type === 'upgrade_required') {
     useAuthStore.setState({
       state: 'upgradeRequired',
-      upgradeLatest: event.latest ?? null,
+      upgradeLatest: event.latest?.version_name ?? null,
     });
   }
 });
