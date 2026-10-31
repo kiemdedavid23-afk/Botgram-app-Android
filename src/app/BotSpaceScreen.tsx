@@ -9,9 +9,17 @@
  * - Paramètres : page Paramètres actuelle (refonte à venir).
  * - Profil : profil Telegram du bot.
  */
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {View, StyleSheet, BackHandler} from 'react-native';
-import {LayoutDashboard} from 'lucide-react-native';
+import {
+  LayoutDashboard,
+  Moon,
+  Sun,
+  ArrowLeftRight,
+  CheckCheck,
+  Mail,
+  ListChecks,
+} from 'lucide-react-native';
 import {useTheme, space} from '../shared/theme';
 import {BrandBar} from '../shared/components/BrandBar';
 import {HeaderAvatarButton} from '../shared/components/HeaderAvatarButton';
@@ -26,6 +34,10 @@ import {
 import {EmptyScreen} from '../shared/components/EmptyScreen';
 import {BotChatsStack} from '../features/conversations/navigation/BotChatsStack';
 import {useConversationsStore} from '../features/conversations/store/conversationsStore';
+import {useSelectionStore} from '../features/conversations/store/selectionStore';
+import {markAllConversationsRead} from '../features/conversations/store/bulkActions';
+import {conversationsTexts as ct} from '../features/conversations/texts';
+import {fireAndForget} from '../core/utils/fireAndForget';
 import {useBotsStore} from '../features/bots/store/botsStore';
 import {BotSettingsStack} from '../features/settings';
 import {BotProfileScreen} from '../features/botprofile';
@@ -42,8 +54,20 @@ const BOT_MENU: ReadonlyArray<HeaderMenuItem<'member'>> = [
   {id: 'member', label: 'Espace membre', Icon: LayoutDashboard},
 ];
 
+type ChatsMenuId =
+  | 'member'
+  | 'theme'
+  | 'switchBot'
+  | 'markAllRead'
+  | 'unreadOnly'
+  | 'select';
+
 export function BotSpaceScreen({onExit, onAddBot}: Props): React.JSX.Element {
-  const {colors} = useTheme();
+  const {colors, mode, appearance, setAppearance} = useTheme();
+  const folder = useConversationsStore(s => s.folder);
+  const setFolder = useConversationsStore(s => s.setFolder);
+  const chatsOffline = useConversationsStore(s => s.offline);
+  const enterSelection = useSelectionStore(s => s.enter);
   const [tab, setTab] = useState<BotTabId>('chats');
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const unreadBadge = useConversationsStore(s => s.unreadTotal);
@@ -67,14 +91,74 @@ export function BotSpaceScreen({onExit, onAddBot}: Props): React.JSX.Element {
   }, [tab]);
 
 
+  // Menu ⋮ de l'onglet Échanges : actions de la liste + espace membre, thème, changement de bot.
+  const dark = mode === 'dark';
+  const chatsMenu = useMemo<ReadonlyArray<HeaderMenuItem<ChatsMenuId>>>(
+    () => [
+      {id: 'member', label: ct.memberSpace, Icon: LayoutDashboard},
+      {
+        id: 'theme',
+        label: dark ? ct.themeDay : ct.themeNight,
+        Icon: dark ? Sun : Moon,
+      },
+      {id: 'switchBot', label: ct.switchBot, Icon: ArrowLeftRight},
+      {id: 'markAllRead', label: ct.markAllRead, Icon: CheckCheck},
+      {
+        id: 'unreadOnly',
+        label: folder === 'unread' ? ct.allChats : ct.unreadOnly,
+        Icon: Mail,
+      },
+      {id: 'select', label: ct.selectAction, Icon: ListChecks},
+    ],
+    [dark, folder],
+  );
+
+  const onChatsMenu = (id: ChatsMenuId) => {
+    switch (id) {
+      case 'member':
+        onExit();
+        break;
+      case 'theme':
+        setAppearance({
+          ...appearance,
+          followSystemTheme: false,
+          theme: dark ? 'light' : 'dark',
+        });
+        break;
+      case 'switchBot':
+        setSwitcherOpen(true);
+        break;
+      case 'markAllRead':
+        if (!chatsOffline) fireAndForget(markAllConversationsRead());
+        break;
+      case 'unreadOnly':
+        setFolder(folder === 'unread' ? 'all' : 'unread');
+        break;
+      case 'select':
+        enterSelection();
+        break;
+    }
+  };
+
+  const avatarButton = (
+    <HeaderAvatarButton
+      title={botName}
+      showAvatar={false}
+      open={switcherOpen}
+      onPress={() => setSwitcherOpen(true)}
+    />
+  );
+
+  const headerRightChats = (
+    <View style={styles.headerRight}>
+      {avatarButton}
+      <HeaderMenu items={chatsMenu} activeId={null} onSelect={onChatsMenu} />
+    </View>
+  );
+
   const headerRight = (
     <View style={styles.headerRight}>
-      <HeaderAvatarButton
-        title={botName}
-        showAvatar={false}
-        open={switcherOpen}
-        onPress={() => setSwitcherOpen(true)}
-      />
+      {avatarButton}
       <HeaderMenu items={BOT_MENU} activeId={null} onSelect={onExit} />
     </View>
   );
@@ -106,7 +190,7 @@ export function BotSpaceScreen({onExit, onAddBot}: Props): React.JSX.Element {
   if (tab === 'chats') {
     return (
       <View style={[styles.root, {backgroundColor: colors.bgPrimary}]}>
-        <BotChatsStack footer={nav} headerRight={headerRight} />
+        <BotChatsStack footer={nav} headerRight={headerRightChats} />
         {switcher}
       </View>
     );
