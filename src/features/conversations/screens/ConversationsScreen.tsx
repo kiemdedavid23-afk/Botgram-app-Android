@@ -4,7 +4,14 @@
  */
 import React, {useEffect, useMemo, type ReactNode} from 'react';
 import {useShallow} from 'zustand/react/shallow';
-import {View, Text, StyleSheet, ActivityIndicator, BackHandler} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  BackHandler,
+  Alert,
+} from 'react-native';
 import {useTheme, fontSize} from '../../../shared/theme';
 import {BrandBar} from '../../../shared/components/BrandBar';
 import {SearchBar} from '../../../shared/components/SearchBar';
@@ -16,6 +23,14 @@ import {
   conversationTitle,
 } from '../store/conversationsStore';
 import {useArchiveStore} from '../store/archiveStore';
+import {useSelectionStore} from '../store/selectionStore';
+import {
+  archiveConversations,
+  deleteConversations,
+  markConversationsRead,
+  pinConversations,
+} from '../store/bulkActions';
+import {SelectionBar} from '../components/SelectionBar';
 import {applyArchiveVisibility} from '../store/filters';
 import {conversationsTexts as t} from '../texts';
 import {FoldersBar} from '../components/FoldersBar';
@@ -78,6 +93,74 @@ export function ConversationsScreen({
   const {searchQuery, searching, onSearchChange, clearSearch} =
     useConversationSearch();
 
+  // Mode sélection (menu ⋮ « Sélectionner »).
+  const selActive = useSelectionStore(s => s.active);
+  const selIds = useSelectionStore(s => s.ids);
+  const toggleSelect = useSelectionStore(s => s.toggle);
+  const selectAll = useSelectionStore(s => s.selectAll);
+  const exitSelection = useSelectionStore(s => s.exit);
+  const botId = useConversationsStore(s => s.botId);
+  const selectedList = useMemo(() => Object.keys(selIds), [selIds]);
+  const selectedItems = useMemo(
+    () => items.filter(c => !!selIds[c.id]),
+    [items, selIds],
+  );
+  const allPinned =
+    selectedItems.length > 0 && selectedItems.every(c => !!c.pinned);
+  const allArchived =
+    selectedList.length > 0 && selectedList.every(id => !!archivedIds[id]);
+
+  // Changer de bot ou quitter l'onglet : on sort du mode sélection.
+  useEffect(() => {
+    exitSelection();
+  }, [botId, exitSelection]);
+  useEffect(() => exitSelection, [exitSelection]);
+
+  // Retour Android : quitte d'abord le mode sélection.
+  useEffect(() => {
+    if (!selActive) return undefined;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      exitSelection();
+      return true;
+    });
+    return () => sub.remove();
+  }, [selActive, exitSelection]);
+
+  const onBulkPin = () => {
+    const ids = selectedList;
+    exitSelection();
+    fireAndForget(pinConversations(ids, !allPinned));
+  };
+  const onBulkArchive = () => {
+    archiveConversations(selectedList, !allArchived);
+    exitSelection();
+  };
+  const onBulkDelete = () => {
+    const ids = selectedList;
+    Alert.alert(
+      ids.length === 1
+        ? t.deleteConversationConfirmTitle
+        : t.deleteSelectedTitle(ids.length),
+      t.deleteConversationConfirmBody,
+      [
+        {text: t.cancel, style: 'cancel'},
+        {
+          text: t.deleteConversationConfirm2,
+          style: 'destructive',
+          onPress: () => {
+            exitSelection();
+            fireAndForget(deleteConversations(ids));
+          },
+        },
+      ],
+    );
+  };
+  const onBulkMarkRead = () => {
+    const ids = selectedList;
+    exitSelection();
+    fireAndForget(markConversationsRead(ids));
+  };
+
   // Aperçu de la ligne « Échanges archivés » : noms des 3 premières conversations archivées.
   const archivedPreview = useMemo(
     () =>
@@ -108,7 +191,22 @@ export function ConversationsScreen({
 
   return (
     <View style={[styles.root, {backgroundColor: colors.bgPrimary}]}>
-      <BrandBar title={t.title} right={headerRight} seamless />
+      {selActive ? (
+        <SelectionBar
+          count={selectedList.length}
+          allPinned={allPinned}
+          allArchived={allArchived}
+          offline={offline}
+          onExit={exitSelection}
+          onPin={onBulkPin}
+          onArchive={onBulkArchive}
+          onDelete={onBulkDelete}
+          onSelectAll={() => selectAll(filtered.map(c => c.id))}
+          onMarkRead={onBulkMarkRead}
+        />
+      ) : (
+        <BrandBar title={t.title} right={headerRight} seamless />
+      )}
       {offline ? (
         <View style={[styles.offline, {backgroundColor: colors.bgTertiary}]}>
           <Text
@@ -147,6 +245,9 @@ export function ConversationsScreen({
         onUnarchive={id => unarchiveConv(id)}
         isArchived={id => !!archivedIds[id]}
         swipeAction={appearance.swipeAction}
+        selectionMode={selActive}
+        selectedIds={selIds}
+        onToggleSelect={toggleSelect}
         filtered={filtered}
         loading={loading}
         loadingMore={loadingMore}
