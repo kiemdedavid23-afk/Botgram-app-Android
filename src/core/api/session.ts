@@ -6,13 +6,14 @@ import {http, type HttpRequestOptions, type HttpResult} from './http';
 import {httpBinary, type HttpBinaryResult} from './http.binary';
 export type {HttpResult} from './http';
 import {refresh as refreshEndpoint} from './endpoints/auth';
+import {parseLatest, type LatestBuild} from '../update/latest';
 import {getAccessToken, getRefreshToken, saveTokenPair, clearTokens} from '../storage';
 
 export type SessionEndReason = 'revoked' | 'session_expired' | 'invalid' | 'refresh_reuse';
 
 export type SessionEvent =
   | {type: 'ended'; reason: SessionEndReason}
-  | {type: 'upgrade_required'; latest?: string}
+  | {type: 'upgrade_required'; latest?: LatestBuild}
   | {type: 'update'; level: 'none' | 'optional' | 'required'};
 
 type Listener = (event: SessionEvent) => void;
@@ -52,7 +53,7 @@ async function doRefresh(): Promise<{ok: true} | {ok: false; end?: SessionEndRea
   }
 
   if (result.status === 426) {
-    const latest = (result.error.details as {latest?: string} | undefined)?.latest;
+    const latest = parseLatest((result.error.details as {latest?: unknown} | undefined)?.latest);
     emit({type: 'upgrade_required', latest});
     return {ok: false};
   }
@@ -133,7 +134,7 @@ export async function authedHttp<T>(
   }
 
   if (!first.ok && first.status === 426) {
-    const latest = (first.error.details as {latest?: string} | undefined)?.latest;
+    const latest = parseLatest((first.error.details as {latest?: unknown} | undefined)?.latest);
     emit({type: 'upgrade_required', latest});
     return first;
   }
@@ -179,7 +180,7 @@ export async function authedHttpBinary(
   }
 
   if (!first.ok && first.status === 426) {
-    const latest = (first.error.details as {latest?: string} | undefined)?.latest;
+    const latest = parseLatest((first.error.details as {latest?: unknown} | undefined)?.latest);
     emit({type: 'upgrade_required', latest});
     return first;
   }
