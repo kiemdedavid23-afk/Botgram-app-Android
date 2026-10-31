@@ -119,6 +119,7 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
         {(message.kind === 'location' || message.kind === 'venue') &&
         message.location ? (
           <LocationBubble
+            messageId={message.id}
             location={message.location}
             textColor={textColor}
             subColor={timeColor}

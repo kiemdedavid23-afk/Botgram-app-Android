@@ -4,17 +4,28 @@ import {View, Text, Pressable, Linking, StyleSheet} from 'react-native';
 import {MapPin} from 'lucide-react-native';
 import type {LocationPayload} from '../../../core/realtime/messageTypes';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
+import {useLiveLocationStore, stopLive} from '../live/liveLocation';
 import {threadTexts as t} from '../texts';
 
 type Props = {
+  /** Id serveur du message (pour arrêter un partage en direct). */
+  messageId: string;
   location: LocationPayload;
   textColor: string;
   subColor: string;
 };
 
-export function LocationBubble({location, textColor, subColor}: Props): React.JSX.Element {
+export function LocationBubble({
+  messageId,
+  location,
+  textColor,
+  subColor,
+}: Props): React.JSX.Element {
   const {latitude: lat, longitude: lon} = location;
+  const ended = useLiveLocationStore(s => s.ended[messageId] === true);
+  const mine = useLiveLocationStore(s => s.activeId === messageId);
   const live =
+    !ended &&
     location.live_period != null &&
     !location.stopped_at &&
     (location.live_until == null || location.live_until > Date.now());
@@ -42,6 +53,15 @@ export function LocationBubble({location, textColor, subColor}: Props): React.JS
           {lat.toFixed(5)}, {lon.toFixed(5)}
         </Text>
         <Text style={[styles.link, {color: textColor}]}>{t.locationOpen}</Text>
+        {mine ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => fireAndForget(stopLive(messageId))}>
+            <Text style={[styles.stop, {color: textColor}]}>{t.locationStop}</Text>
+          </Pressable>
+        ) : ended && location.live_period != null ? (
+          <Text style={[styles.sub, {color: subColor}]}>{t.locationEnded}</Text>
+        ) : null}
       </View>
     </Pressable>
   );
@@ -60,5 +80,6 @@ const styles = StyleSheet.create({
   text: {flexShrink: 1},
   title: {fontSize: 15, fontWeight: '600'},
   sub: {fontSize: 12, marginTop: 1},
+  stop: {fontSize: 13, fontWeight: '700', marginTop: 6},
   link: {fontSize: 13, fontWeight: '600', marginTop: 3, textDecorationLine: 'underline'},
 });

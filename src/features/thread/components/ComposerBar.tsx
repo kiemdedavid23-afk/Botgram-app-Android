@@ -40,6 +40,7 @@ type Props = {
   ) => Promise<void>;
   onSendContact: (contact: ContactDraft) => Promise<void>;
   onSendLocation: (loc: LocationDraft) => Promise<void>;
+  onSendLiveLocation: (loc: LocationDraft, periodSec: number) => Promise<void>;
 };
 
 export function ComposerBar({
@@ -49,6 +50,7 @@ export function ComposerBar({
   onSendMedia,
   onSendContact,
   onSendLocation,
+  onSendLiveLocation,
 }: Props): React.JSX.Element {
   const {colors, mode, appearance} = useTheme();
   const sendWithEnter = appearance.sendWithEnter;
@@ -310,6 +312,7 @@ export function ComposerBar({
         onPickFiles={addPending}
         onSendContact={c => fireAndForget(onSendContact(c))}
         onSendLocation={l => fireAndForget(onSendLocation(l))}
+        onSendLiveLocation={(l, p) => fireAndForget(onSendLiveLocation(l, p))}
       />
     </View>
   );
