@@ -13,6 +13,7 @@ import {
 import {useAuthStore} from '../../auth';
 import {settingsTexts as texts} from '../texts';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
+import {UpdateRow} from '../../update/UpdateRow';
 
 type Props = {
   onGoProfile: () => void;
@@ -102,6 +103,10 @@ export function MemberSettingsScreen({
               </Text>
             </View>
           </Pressable>
+
+          <View style={[styles.sep, {backgroundColor: colors.bgSecondary}]} />
+
+          <UpdateRow />
 
           <View style={[styles.sep, {backgroundColor: colors.bgSecondary}]} />
 
