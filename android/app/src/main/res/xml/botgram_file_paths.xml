@@ -2,4 +2,6 @@
 <paths>
     <!-- Copies temporaires créées pour le partage (cache/shared/) -->
     <cache-path name="botgram_shared" path="shared/" />
+    <!-- APK de mise à jour téléchargé (cache/updates/) -->
+    <cache-path name="botgram_update" path="updates/" />
 </paths>
