@@ -30,6 +30,9 @@
       android:name="android.permission.READ_EXTERNAL_STORAGE"
       android:maxSdkVersion="32" />
 
+    <!-- Mises à jour du canal direct : installer l'APK téléchargé (à retirer de la saveur Play Store) -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
     <!-- Partage de position (demandée à l'ouverture de l'onglet Position) -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
