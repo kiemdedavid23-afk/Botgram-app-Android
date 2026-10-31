@@ -4,6 +4,8 @@
  * Espace bot (BotSpace) : depuis le tableau de bord ou la feuille de bascule.
  * ShellSwitcher uniquement sous __DEV__.
  */
+import {startUpdateWatcher} from '../features/update/updateStore';
+import {UpdateBanner} from '../features/update/UpdateBanner';
 import React, {useCallback, useEffect, useState} from 'react';
 import {
   View,
@@ -48,8 +50,10 @@ import {
   AssociateVerifyWrapper,
   AssociateConfirmWrapper,
   AssociateDoneWrapper,
+  AssociateGuideWrapper,
 } from '../features/associate/AssociateStackScreens';
 import type {VerifyResult} from '../features/associate';
+import type {GuideSectionId} from '../features/associate/guideContent';
 import {BotSpaceScreen} from './BotSpaceScreen';
 import {ContextSwitcher} from './ContextSwitcher';
 import {useMemberSectionStore, type MemberSection} from './memberSectionStore';
@@ -130,6 +134,7 @@ export type MemberStackParamList = {
   AssociateVerify: {result: VerifyResult};
   AssociateConfirm: undefined;
   AssociateDone: undefined;
+  AssociateGuide: {section?: GuideSectionId} | undefined;
 };
 
 const MemberStack = createNativeStackNavigator<MemberStackParamList>();
@@ -281,6 +286,10 @@ function MemberShell(): React.JSX.Element {
         name="AssociateDone"
         component={AssociateDoneWrapper}
       />
+      <MemberStack.Screen
+        name="AssociateGuide"
+        component={AssociateGuideWrapper}
+      />
     </MemberStack.Navigator>
   );
 }
@@ -330,6 +339,8 @@ export function RootNavigator(): React.JSX.Element {
     fireAndForget(boot());
   }, [boot]);
 
+  useEffect(() => startUpdateWatcher(), []);
+
   const navTheme = {
     ...(mode === 'dark' ? DarkTheme : DefaultTheme),
     colors: {
@@ -360,6 +371,7 @@ export function RootNavigator(): React.JSX.Element {
       <NavigationContainer theme={navTheme}>
         {devBanner}
         {content}
+        <UpdateBanner />
       </NavigationContainer>
     </SafeAreaProvider>
   );
