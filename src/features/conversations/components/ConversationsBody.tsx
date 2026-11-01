@@ -11,6 +11,7 @@ import {EmptyScreen} from '../../../shared/components/EmptyScreen';
 import {conversationsMetrics as cm} from '../../../shared/theme/conversationsMetrics';
 import {conversationsTexts as t} from '../texts';
 import {ConversationRow} from './ConversationRow';
+import {isBotfactorListItem} from '../../botfactor';
 import type {ConversationSummary} from '../../../core/api/endpoints/conversations';
 
 type Props = {
@@ -61,24 +62,28 @@ export function ConversationsBody({
   const hideBadge = searchQuery.trim().length >= 1;
 
   const renderItem = useCallback(
-    ({item}: {item: ConversationSummary}) => (
-      <ConversationRow
-        item={item}
-        densityPad={densityPad}
-        hideBadge={hideBadge}
-        onPress={() => onOpen?.(item.id)}
-        onPressAvatar={() => onOpenProfile?.(item.id)}
-        onPin={onPin}
-        onDelete={onDelete}
-        onArchive={onArchive}
-        onUnarchive={onUnarchive}
-        archived={isArchived?.(item.id) ?? false}
-        swipeAction={swipeAction}
-        selectionMode={selectionMode}
-        selected={!!selectedIds?.[item.id]}
-        onToggleSelect={() => onToggleSelect?.(item.id)}
-      />
-    ),
+    ({item}: {item: ConversationSummary}) => {
+      // Botfactor n'est pas une conversation serveur : pas de suppression ni d'archivage.
+      const assistant = isBotfactorListItem(item.id);
+      return (
+        <ConversationRow
+          item={item}
+          densityPad={densityPad}
+          hideBadge={hideBadge}
+          onPress={() => onOpen?.(item.id)}
+          onPressAvatar={() => onOpenProfile?.(item.id)}
+          onPin={onPin}
+          onDelete={assistant ? undefined : onDelete}
+          onArchive={assistant ? undefined : onArchive}
+          onUnarchive={assistant ? undefined : onUnarchive}
+          archived={assistant ? false : (isArchived?.(item.id) ?? false)}
+          swipeAction={swipeAction}
+          selectionMode={selectionMode}
+          selected={!!selectedIds?.[item.id]}
+          onToggleSelect={() => onToggleSelect?.(item.id)}
+        />
+      );
+    },
     [
       densityPad,
       hideBadge,
