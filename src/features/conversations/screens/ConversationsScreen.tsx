@@ -38,6 +38,7 @@ import {ArchiveRow, ArchiveHeader} from '../components/ArchivedBar';
 import {ConversationsBody} from '../components/ConversationsBody';
 import {useConversationSearch} from '../hooks/useConversationSearch';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
+import {BotfactorRow} from '../../botfactor';
 
 type Props = {
   onOpenConversation?: (id: string) => void;
@@ -229,6 +230,7 @@ export function ConversationsScreen({
       ) : (
         <>
           <FoldersBar folder={folder} counts={counts} onSelect={setFolder} />
+          {searchQuery.trim().length === 0 ? <BotfactorRow /> : null}
           {counts.archive > 0 && searchQuery.trim().length === 0 ? (
             <ArchiveRow
               count={counts.archive}
