@@ -341,3 +341,4 @@ const styles = StyleSheet.create({
     bottom: cm.searchingOffset,
   },
 });
+
