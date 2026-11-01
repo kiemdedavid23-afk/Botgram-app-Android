@@ -78,7 +78,7 @@ export function LocationTab({
   return (
     <View style={[styles.wrap, {paddingBottom: bottomSpace}]}>
       <View style={[styles.card, {backgroundColor: colors.bgPrimary}]}>
-        <View style={[styles.circle, {backgroundColor: '#FF3B30'}]}>
+        <View style={[styles.circle, styles.red]}>
           <MapPin size={26} color="#fff" />
         </View>
         {needsPermission ? (
@@ -129,7 +129,7 @@ export function LocationTab({
                       styles.chip,
                       {backgroundColor: on ? colors.accentSoft : colors.bgSecondary},
                     ]}>
-                    <Text style={{color: on ? colors.accent : colors.textPrimary, fontSize: 13}}>
+                    <Text style={[styles.chipText, {color: on ? colors.accent : colors.textPrimary}]}>
                       {d.label}
                     </Text>
                   </Pressable>
@@ -161,6 +161,8 @@ export function LocationTab({
 }
 
 const styles = StyleSheet.create({
+  red: {backgroundColor: '#FF3B30'},
+  chipText: {fontSize: 13},
   wrap: {flex: 1, paddingHorizontal: 12},
   card: {
     borderRadius: radii.navPill,

@@ -146,7 +146,7 @@ export function GalleryTab({
               styles.circle,
               picked
                 ? {backgroundColor: colors.accent, borderColor: colors.accent}
-                : {borderColor: '#fff'},
+                : styles.whiteBorder,
             ]}>
             {picked ? <Text style={styles.circleText}>{order + 1}</Text> : null}
           </View>
@@ -257,6 +257,7 @@ function Gap(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
+  whiteBorder: {borderColor: '#fff'},
   flex: {flex: 1},
   row: {gap: GAP},
   center: {flex: 1, justifyContent: 'center', padding: 16},

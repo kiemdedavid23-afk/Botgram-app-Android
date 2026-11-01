@@ -45,7 +45,7 @@ export function ContactTab({bottomSpace, onSend}: Props): React.JSX.Element {
             styles.row,
             pressed && {backgroundColor: colors.bgSecondary},
           ]}>
-          <View style={[styles.circle, {backgroundColor: '#FF9500'}]}>
+          <View style={[styles.circle, styles.orange]}>
             <UserRound size={24} color="#fff" />
           </View>
           <View style={styles.text}>
@@ -95,6 +95,7 @@ export function ContactTab({bottomSpace, onSend}: Props): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
+  orange: {backgroundColor: '#FF9500'},
   wrap: {flex: 1, paddingHorizontal: 12, gap: 12},
   card: {borderRadius: radii.navPill, overflow: 'hidden'},
   row: {flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12},

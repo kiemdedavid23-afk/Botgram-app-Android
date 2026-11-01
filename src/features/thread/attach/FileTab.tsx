@@ -22,7 +22,7 @@ export function FileTab({onBrowse}: Props): React.JSX.Element {
             styles.row,
             pressed && {backgroundColor: colors.bgSecondary},
           ]}>
-          <View style={[styles.circle, {backgroundColor: '#34C759'}]}>
+          <View style={[styles.circle, styles.green]}>
             <FolderOpen size={24} color="#fff" />
           </View>
           <View style={styles.text}>
@@ -41,6 +41,7 @@ export function FileTab({onBrowse}: Props): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
+  green: {backgroundColor: '#34C759'},
   wrap: {padding: 16, gap: 12},
   card: {borderRadius: radii.lg, overflow: 'hidden'},
   row: {
