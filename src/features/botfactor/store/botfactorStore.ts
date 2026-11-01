@@ -14,6 +14,9 @@ type BotfactorStore = {
   stepIndex: number;
   data: FlowData;
   busy: boolean;
+  /** Dernière activité, pour la position dans la liste Échanges. */
+  lastAt: number;
+  lastText: string | null;
   push: (m: Omit<FactorMessage, 'id'>) => void;
   setTarget: (id: string | null) => void;
   startFlow: (action: FactorAction) => void;
@@ -30,7 +33,14 @@ export const useBotfactorStore = create<BotfactorStore>(set => ({
   stepIndex: 0,
   data: {},
   busy: false,
-  push: m => set(s => ({messages: [...s.messages, {...m, id: nextId()}]})),
+  lastAt: 0,
+  lastText: null,
+  push: m =>
+    set(s => ({
+      messages: [...s.messages, {...m, id: nextId()}],
+      lastAt: Date.now(),
+      lastText: m.text,
+    })),
   setTarget: id => set({targetBotId: id}),
   startFlow: action => set({action, stepIndex: 0, data: {}}),
   goToStep: (stepIndex, data) => set({stepIndex, data}),
@@ -44,6 +54,8 @@ export const useBotfactorStore = create<BotfactorStore>(set => ({
       stepIndex: 0,
       data: {},
       busy: false,
+      lastAt: 0,
+      lastText: null,
     }),
 }));
 
