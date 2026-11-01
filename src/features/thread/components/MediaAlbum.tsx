@@ -96,7 +96,7 @@ export function MediaAlbum({
                   return (
                     <View
                       key={item.id}
-                      style={{width: cellW, height: rowH, overflow: 'hidden'}}>
+                      style={[styles.cellClip, {width: cellW, height: rowH}]}>
                       {isVideoItem(item) ? (
                         <MediaVideo
                           messageId={item.id}
@@ -125,7 +125,7 @@ export function MediaAlbum({
       {others.map(item => (
         <View
           key={item.id}
-          style={{paddingHorizontal: sidePad, paddingVertical: 4}}>
+          style={[{paddingHorizontal: sidePad}, styles.captionPad]}>
           <MediaFile
             messageId={item.id}
             name={item.attachment?.name}
@@ -137,7 +137,7 @@ export function MediaAlbum({
         </View>
       ))}
       {caption ? (
-        <View style={{paddingHorizontal: sidePad, paddingTop: 4}}>
+        <View style={[{paddingHorizontal: sidePad}, styles.captionTop]}>
           <FormattedText
             text={caption}
             parseMode={parseMode}
@@ -151,6 +151,9 @@ export function MediaAlbum({
 }
 
 const styles = StyleSheet.create({
+  cellClip: {overflow: 'hidden'},
+  captionPad: {paddingVertical: 4},
+  captionTop: {paddingTop: 4},
   grid: {overflow: 'hidden'},
   row: {flexDirection: 'row'},
 });

@@ -48,14 +48,14 @@ function formatClock(ms: number): string {
 
 /** Barres de repli (fichier non décodable / forme d'onde pas encore prête) : stables par message. */
 function fallbackBars(seed: string): number[] {
-  let h = 2166136261;
+  let h = 7;
   for (let i = 0; i < seed.length; i += 1) {
-    h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
+    h = (h * 31 + seed.charCodeAt(i)) % 2147483647;
   }
   const out: number[] = [];
   for (let i = 0; i < BARS; i += 1) {
-    h = Math.imul(h ^ (h >>> 13), 1274126177);
-    out.push(25 + (Math.abs(h) % 55));
+    h = (h * 48271) % 2147483647;
+    out.push(25 + (h % 55));
   }
   return out;
 }
@@ -222,15 +222,15 @@ export function MediaAudio({messageId, kind, name, size, isOut}: Props): React.J
                     {
                       height: `${Math.max(12, v)}%`,
                       backgroundColor: played ? colors.accent : dim,
-                      opacity: played ? 1 : 0.55,
                     },
+                    played ? null : styles.unplayed,
                   ]}
                 />
               );
             })
           ) : (
             <>
-              <View pointerEvents="none" style={[styles.track, {backgroundColor: dim, opacity: 0.35}]} />
+              <View pointerEvents="none" style={[styles.track, {backgroundColor: dim}, styles.trackDim]} />
               <View
                 pointerEvents="none"
                 style={[styles.fill, {backgroundColor: colors.accent, width: `${progress * 100}%`}]}
@@ -263,6 +263,8 @@ export function MediaAudio({messageId, kind, name, size, isOut}: Props): React.J
 }
 
 const styles = StyleSheet.create({
+  unplayed: {opacity: 0.55},
+  trackDim: {opacity: 0.35},
   row: {flexDirection: 'row', alignItems: 'center', gap: 10, minWidth: 220, paddingVertical: 2},
   btn: {width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center'},
   playIcon: {marginLeft: 2},
