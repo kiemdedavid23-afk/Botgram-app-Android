@@ -53,7 +53,7 @@ const RawVideo = hasNative
   : null;
 
 export const NativeVideoView = forwardRef<NativeVideoHandle, NativeVideoProps>(
-  function NativeVideoView(props, ref) {
+  function NativeVideoViewImpl(props, ref) {
     const inner = useRef<View>(null);
 
     const dispatch = (command: string, args: unknown[] = []) => {
