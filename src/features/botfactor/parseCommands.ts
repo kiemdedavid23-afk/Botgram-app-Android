@@ -2,7 +2,8 @@
 import type {BotCommandItem} from '../../core/api/endpoints/botProfile.types';
 
 export const MAX_COMMANDS = 100;
-const LINE = /^\/?([^\s\-–—:]+)\s*[-–—:]\s*(.+)$/;
+// Format « commande - description » : séparateur entouré d’espaces.
+const LINE = /^\/?(\S+)\s+[-–—:]\s+(.+)$/;
 const NAME = /^[a-z0-9_]{1,32}$/;
 
 export type ParsedCommands =
