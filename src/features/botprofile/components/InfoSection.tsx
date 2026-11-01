@@ -1,6 +1,6 @@
 /**
  * Onglet Infos (lecture seule) — lignes « libellé · valeur » alignées,
- * rappel de modification via @BotFather, puis resynchronisation.
+ * accès à Botfactor pour modifier, puis resynchronisation.
  */
 import React from 'react';
 import {View, Text, Pressable, StyleSheet, ActivityIndicator} from 'react-native';
@@ -15,6 +15,8 @@ type Props = {
   status?: BotStatus;
   loading: boolean;
   onResync: () => void;
+  /** Ouvre Botfactor pour modifier le profil. */
+  onOpenBotfactor?: () => void;
 };
 
 type Row = {key: string; label: string; value: string};
@@ -24,6 +26,7 @@ export function InfoSection({
   status,
   loading,
   onResync,
+  onOpenBotfactor,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
   const rows: Row[] = [
@@ -72,6 +75,15 @@ export function InfoSection({
       <Text style={[styles.note, {color: colors.textHint}]}>
         {texts.readOnlyNote}
       </Text>
+      {onOpenBotfactor ? (
+        <Pressable
+          onPress={onOpenBotfactor}
+          style={[styles.btn, {backgroundColor: colors.accent}]}>
+          <Text style={[styles.btnText, {color: colors.white}]}>
+            {texts.editWithBotfactor}
+          </Text>
+        </Pressable>
+      ) : null}
       <Pressable
         onPress={onResync}
         disabled={loading}
