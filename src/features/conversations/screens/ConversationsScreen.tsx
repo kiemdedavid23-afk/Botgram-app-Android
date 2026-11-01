@@ -2,7 +2,7 @@
  * Liste des conversations — onglet Échanges (L5b).
  * Abonnement realtime et setBotId : niveau app (useRealtimeLifecycle).
  */
-import React, {useEffect, useMemo, type ReactNode} from 'react';
+import React, {useCallback, useEffect, useMemo, type ReactNode} from 'react';
 import {useShallow} from 'zustand/react/shallow';
 import {
   View,
@@ -38,7 +38,14 @@ import {ArchiveRow, ArchiveHeader} from '../components/ArchivedBar';
 import {ConversationsBody} from '../components/ConversationsBody';
 import {useConversationSearch} from '../hooks/useConversationSearch';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
-import {BotfactorRow} from '../../botfactor';
+import {
+  buildBotfactorListItem,
+  isBotfactorListItem,
+  useBotfactorLauncher,
+  useBotfactorListStore,
+  useBotfactorStore,
+} from '../../botfactor';
+import {sortItems} from '../store/merge';
 
 type Props = {
   onOpenConversation?: (id: string) => void;
@@ -93,6 +100,62 @@ export function ConversationsScreen({
 
   const {searchQuery, searching, onSearchChange, clearSearch} =
     useConversationSearch();
+
+  // Botfactor : une ligne de la liste, épinglée ou non, comme une conversation.
+  const bfPinned = useBotfactorListStore(s => s.pinned);
+  const setBfPinned = useBotfactorListStore(s => s.setPinned);
+  const hydrateBfList = useBotfactorListStore(s => s.hydrate);
+  const bfLastAt = useBotfactorStore(s => s.lastAt);
+  const bfLastText = useBotfactorStore(s => s.lastText);
+  useEffect(() => {
+    fireAndForget(hydrateBfList());
+  }, [hydrateBfList]);
+
+  // Visible dans « Tous » et « Privées », hors recherche et hors archive.
+  const listItems = useMemo(() => {
+    const showAssistant =
+      !searchQuery.trim() && (folder === 'all' || folder === 'personal');
+    if (!showAssistant) return filtered;
+    const bf = buildBotfactorListItem({
+      pinned: bfPinned,
+      lastAt: bfLastAt,
+      lastText: bfLastText,
+    });
+    return sortItems([bf, ...filtered]);
+  }, [filtered, folder, searchQuery, bfPinned, bfLastAt, bfLastText]);
+
+  const openItem = useCallback(
+    (id: string) => {
+      if (isBotfactorListItem(id)) {
+        useBotfactorLauncher.getState().openWith();
+        return;
+      }
+      onOpenConversation?.(id);
+    },
+    [onOpenConversation],
+  );
+
+  const openItemProfile = useCallback(
+    (id: string) => {
+      if (isBotfactorListItem(id)) {
+        useBotfactorLauncher.getState().openWith();
+        return;
+      }
+      onOpenProfile?.(id);
+    },
+    [onOpenProfile],
+  );
+
+  const pinItem = useCallback(
+    async (id: string, pinned: boolean) => {
+      if (isBotfactorListItem(id)) {
+        setBfPinned(pinned);
+        return;
+      }
+      await pinConversation(id, pinned);
+    },
+    [pinConversation, setBfPinned],
+  );
 
   // Mode sélection (menu ⋮ « Sélectionner »).
   const selActive = useSelectionStore(s => s.active);
@@ -230,7 +293,6 @@ export function ConversationsScreen({
       ) : (
         <>
           <FoldersBar folder={folder} counts={counts} onSelect={setFolder} />
-          {searchQuery.trim().length === 0 ? <BotfactorRow /> : null}
           {counts.archive > 0 && searchQuery.trim().length === 0 ? (
             <ArchiveRow
               count={counts.archive}
@@ -241,7 +303,7 @@ export function ConversationsScreen({
         </>
       )}
       <ConversationsBody
-        onPin={pinConversation}
+        onPin={pinItem}
         onDelete={deleteConversation}
         onArchive={id => archiveConv(id)}
         onUnarchive={id => unarchiveConv(id)}
@@ -250,7 +312,7 @@ export function ConversationsScreen({
         selectionMode={selActive}
         selectedIds={selIds}
         onToggleSelect={toggleSelect}
-        filtered={filtered}
+        filtered={listItems}
         loading={loading}
         loadingMore={loadingMore}
         error={error}
@@ -258,8 +320,8 @@ export function ConversationsScreen({
         densityPad={densityPad}
         onRetry={() => fireAndForget(load(true))}
         onLoadMore={() => fireAndForget(loadMore())}
-        onOpen={onOpenConversation}
-        onOpenProfile={onOpenProfile}
+        onOpen={openItem}
+        onOpenProfile={openItemProfile}
       />
       {searching ? (
         <View style={styles.searching}>
