@@ -41,6 +41,7 @@ import {fireAndForget} from '../core/utils/fireAndForget';
 import {useBotsStore} from '../features/bots/store/botsStore';
 import {BotSettingsStack} from '../features/settings';
 import {BotProfileScreen} from '../features/botprofile';
+import {BotfactorScreen, useBotfactorLauncher} from '../features/botfactor';
 import {ContextSwitcher} from './ContextSwitcher';
 
 type Props = {
@@ -70,6 +71,9 @@ export function BotSpaceScreen({onExit, onAddBot}: Props): React.JSX.Element {
   const enterSelection = useSelectionStore(s => s.enter);
   const [tab, setTab] = useState<BotTabId>('chats');
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const factorOpen = useBotfactorLauncher(s => s.open);
+  const closeFactor = useBotfactorLauncher(s => s.close);
+  const openFactor = useBotfactorLauncher(s => s.openWith);
   const unreadBadge = useConversationsStore(s => s.unreadTotal);
   const bots = useBotsStore(s => s.bots);
   const selected = bots.find(b => b.selected) ?? bots[0];
@@ -187,16 +191,13 @@ export function BotSpaceScreen({onExit, onAddBot}: Props): React.JSX.Element {
     />
   );
 
-  if (tab === 'chats') {
-    return (
+  const content =
+    tab === 'chats' ? (
       <View style={[styles.root, {backgroundColor: colors.bgPrimary}]}>
         <BotChatsStack footer={nav} headerRight={headerRightChats} />
         {switcher}
       </View>
-    );
-  }
-
-  return (
+    ) : (
     <View style={[styles.root, {backgroundColor: colors.bgSecondary}]}>
       <BrandBar title="Botgram" right={headerRight} />
       {tab === 'settings' ? (
@@ -204,12 +205,27 @@ export function BotSpaceScreen({onExit, onAddBot}: Props): React.JSX.Element {
           <BotSettingsStack />
         </View>
       ) : tab === 'profile' ? (
-        <BotProfileScreen onAddBot={onAddBot} />
+        <BotProfileScreen
+          onAddBot={onAddBot}
+          onOpenBotfactor={() => openFactor()}
+        />
       ) : (
         <EmptyScreen title="Contacts" subtitle="Bientôt disponible" />
       )}
       {nav}
       {switcher}
+    </View>
+    );
+
+  return (
+    <View style={styles.root}>
+      {content}
+      {factorOpen ? (
+        <View
+          style={[StyleSheet.absoluteFill, {backgroundColor: colors.bgSecondary}]}>
+          <BotfactorScreen onBack={closeFactor} />
+        </View>
+      ) : null}
     </View>
   );
 }
