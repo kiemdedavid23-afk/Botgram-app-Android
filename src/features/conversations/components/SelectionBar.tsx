@@ -79,7 +79,7 @@ export function SelectionBar({
       disabled={disabled}
       onPress={onPress}
       hitSlop={space.sm}
-      style={[styles.btn, {opacity: disabled ? 0.4 : 1}]}>
+      style={[styles.btn, disabled ? styles.dimmed : null]}>
       <Icon size={22} color={color} />
     </Pressable>
   );
@@ -120,6 +120,7 @@ export function SelectionBar({
 }
 
 const styles = StyleSheet.create({
+  dimmed: {opacity: 0.4},
   inner: {
     height: space.brandBarHeight,
     paddingLeft: space.sm,
