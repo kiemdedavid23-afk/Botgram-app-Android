@@ -21,7 +21,8 @@ export function QuickReplies({actions, disabled, onPick}: Props): React.JSX.Elem
           onPress={() => onPick(a)}
           style={[
             styles.chip,
-            {backgroundColor: colors.accentSoft, opacity: disabled ? 0.5 : 1},
+            {backgroundColor: colors.accentSoft},
+            disabled ? styles.dimmed : null,
           ]}>
           <Text style={[styles.label, {color: colors.accent}]}>{a.label}</Text>
         </Pressable>
@@ -31,6 +32,7 @@ export function QuickReplies({actions, disabled, onPick}: Props): React.JSX.Elem
 }
 
 const styles = StyleSheet.create({
+  dimmed: {opacity: 0.5},
   wrap: {flexDirection: 'row', flexWrap: 'wrap', gap: bm.chipGap},
   chip: {
     paddingHorizontal: bm.chipPadH,

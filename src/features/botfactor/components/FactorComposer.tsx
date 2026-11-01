@@ -35,7 +35,8 @@ export function FactorComposer({busy, onSend}: Props): React.JSX.Element {
         disabled={!canSend}
         style={[
           styles.send,
-          {backgroundColor: colors.accent, opacity: canSend || busy ? 1 : 0.4},
+          {backgroundColor: colors.accent},
+          canSend || busy ? null : styles.dimmed,
         ]}>
         {busy ? (
           <ActivityIndicator color={colors.white} />
@@ -48,6 +49,7 @@ export function FactorComposer({busy, onSend}: Props): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
+  dimmed: {opacity: 0.4},
   bar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
