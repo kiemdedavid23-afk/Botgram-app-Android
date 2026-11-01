@@ -61,7 +61,7 @@ export function BotfactorScreen({onBack}: Props): React.JSX.Element {
             <View style={styles.chips}>
               <QuickReplies actions={chips} disabled={busy} onPick={onPick} />
             </View>
-          ) : null
+          ) : undefined
         }
       />
       <FactorComposer busy={busy} onSend={t => fireAndForget(sendInput(t))} />
