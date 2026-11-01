@@ -160,3 +160,27 @@ npm test -- --ci --coverage=false
 
 ### Preuves CI
 *(non exécutées — coller sorties réelles de typecheck / lint / test)*
+
+
+## Botfactor — assistant de gestion du profil du bot (port du site)
+
+### Créés
+- `src/features/botfactor/` : `types`, `texts`, `commands` + `flowsProfile` / `flowsSettings`, `parseCommands`, `replies`, `engine`, `run`, `store/` (fil + lanceur), `components/`, `screens/BotfactorScreen`
+- `src/shared/theme/botfactorMetrics.ts`
+- `__tests__/botfactor-parse.test.ts`, `__tests__/botfactor-engine.test.ts`
+
+### Modifiés
+- `ConversationsScreen` : ligne épinglée « Botfactor » (hors recherche et hors archive)
+- `BotSpaceScreen` : surcouche plein écran Botfactor (le fil ouvert dans Échanges est conservé dessous)
+- `BotProfileScreen` / `InfoSection` / `botprofile/texts.ts` : bouton « Modifier avec Botfactor »
+
+### Écarts avec le site
+- Le site est en mode démonstration (« opération simulée », envoi sans attendre la réponse). L'app envoie **réellement** à Telegram, attend la réponse et affiche l'échec si Telegram refuse.
+- `/setrights` appliqué pour de vrai (tout activer / tout retirer, groupes ou canaux) ; le site ne faisait rien.
+- `/setmenubutton` : étapes texte + lien https ajoutées pour l'application web.
+- Valeurs de flux stockées par id d'étape (le site les retrouvait par `Object.values`).
+- Le bot ciblé reste local à Botfactor : `/mybots` ne change pas le bot sélectionné de l'app.
+- Langue : « par défaut » uniquement.
+
+### Preuves CI
+*(non exécutées — coller sorties réelles de typecheck / lint / test)*
