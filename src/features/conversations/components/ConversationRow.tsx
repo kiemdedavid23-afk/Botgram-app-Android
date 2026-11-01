@@ -1,246 +1,151 @@
-import React, {useState} from 'react';
-import {View, Text, Pressable, StyleSheet} from 'react-native';
-import {Pin, Check} from 'lucide-react-native';
-import {useTheme, fontWeight} from '../../../shared/theme';
-import {Avatar} from '../../../shared/components/Avatar';
-import {conversationsMetrics as cm} from '../../../shared/theme/conversationsMetrics';
-import {stripPreview} from '../../../core/utils/stripPreview';
-import {formatConversationTime} from '../texts';
-import {conversationTitle} from '../store/conversationsStore';
-import type {ConversationSummary} from '../../../core/api/endpoints/conversations';
-import {fireAndForget} from '../../../core/utils/fireAndForget';
-import {ConversationActionsSheet} from './ConversationActionsSheet';
+import React, {useCallback} from 'react';
 import {
-  buildConversationMenu,
-  confirmDeleteConversation,
-  conversationSubtitle,
-} from './conversationMenu';
+  View,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
+import {useTheme} from '../../../shared/theme';
+import {EmptyScreen} from '../../../shared/components/EmptyScreen';
+import {conversationsMetrics as cm} from '../../../shared/theme/conversationsMetrics';
+import {conversationsTexts as t} from '../texts';
+import {ConversationRow} from './ConversationRow';
+import {isBotfactorListItem} from '../../botfactor';
+import type {ConversationSummary} from '../../../core/api/endpoints/conversations';
 
 type Props = {
-  item: ConversationSummary;
+  filtered: ConversationSummary[];
+  loading: boolean;
+  loadingMore: boolean;
+  error: string | null;
+  searchQuery: string;
   densityPad: number;
-  hideBadge: boolean;
-  onPress?: () => void;
-  /** Appui sur la photo uniquement → profil contact. */
-  onPressAvatar?: () => void;
+  onRetry: () => void;
+  onLoadMore: () => void;
+  onOpen?: (id: string) => void;
+  /** Photo de profil → écran contact. */
+  onOpenProfile?: (id: string) => void;
   onPin?: (id: string, pinned: boolean) => Promise<void>;
   onDelete?: (id: string) => Promise<boolean>;
   onArchive?: (id: string) => void;
   onUnarchive?: (id: string) => void;
-  archived?: boolean;
-  /** Action préférée (réglage Discussions) — mise en avant dans le menu. */
+  isArchived?: (id: string) => boolean;
   swipeAction?: 'archive' | 'folder' | 'pin';
-  /** Mode sélection : un appui coche / décoche la ligne. */
   selectionMode?: boolean;
-  selected?: boolean;
-  onToggleSelect?: () => void;
+  selectedIds?: Record<string, true>;
+  onToggleSelect?: (id: string) => void;
 };
 
-export function ConversationRow({
-  item,
+export function ConversationsBody({
+  filtered,
+  loading,
+  loadingMore,
+  error,
+  searchQuery,
   densityPad,
-  hideBadge,
-  onPress,
-  onPressAvatar,
+  onRetry,
+  onLoadMore,
+  onOpen,
+  onOpenProfile,
   onPin,
   onDelete,
   onArchive,
   onUnarchive,
-  archived = false,
-  swipeAction = 'folder',
+  isArchived,
+  swipeAction,
   selectionMode = false,
-  selected = false,
+  selectedIds,
   onToggleSelect,
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
-  const title = conversationTitle(item);
-  const preview = stripPreview(item.last_message_text);
-  const time = formatConversationTime(item.last_message_at);
-  const unread = item.unread_count ?? 0;
-  const showBadge = !hideBadge && unread > 0;
-  const [menuOpen, setMenuOpen] = useState(false);
-  const pinned = !!item.pinned;
-  const groups = buildConversationMenu({
-    pinned,
-    archived,
-    onViewProfile: onPressAvatar,
-    onTogglePin: () => {
-      if (onPin) fireAndForget(onPin(item.id, !pinned));
-    },
-    onToggleArchive: () => {
-      if (archived) onUnarchive?.(item.id);
-      else onArchive?.(item.id);
-    },
-    onDelete: () =>
-      confirmDeleteConversation(() => {
-        if (onDelete) fireAndForget(onDelete(item.id));
-      }),
-  });
+  const hideBadge = searchQuery.trim().length >= 1;
 
+  const renderItem = useCallback(
+    ({item}: {item: ConversationSummary}) => {
+      // Botfactor n'est pas une conversation serveur : pas de suppression ni d'archivage.
+      const assistant = isBotfactorListItem(item.id);
+      return (
+        <ConversationRow
+          item={item}
+          densityPad={densityPad}
+          hideBadge={hideBadge}
+          onPress={() => onOpen?.(item.id)}
+          onPressAvatar={() => onOpenProfile?.(item.id)}
+          onPin={onPin}
+          onDelete={assistant ? undefined : onDelete}
+          onArchive={assistant ? undefined : onArchive}
+          onUnarchive={assistant ? undefined : onUnarchive}
+          archived={assistant ? false : (isArchived?.(item.id) ?? false)}
+          swipeAction={swipeAction}
+          selectionMode={selectionMode}
+          selected={!!selectedIds?.[item.id]}
+          onToggleSelect={() => onToggleSelect?.(item.id)}
+        />
+      );
+    },
+    [
+      densityPad,
+      hideBadge,
+      onOpen,
+      onOpenProfile,
+      onPin,
+      onDelete,
+      onArchive,
+      onUnarchive,
+      isArchived,
+      swipeAction,
+      selectionMode,
+      selectedIds,
+      onToggleSelect,
+    ],
+  );
+
+  if (loading && filtered.length === 0) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator color={colors.accent} />
+      </View>
+    );
+  }
+  if (error && filtered.length === 0) {
+    return (
+      <Pressable onPress={onRetry} style={styles.center}>
+        <EmptyScreen title={error} subtitle={t.retry} />
+      </Pressable>
+    );
+  }
+  if (filtered.length === 0) {
+    return (
+      <EmptyScreen
+        title={searchQuery ? t.emptySearch : t.emptyTitle}
+        subtitle={searchQuery ? '' : t.emptySubtitle}
+      />
+    );
+  }
   return (
-    <>
-    <Pressable
-      onPress={selectionMode ? onToggleSelect : onPress}
-      onLongPress={selectionMode ? onToggleSelect : () => setMenuOpen(true)}
-      accessibilityState={{selected}}
-      style={({pressed}) => [
-        styles.item,
-        {
-          paddingVertical: cm.itemPaddingV + densityPad,
-          paddingHorizontal: cm.itemPaddingH,
-          backgroundColor: selected
-            ? colors.accentSoft
-            : pressed
-              ? colors.bgTertiary
-              : 'transparent',
-        },
-      ]}>
-      <View>
-        {onPressAvatar ? (
-          <Pressable
-            onPress={selectionMode ? onToggleSelect : onPressAvatar}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={title}>
-            <Avatar
-              photoUrl={item.photo_url}
-              initials={item.initials}
-              title={title}
-            />
-          </Pressable>
-        ) : (
-          <Avatar
-            photoUrl={item.photo_url}
-            initials={item.initials}
-            title={title}
+    <FlatList
+      data={filtered}
+      keyExtractor={item => item.id}
+      renderItem={renderItem}
+      extraData={selectedIds}
+      onEndReached={() => {
+        if (!searchQuery) onLoadMore();
+      }}
+      onEndReachedThreshold={0.4}
+      ListFooterComponent={
+        loadingMore ? (
+          <ActivityIndicator
+            color={colors.accent}
+            style={styles.footerSpinner}
           />
-        )}
-        {selected ? (
-          <View
-            style={[
-              styles.check,
-              {backgroundColor: colors.accent, borderColor: colors.bgPrimary},
-            ]}>
-            <Check size={12} color={colors.white} strokeWidth={3} />
-          </View>
-        ) : null}
-      </View>
-      <View style={styles.content}>
-        <View style={styles.row}>
-          <View style={styles.titleRow}>
-            {item.pinned ? (
-              <Pin
-                size={cm.pinIconSize}
-                color={colors.textSecondary}
-                strokeWidth={2}
-              />
-            ) : null}
-            <Text
-              numberOfLines={1}
-              style={[
-                styles.title,
-                {color: colors.textPrimary, fontWeight: fontWeight.semibold},
-              ]}>
-              {title}
-            </Text>
-          </View>
-          <Text
-            style={{
-              color: showBadge ? colors.accent : colors.textHint,
-              fontSize: cm.timeSize,
-              fontWeight: showBadge ? fontWeight.semibold : fontWeight.regular,
-            }}>
-            {time}
-          </Text>
-        </View>
-        <View style={styles.row}>
-          <Text
-            numberOfLines={1}
-            style={[
-              styles.preview,
-              styles.previewFlex,
-              {color: showBadge ? colors.textPrimary : colors.textSecondary},
-            ]}>
-            {preview}
-          </Text>
-          {showBadge ? (
-            <View
-              style={[
-                styles.badge,
-                {backgroundColor: colors.accent, minWidth: cm.badgeMinSize},
-              ]}>
-              <Text
-                style={{
-                  color: colors.white,
-                  fontSize: cm.badgeFontSize,
-                  fontWeight: fontWeight.bold,
-                }}>
-                {unread > 99 ? '99+' : String(unread)}
-              </Text>
-            </View>
-          ) : null}
-        </View>
-      </View>
-    </Pressable>
-    <ConversationActionsSheet
-      visible={menuOpen}
-      onClose={() => setMenuOpen(false)}
-      title={title}
-      subtitle={conversationSubtitle(item)}
-      photoUrl={item.photo_url}
-      initials={item.initials}
-      groups={groups}
-      highlightId={
-        swipeAction === 'pin'
-          ? 'pin'
-          : swipeAction === 'archive'
-            ? 'archive'
-            : undefined
+        ) : undefined
       }
     />
-    </>
   );
 }
 
 const styles = StyleSheet.create({
-  item: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: cm.itemGap,
-  },
-  check: {
-    position: 'absolute',
-    right: -2,
-    bottom: -2,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  content: {flex: 1, minWidth: 0, gap: cm.contentGap},
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: cm.rowGap,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    minWidth: 0,
-    gap: cm.titleRowGap,
-  },
-  title: {fontSize: cm.titleSize, flexShrink: 1},
-  preview: {fontSize: cm.previewSize},
-  previewFlex: {flex: cm.previewFlex},
-  badge: {
-    height: cm.badgeMinSize,
-    borderRadius: cm.badgeMinSize / 2,
-    paddingHorizontal: cm.badgePadH,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  center: {flex: 1, alignItems: 'center', justifyContent: 'center'},
+  footerSpinner: {margin: cm.footerSpinnerMargin},
 });
