@@ -18,7 +18,7 @@ import {PROFILE_TABS, type TabId} from '../utils/tabs';
 import {texts} from '../texts';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 
-type Props = {onAddBot?: () => void};
+type Props = {onAddBot?: () => void; onOpenBotfactor?: () => void};
 
 function makeStyles(c: ColorTokens) {
   return StyleSheet.create({
@@ -61,7 +61,10 @@ function makeStyles(c: ColorTokens) {
   });
 }
 
-export function BotProfileScreen({onAddBot}: Props): React.JSX.Element {
+export function BotProfileScreen({
+  onAddBot,
+  onOpenBotfactor,
+}: Props): React.JSX.Element {
   const {colors} = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const member = useAuthStore(s => s.member);
@@ -185,6 +188,7 @@ export function BotProfileScreen({onAddBot}: Props): React.JSX.Element {
             status={bot.status}
             loading={loading}
             onResync={resync}
+            onOpenBotfactor={onOpenBotfactor}
           />
         ) : null}
       </ScrollView>
