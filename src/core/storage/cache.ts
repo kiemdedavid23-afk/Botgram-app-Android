@@ -77,5 +77,11 @@ export async function cacheDeleteByPrefix(prefix: string): Promise<void> {
   }
 }
 
+/** Toutes les clés du cache (migration archive). */
+export async function cacheGetAllKeys(): Promise<string[]> {
+  const mmkv = await getInstance();
+  return mmkv.getAllKeys();
+}
+
 /** Clé dédiée aux réglages d'apparence (distincte du site web). */
 export const APPEARANCE_STORAGE_KEY = 'appearance';

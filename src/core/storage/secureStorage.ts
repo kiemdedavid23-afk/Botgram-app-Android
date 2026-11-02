@@ -110,3 +110,17 @@ function generateArchiveKey(): string {
   }
   return out;
 }
+
+/** Lit la clé archive sans la créer (null si absente). */
+export async function getArchiveKeyIfExists(): Promise<string | null> {
+  const existing = await getPassword(ARCHIVE_KEY_KEY);
+  if (existing !== null && existing.length >= 32) {
+    return existing;
+  }
+  return null;
+}
+
+/** Efface la clé archive du Keychain (13.5 / clearAll). */
+export async function clearArchiveKey(): Promise<void> {
+  await resetPassword(ARCHIVE_KEY_KEY);
+}
