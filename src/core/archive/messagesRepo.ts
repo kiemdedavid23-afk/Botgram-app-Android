@@ -140,7 +140,7 @@ export async function upsertMessages(db: DB, items: Message[]): Promise<void> {
 
 async function loadAlbum(db: DB, albumMessageId: string): Promise<AlbumItem[]> {
   const res = await db.execute(
-    `SELECT * FROM album_items WHERE album_message_id = ? ORDER BY created_at ASC;`,
+    `SELECT * FROM album_items WHERE album_message_id = ? ORDER BY created_at ASC, rowid ASC;`,
     [albumMessageId],
   );
   return (res.rows as Row[]).map(r => ({
@@ -157,7 +157,8 @@ async function loadAlbum(db: DB, albumMessageId: string): Promise<AlbumItem[]> {
 
 /**
  * Messages d'une conversation, hors tombstones message.
- * Ordre chronologique croissant (fil).
+ * Renvoie les `limit` messages les PLUS RÉCENTS, en ordre chronologique
+ * croissant (fil).
  */
 export async function listMessagesForConversation(
   db: DB,
@@ -165,14 +166,16 @@ export async function listMessagesForConversation(
   limit: number,
 ): Promise<Message[]> {
   const res = await db.execute(
-    `SELECT m.* FROM messages m
-     WHERE m.conversation_id = ?
-       AND NOT EXISTS (
-         SELECT 1 FROM tombstones t
-         WHERE t.entity_type = 'message' AND t.entity_id = m.id
-       )
-     ORDER BY m.created_at ASC
-     LIMIT ?;`,
+    `SELECT * FROM (
+       SELECT m.* FROM messages m
+       WHERE m.conversation_id = ?
+         AND NOT EXISTS (
+           SELECT 1 FROM tombstones t
+           WHERE t.entity_type = 'message' AND t.entity_id = m.id
+         )
+       ORDER BY m.created_at DESC, m.rowid DESC
+       LIMIT ?
+     ) ORDER BY created_at ASC, id ASC;`,
     [conversationId, limit],
   );
   const out: Message[] = [];
