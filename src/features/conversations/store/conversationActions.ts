@@ -1,12 +1,13 @@
 /**
- * Actions conversation L6d — pin / delete.
- * removeConversationLocally : branche archive 6 bis.
+ * Actions conversation L6d — pin / delete + tombstone archive (6bis-c).
  */
 import {
   pinConversation,
   deleteConversation,
 } from '../../../core/api/endpoints/conversations';
 import type {ConversationSummary} from '../../../core/realtime/events';
+import {archiveTombstone, archiveUpsertConversations} from '../../../core/archive/hydrate';
+import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {conversationsTexts as texts} from '../texts';
 
 type Slice = {
@@ -25,6 +26,15 @@ export function removeConversationLocally(
   items: ConversationSummary[],
   id: string,
 ): ConversationSummary[] {
+  fireAndForget(archiveTombstone('conversation', id, 'user_deleted'));
+  return items.filter(c => c.id !== id);
+}
+
+export function removeConversationFromEvent(
+  items: ConversationSummary[],
+  id: string,
+): ConversationSummary[] {
+  fireAndForget(archiveTombstone('conversation', id, 'server_removed'));
   return items.filter(c => c.id !== id);
 }
 
@@ -38,7 +48,6 @@ export function applyPinnedLocally(
   );
 }
 
-/** Tri épinglées d'abord puis last_message_at desc. */
 export function sortConversations(
   items: ConversationSummary[],
 ): ConversationSummary[] {
@@ -63,6 +72,7 @@ export async function doPinConversation(
     return;
   }
   const updated = res.data.conversation;
+  fireAndForget(archiveUpsertConversations([updated]));
   ctx.set(s => ({
     items: sortConversations(
       s.items.map(c => (c.id === id ? {...c, ...updated} : c)),

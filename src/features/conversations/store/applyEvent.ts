@@ -3,6 +3,8 @@ import {fireAndForget} from '../../../core/utils/fireAndForget';
 import type {RealtimeEvent} from '../../../core/realtime';
 import type {ConversationSummary} from '../../../core/api/endpoints/conversations';
 import {mergeById} from './merge';
+import {removeConversationFromEvent} from './conversationActions';
+import {archiveUpsertConversations} from '../../../core/archive/hydrate';
 
 export type ApplyCtx = {
   get: () => {
@@ -33,6 +35,7 @@ function applyUpdates(ev: Extract<RealtimeEvent, {type: 'updates'}>, ctx: ApplyC
   if (!botId) return;
   const relevant = ev.conversations.filter(c => c.bot_id === botId);
   if (relevant.length > 0) {
+    fireAndForget(archiveUpsertConversations(relevant));
     ctx.set(s => ({items: mergeById(s.items, relevant)}));
   }
   if (ev.unread[botId] !== undefined) {
@@ -51,6 +54,7 @@ function applyMessage(
     const oldUnread = prev?.unread_count ?? 0;
     const newUnread = ev.conversation.unread_count ?? oldUnread;
     const delta = newUnread - oldUnread;
+    fireAndForget(archiveUpsertConversations([ev.conversation]));
     ctx.set(s => ({
       items: mergeById(s.items, [ev.conversation!]),
       unreadTotal: Math.max(0, s.unreadTotal + delta),
@@ -94,7 +98,7 @@ function applyChanged(
       const prev = s.items.find(i => i.id === ev.conversation_id);
       const old = prev?.unread_count ?? 0;
       return {
-        items: s.items.filter(i => i.id !== ev.conversation_id),
+        items: removeConversationFromEvent(s.items, ev.conversation_id),
         unreadTotal: Math.max(0, s.unreadTotal - old),
       };
     });
