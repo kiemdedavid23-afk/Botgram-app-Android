@@ -184,3 +184,78 @@ npm test -- --ci --coverage=false
 
 ### Preuves CI
 *(non exécutées — coller sorties réelles de typecheck / lint / test)*
+
+## 6bis-b — Schéma + migrations + lecture archive
+
+### Durcissement 6bis-a (réserves audit)
+- `ensureOpen` single-flight (promesse d'ouverture mémorisée)
+- `clearAll` : ferme la connexion, `db.delete()` (fichier), `clearArchiveKey()` (Keychain)
+- `open()` renvoie `{ok, reason}` si clé/base illisible (pas de crash au boot)
+- `getArchiveKeyIfExists` / `clearArchiveKey` dans `secureStorage`
+
+### Schéma (v1)
+- Tables : `schema_version`, `conversations`, `messages`, `album_items`, `tombstones`
+- `tombstones` = seul mécanisme de suppressions (pas de `tombstone_at` sur conversations)
+- `server_deleted` : pas de colonne ; l'absence serveur ne supprime jamais (13.11). Un retrait local = ligne `tombstones` (branché en 6bis-c)
+- `text` en colonne simple (FTS5 → 6bis-e)
+
+### Migration MMKV
+- Flag `archive.mmkv_migrated.v1` (idempotente)
+- Sources : `conversations.page1.*`, `thread.messages.*`
+- Cas « message realtime pendant migration » : upsert par id après coup (pas de perte)
+
+### Lecture liste / fil
+- `conversationsStore.load` / `threadStore.load` : archive d'abord, puis réseau, puis upsert
+- Fusion par id : le serveur gagne sur les ids présents ; le local conserve le reste
+- `reloadPage1` upsert aussi l'archive
+
+### Créés
+- `src/core/archive/schema.ts`, `migrations.ts`, `conversationsRepo.ts`, `messagesRepo.ts`
+- `src/core/archive/migrateFromMmkv.ts`, `hydrate.ts`
+- `src/features/thread/store/loadMessages.ts`
+- Tests étendus `__tests__/archive-store.test.ts`
+
+### Modifiés
+- `opSqliteArchiveStore.ts`, `ArchiveStore.ts`, `registerArchiveCleaner.ts`, `index.ts`
+- `secureStorage.ts`, `cache.ts` (`cacheGetAllKeys`), `storage/index.ts`
+- `conversationsStore.ts`, `threadStore.ts`, `reloadPage1.ts`
+- `__mocks__/op-sqlite.ts`
+
+### Non fait (6bis-c)
+- Fusion fine REST/temps réel/tombstones
+- Branchement `removeMessageLocally` / `removeConversationLocally`
+
+### Écarts
+- Aucune nouvelle dépendance
+- android/ inchangé
+
+### Preuves CI
+```
+(à coller après exécution locale)
+npm run typecheck
+npm run lint
+npm test -- --ci --coverage=false
+```
+
+## Correction CI 6bis-b (lint + guard op-sqlite)
+
+### Lint
+- `threadStore.ts` : suppression imports/const inutilisés (`cacheGetString`, `cacheSetString`, `sortMessagesAsc`, `threadTexts`, `cacheKey`). La lecture fil passe par `loadMessages.ts` (archive + secours MMKV). `cacheDeleteByPrefix` + `CACHE_PREFIX` conservés pour `clear()`.
+- `migrateFromMmkv.ts` : suppression du `void cacheDeleteByPrefix` (code mort) ; import nettoyé.
+
+### Guard op-sqlite
+Cas retenu : **import type uniquement** hors `opSqliteArchiveStore.ts`.
+| Fichier | Accès |
+|---------|--------|
+| `opSqliteArchiveStore.ts` | import d'exécution (`open`, `DB`) — seul autorisé |
+| `conversationsRepo.ts` | `import type {DB}` |
+| `messagesRepo.ts` | `import type {DB}` |
+| `migrations.ts` | `import type {DB}` |
+| `migrateFromMmkv.ts` | `import type {DB}` |
+
+Le test `op-sqlite-guard.test.ts` accepte `import type … from '@op-engineering/op-sqlite'` ailleurs ; refuse tout import d'exécution hors `opSqliteArchiveStore.ts` (preuve unitaire ajoutée).
+
+### Preuves CI
+```
+(à coller — environnement agent : npm registry timeout)
+```
