@@ -1,4 +1,4 @@
-export type {ArchiveStore} from './ArchiveStore';
+export type {ArchiveStore, ArchiveOpenResult} from './ArchiveStore';
 export {
   getArchiveStore,
   setArchiveStoreForTests,
@@ -7,3 +7,4 @@ export {
 } from './ArchiveStore';
 export {createOpSqliteArchiveStore} from './opSqliteArchiveStore';
 export {registerArchiveStoreCleaner} from './registerArchiveCleaner';
+export {SCHEMA_VERSION, ARCHIVE_DB_NAME} from './schema';
