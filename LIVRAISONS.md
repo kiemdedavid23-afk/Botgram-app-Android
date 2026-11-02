@@ -259,3 +259,31 @@ Le test `op-sqlite-guard.test.ts` accepte `import type … from '@op-engineering
 ```
 (à coller — environnement agent : npm registry timeout)
 ```
+
+## 6bis-c — Vraie base de test, durcissement, fusion / tombstones
+
+### Partie A
+- devDependencies exactes : `better-sqlite3@12.5.0`, `@types/better-sqlite3@9.6.0`
+- `__tests__/helpers/realSqliteDb.ts` — adaptateur en mémoire
+- `__tests__/better-sqlite3-guard.test.ts` — import uniquement sous `__tests__/`
+- `__tests__/archive-sql.real.test.ts` — migrations, limit récents, tombstones, album, ordre, upsert
+- `messagesRepo.listMessagesForConversation` : `limit` messages **les plus récents**, ordre croissant
+- Limite : SQLCipher / op-sqlite natif non exercés ici (essai téléphone)
+
+### Partie B
+- Base illisible → delete fichier + clé + archive neuve + message one-shot (`archiveTexts.resetUnreadable`)
+- Erreurs transitoires (locked/busy/full) : pas de reset
+- `clearAll` sans catch vide ; cleaner propage ; `clearMemberData` continue puis rejette la 1re erreur
+- Upserts + migration MMKV en transaction BEGIN/COMMIT
+- Flag MMKV seulement après succès ; réessai migration si échec ; purge préfixes après succès
+- Upsert COALESCE : champs absents/null ne écrasent pas l'existant (title, photo, unread…)
+
+### Partie C
+- Écritures archive : load REST, reloadPage1, realtime message.new/updated, pin, updates
+- Tombstones via `removeMessageLocally` / `removeMessageFromEvent` / `removeConversationLocally` / `removeConversationFromEvent`
+- Absence serveur ≠ tombstone (test SQL réel)
+
+### Preuves CI
+```
+(à coller après npm ci local)
+```
