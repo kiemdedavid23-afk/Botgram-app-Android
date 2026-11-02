@@ -1,13 +1,16 @@
 /**
  * Upsert / lecture conversations (archive locale).
  * N'efface jamais une ligne absente du serveur (13.11).
+ * Champs absents (undefined/null en entrée partielle) : ne pas écraser
+ * une valeur déjà connue (COALESCE côté UPDATE).
  */
 import type {DB} from '@op-engineering/op-sqlite';
 import type {ConversationSummary} from '../realtime/events';
 
 type Row = Record<string, unknown>;
 
-function bool01(v: boolean | undefined): number {
+function bool01(v: boolean | undefined | null): number | null {
+  if (v === undefined || v === null) return null;
   return v ? 1 : 0;
 }
 
@@ -35,64 +38,80 @@ function rowToConversation(row: Row): ConversationSummary {
   };
 }
 
+/**
+ * Règle d'écrasement (documentée) :
+ * - id, bot_id : toujours pris à l'insert
+ * - title, username, first_name, last_name, contact_id, chat_type,
+ *   photo_url, initials, last_message_text, pinned_at, last_message_at,
+ *   created_at : COALESCE — null/absent ne remplace pas l'existant
+ * - pinned, has_photo, unread_count : COALESCE sur la valeur numérique
+ */
 export async function upsertConversations(
   db: DB,
   items: ConversationSummary[],
 ): Promise<void> {
-  const now = Date.now();
-  for (const c of items) {
-    await db.execute(
-      `INSERT INTO conversations (
-        id, bot_id, chat_type, title, username, first_name, last_name,
-        contact_id, pinned, pinned_at, has_photo, photo_url, initials,
-        last_message_at, created_at, unread_count, last_message_text, updated_at
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-      ON CONFLICT(id) DO UPDATE SET
-        bot_id=excluded.bot_id,
-        chat_type=excluded.chat_type,
-        title=excluded.title,
-        username=excluded.username,
-        first_name=excluded.first_name,
-        last_name=excluded.last_name,
-        contact_id=excluded.contact_id,
-        pinned=excluded.pinned,
-        pinned_at=excluded.pinned_at,
-        has_photo=excluded.has_photo,
-        photo_url=excluded.photo_url,
-        initials=excluded.initials,
-        last_message_at=excluded.last_message_at,
-        created_at=excluded.created_at,
-        unread_count=excluded.unread_count,
-        last_message_text=excluded.last_message_text,
-        updated_at=excluded.updated_at;`,
-      [
-        c.id,
-        c.bot_id,
-        c.chat_type ?? null,
-        c.title ?? null,
-        c.username ?? null,
-        c.first_name ?? null,
-        c.last_name ?? null,
-        c.contact_id ?? null,
-        bool01(c.pinned),
-        c.pinned_at ?? null,
-        bool01(c.has_photo),
-        c.photo_url ?? null,
-        c.initials ?? null,
-        c.last_message_at ?? null,
-        c.created_at ?? null,
-        c.unread_count ?? 0,
-        c.last_message_text ?? null,
-        now,
-      ],
-    );
+  if (items.length === 0) return;
+  await db.execute('BEGIN;');
+  try {
+    const now = Date.now();
+    for (const c of items) {
+      await db.execute(
+        `INSERT INTO conversations (
+          id, bot_id, chat_type, title, username, first_name, last_name,
+          contact_id, pinned, pinned_at, has_photo, photo_url, initials,
+          last_message_at, created_at, unread_count, last_message_text, updated_at
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ON CONFLICT(id) DO UPDATE SET
+          bot_id=excluded.bot_id,
+          chat_type=COALESCE(excluded.chat_type, conversations.chat_type),
+          title=COALESCE(excluded.title, conversations.title),
+          username=COALESCE(excluded.username, conversations.username),
+          first_name=COALESCE(excluded.first_name, conversations.first_name),
+          last_name=COALESCE(excluded.last_name, conversations.last_name),
+          contact_id=COALESCE(excluded.contact_id, conversations.contact_id),
+          pinned=COALESCE(excluded.pinned, conversations.pinned),
+          pinned_at=COALESCE(excluded.pinned_at, conversations.pinned_at),
+          has_photo=COALESCE(excluded.has_photo, conversations.has_photo),
+          photo_url=COALESCE(excluded.photo_url, conversations.photo_url),
+          initials=COALESCE(excluded.initials, conversations.initials),
+          last_message_at=COALESCE(excluded.last_message_at, conversations.last_message_at),
+          created_at=COALESCE(excluded.created_at, conversations.created_at),
+          unread_count=COALESCE(excluded.unread_count, conversations.unread_count),
+          last_message_text=COALESCE(excluded.last_message_text, conversations.last_message_text),
+          updated_at=excluded.updated_at;`,
+        [
+          c.id,
+          c.bot_id,
+          c.chat_type ?? null,
+          c.title ?? null,
+          c.username ?? null,
+          c.first_name ?? null,
+          c.last_name ?? null,
+          c.contact_id ?? null,
+          bool01(c.pinned) ?? 0,
+          c.pinned_at ?? null,
+          bool01(c.has_photo) ?? 0,
+          c.photo_url ?? null,
+          c.initials ?? null,
+          c.last_message_at ?? null,
+          c.created_at ?? null,
+          c.unread_count ?? null,
+          c.last_message_text ?? null,
+          now,
+        ],
+      );
+    }
+    await db.execute('COMMIT;');
+  } catch (e) {
+    try {
+      await db.execute('ROLLBACK;');
+    } catch {
+      // rollback best-effort
+    }
+    throw e;
   }
 }
 
-/**
- * Liste locale pour un bot, hors tombstones conversation.
- * Ordre : épinglées d'abord, puis last_message_at DESC.
- */
 export async function listConversationsForBot(
   db: DB,
   botId: string,

@@ -1,7 +1,6 @@
 /**
- * Implémentation ArchiveStore via @op-engineering/op-sqlite + SQLCipher.
- * SEUL fichier qui importe op-sqlite (hors tests/mocks).
- * 6bis-b : ensureOpen single-flight, clearAll fichier+clé, schéma métier.
+ * Implémentation ArchiveStore via op-sqlite + SQLCipher.
+ * SEUL fichier avec import d'exécution de @op-engineering/op-sqlite.
  */
 import {open, type DB} from '@op-engineering/op-sqlite';
 import {
@@ -22,21 +21,57 @@ import {
   listMessagesForConversation,
 } from './messagesRepo';
 import {migrateMmkvToArchive} from './migrateFromMmkv';
+import {
+  insertTombstone,
+  type TombstoneEntity,
+  type TombstoneReason,
+} from './tombstonesRepo';
+import {archiveTexts} from './texts';
 import type {ConversationSummary} from '../realtime/events';
 import type {Message} from '../realtime/messageTypes';
 
 let db: DB | null = null;
-/** Promesse d'ouverture en cours — un seul open concurrent. */
 let openPromise: Promise<DB> | null = null;
-let lastOpenError: ArchiveOpenResult | null = null;
+let pendingResetMessage: string | null = null;
 
-async function openConnection(): Promise<DB> {
+function isTransientOpenError(message: string): boolean {
+  const m = message.toLowerCase();
+  return (
+    m.includes('locked') ||
+    m.includes('busy') ||
+    m.includes('sqlite_busy') ||
+    m.includes('sqlite_full') ||
+    m.includes('disk i/o') ||
+    m.includes('ioerr') ||
+    m.includes('unable to open database file')
+  );
+}
+
+function isUnreadableDbError(message: string): boolean {
+  if (isTransientOpenError(message)) return false;
+  const m = message.toLowerCase();
+  return (
+    m.includes('not a database') ||
+    m.includes('file is not a database') ||
+    m.includes('file is encrypted') ||
+    m.includes('hmac') ||
+    m.includes('unsupported file format') ||
+    m.includes('wrong key') ||
+    m.includes('encrypt')
+  );
+}
+
+async function deleteDbFile(): Promise<void> {
+  const key = await getArchiveKeyIfExists();
+  if (!key) return;
+  const tmp = open({name: ARCHIVE_DB_NAME, encryptionKey: key});
+  tmp.close();
+  tmp.delete();
+}
+
+async function openFresh(): Promise<DB> {
   const key = await getOrCreateArchiveKey();
-  const conn = open({
-    name: ARCHIVE_DB_NAME,
-    encryptionKey: key,
-  });
-  // table de preuve 6bis-a conservée
+  const conn = open({name: ARCHIVE_DB_NAME, encryptionKey: key});
   await conn.execute(
     `CREATE TABLE IF NOT EXISTS archive_proof (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -48,10 +83,45 @@ async function openConnection(): Promise<DB> {
   return conn;
 }
 
-/**
- * Une seule connexion ; appels simultanés partagent la même promesse.
- * En cas d'échec (clé/base illisible), lastOpenError est renseigné.
- */
+async function openConnection(): Promise<DB> {
+  try {
+    return await openFresh();
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'open_failed';
+    if (isTransientOpenError(message)) {
+      throw e;
+    }
+    if (isUnreadableDbError(message) || true) {
+      // Fichier illisible / mauvaise clé : repartir à neuf (décision propriétaire).
+      // Les erreurs non classées comme transitoires suivent le même chemin
+      // après une seule tentative de delete+recreate.
+      try {
+        openPromise = null;
+        if (db) {
+          try {
+            db.close();
+          } catch {
+            /* */
+          }
+          db = null;
+        }
+        try {
+          await deleteDbFile();
+        } catch {
+          /* fichier absent */
+        }
+        await clearArchiveKey();
+        const conn = await openFresh();
+        pendingResetMessage = archiveTexts.resetUnreadable;
+        return conn;
+      } catch (e2) {
+        throw e2 instanceof Error ? e2 : new Error(message);
+      }
+    }
+    throw e;
+  }
+}
+
 async function ensureOpen(): Promise<DB> {
   if (db) return db;
   if (openPromise) return openPromise;
@@ -59,11 +129,8 @@ async function ensureOpen(): Promise<DB> {
     try {
       const conn = await openConnection();
       db = conn;
-      lastOpenError = null;
       return conn;
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'open_failed';
-      lastOpenError = {ok: false, reason: 'unreadable', message};
       openPromise = null;
       throw e;
     }
@@ -78,10 +145,18 @@ export function createOpSqliteArchiveStore(): ArchiveStore {
         await ensureOpen();
         return {ok: true};
       } catch (e) {
-        if (lastOpenError) return lastOpenError;
         const message = e instanceof Error ? e.message : 'open_failed';
-        return {ok: false, reason: 'error', message};
+        if (isTransientOpenError(message)) {
+          return {ok: false, reason: 'transient', message};
+        }
+        return {ok: false, reason: 'unreadable', message};
       }
+    },
+
+    consumeResetMessage() {
+      const m = pendingResetMessage;
+      pendingResetMessage = null;
+      return m;
     },
 
     async close() {
@@ -110,48 +185,21 @@ export function createOpSqliteArchiveStore(): ArchiveStore {
         'SELECT COUNT(*) AS c FROM archive_proof;',
       );
       const row = res.rows[0] as {c?: number} | undefined;
-      const c = row?.c;
-      return typeof c === 'number' ? c : Number(c) || 0;
+      return typeof row?.c === 'number' ? row.c : Number(row?.c) || 0;
     },
 
     async clearAll() {
-      // 1. Fermer la connexion courante
       openPromise = null;
       const existing = db;
       db = null;
       if (existing) {
-        try {
-          existing.close();
-        } catch {
-          // fermeture best-effort avant delete
-        }
-        try {
-          // op-sqlite : delete() après close supprime le fichier
-          existing.delete();
-        } catch (e) {
-          // si delete indisponible sur le mock, on continue vers la clé
-          if (typeof (existing as {delete?: () => void}).delete !== 'function') {
-            // mock jest : pas de fichier réel
-          } else {
-            throw e;
-          }
-        }
+        existing.close();
+        existing.delete();
       } else {
-        // Pas de connexion : ouvrir pour pouvoir delete le fichier s'il existe
-        const key = await getArchiveKeyIfExists();
-        if (key) {
-          try {
-            const tmp = open({name: ARCHIVE_DB_NAME, encryptionKey: key});
-            tmp.close();
-            tmp.delete();
-          } catch {
-            // fichier absent ou illisible : on efface quand même la clé
-          }
-        }
+        await deleteDbFile();
       }
-      // 2. Effacer la clé Keychain (obligatoire 13.5)
       await clearArchiveKey();
-      lastOpenError = null;
+      pendingResetMessage = null;
     },
 
     async migrateFromMmkv() {
@@ -179,6 +227,15 @@ export function createOpSqliteArchiveStore(): ArchiveStore {
     async listMessages(conversationId: string, limit: number) {
       const conn = await ensureOpen();
       return listMessagesForConversation(conn, conversationId, limit);
+    },
+
+    async tombstone(
+      entityType: TombstoneEntity,
+      entityId: string,
+      reason: TombstoneReason,
+    ) {
+      const conn = await ensureOpen();
+      await insertTombstone(conn, entityType, entityId, reason);
     },
   };
 }

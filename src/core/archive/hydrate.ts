@@ -1,22 +1,29 @@
 /**
- * Helpers lecture/écriture archive pour les stores (6bis-b).
- * core n'importe pas features.
+ * Helpers lecture/écriture archive pour les stores (6bis-b/c).
  */
 import {getArchiveStore} from './ArchiveStore';
 import type {ConversationSummary} from '../realtime/events';
 import type {Message} from '../realtime/messageTypes';
+import type {
+  TombstoneEntity,
+  TombstoneReason,
+} from './tombstonesRepo';
 
-let migrationStarted = false;
+let migrationSucceeded = false;
 
-/** open + migration MMKV une fois (best-effort, pas de throw vers l'UI). */
 export async function ensureArchiveReady(): Promise<boolean> {
   try {
     const store = getArchiveStore();
     const res = await store.open();
     if (!res.ok) return false;
-    if (!migrationStarted) {
-      migrationStarted = true;
-      await store.migrateFromMmkv();
+    if (!migrationSucceeded) {
+      try {
+        await store.migrateFromMmkv();
+        migrationSucceeded = true;
+      } catch {
+        // réessai au prochain démarrage / appel
+        migrationSucceeded = false;
+      }
     }
     return true;
   } catch {
@@ -42,7 +49,7 @@ export async function archiveUpsertConversations(
     if (!(await ensureArchiveReady())) return;
     await getArchiveStore().upsertConversations(items);
   } catch {
-    // archive indisponible : le store garde la mémoire
+    /* archive indisponible */
   }
 }
 
@@ -63,11 +70,23 @@ export async function archiveUpsertMessages(items: Message[]): Promise<void> {
     if (!(await ensureArchiveReady())) return;
     await getArchiveStore().upsertMessages(items);
   } catch {
-    // ignore
+    /* */
   }
 }
 
-/** Tests uniquement. */
+export async function archiveTombstone(
+  entityType: TombstoneEntity,
+  entityId: string,
+  reason: TombstoneReason,
+): Promise<void> {
+  try {
+    if (!(await ensureArchiveReady())) return;
+    await getArchiveStore().tombstone(entityType, entityId, reason);
+  } catch {
+    /* */
+  }
+}
+
 export function resetArchiveHydrateForTests(): void {
-  migrationStarted = false;
+  migrationSucceeded = false;
 }

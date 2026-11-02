@@ -78,6 +78,9 @@ async function replaceAlbumItems(
 }
 
 export async function upsertMessages(db: DB, items: Message[]): Promise<void> {
+  if (items.length === 0) return;
+  await db.execute('BEGIN;');
+  try {
   const now = Date.now();
   for (const m of items) {
     await db.execute(
@@ -91,22 +94,22 @@ export async function upsertMessages(db: DB, items: Message[]): Promise<void> {
         conversation_id=excluded.conversation_id,
         direction=excluded.direction,
         kind=excluded.kind,
-        status=excluded.status,
-        text=excluded.text,
-        parse_mode=excluded.parse_mode,
-        buttons_json=excluded.buttons_json,
-        callback_json=excluded.callback_json,
-        attachment_json=excluded.attachment_json,
-        contact_json=excluded.contact_json,
-        location_json=excluded.location_json,
-        created_at=excluded.created_at,
-        sent_at=excluded.sent_at,
-        edited_at=excluded.edited_at,
-        telegram_message_id=excluded.telegram_message_id,
-        error_code=excluded.error_code,
-        retryable=excluded.retryable,
-        retry_at=excluded.retry_at,
-        client_message_id=excluded.client_message_id,
+        status=COALESCE(excluded.status, messages.status),
+        text=COALESCE(excluded.text, messages.text),
+        parse_mode=COALESCE(excluded.parse_mode, messages.parse_mode),
+        buttons_json=COALESCE(excluded.buttons_json, messages.buttons_json),
+        callback_json=COALESCE(excluded.callback_json, messages.callback_json),
+        attachment_json=COALESCE(excluded.attachment_json, messages.attachment_json),
+        contact_json=COALESCE(excluded.contact_json, messages.contact_json),
+        location_json=COALESCE(excluded.location_json, messages.location_json),
+        created_at=COALESCE(excluded.created_at, messages.created_at),
+        sent_at=COALESCE(excluded.sent_at, messages.sent_at),
+        edited_at=COALESCE(excluded.edited_at, messages.edited_at),
+        telegram_message_id=COALESCE(excluded.telegram_message_id, messages.telegram_message_id),
+        error_code=COALESCE(excluded.error_code, messages.error_code),
+        retryable=COALESCE(excluded.retryable, messages.retryable),
+        retry_at=COALESCE(excluded.retry_at, messages.retry_at),
+        client_message_id=COALESCE(excluded.client_message_id, messages.client_message_id),
         updated_at=excluded.updated_at;`,
       [
         m.id,
@@ -136,11 +139,16 @@ export async function upsertMessages(db: DB, items: Message[]): Promise<void> {
       await replaceAlbumItems(db, m.id, m.album);
     }
   }
+  await db.execute('COMMIT;');
+  } catch (e) {
+    try { await db.execute('ROLLBACK;'); } catch { /* best-effort */ }
+    throw e;
+  }
 }
 
 async function loadAlbum(db: DB, albumMessageId: string): Promise<AlbumItem[]> {
   const res = await db.execute(
-    `SELECT * FROM album_items WHERE album_message_id = ? ORDER BY created_at ASC, rowid ASC;`,
+    `SELECT * FROM album_items WHERE album_message_id = ? ORDER BY created_at ASC;`,
     [albumMessageId],
   );
   return (res.rows as Row[]).map(r => ({
@@ -157,14 +165,14 @@ async function loadAlbum(db: DB, albumMessageId: string): Promise<AlbumItem[]> {
 
 /**
  * Messages d'une conversation, hors tombstones message.
- * Renvoie les `limit` messages les PLUS RÉCENTS, en ordre chronologique
- * croissant (fil).
+ * Ordre chronologique croissant (fil).
  */
 export async function listMessagesForConversation(
   db: DB,
   conversationId: string,
   limit: number,
 ): Promise<Message[]> {
+  // Les `limit` messages les PLUS RÉCENTS, renvoyés en ordre croissant (fil).
   const res = await db.execute(
     `SELECT * FROM (
        SELECT m.* FROM messages m
@@ -173,9 +181,10 @@ export async function listMessagesForConversation(
            SELECT 1 FROM tombstones t
            WHERE t.entity_type = 'message' AND t.entity_id = m.id
          )
-       ORDER BY m.created_at DESC, m.rowid DESC
+       ORDER BY m.created_at DESC
        LIMIT ?
-     ) ORDER BY created_at ASC, id ASC;`,
+     ) AS recent
+     ORDER BY created_at ASC;`,
     [conversationId, limit],
   );
   const out: Message[] = [];
