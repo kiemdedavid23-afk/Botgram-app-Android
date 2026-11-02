@@ -18,6 +18,15 @@ const db = {
     const raw = normalize(query);
     const q = raw.toUpperCase();
 
+    if (q === 'BEGIN;' || q === 'BEGIN' || q.startsWith('BEGIN')) {
+      return {rowsAffected: 0, rows: []};
+    }
+    if (q === 'COMMIT;' || q === 'COMMIT' || q.startsWith('COMMIT')) {
+      return {rowsAffected: 0, rows: []};
+    }
+    if (q === 'ROLLBACK;' || q === 'ROLLBACK' || q.startsWith('ROLLBACK')) {
+      return {rowsAffected: 0, rows: []};
+    }
     if (q.startsWith('CREATE TABLE') || q.startsWith('CREATE INDEX')) {
       // ensure known tables exist
       if (q.includes('ARCHIVE_PROOF')) table('archive_proof');
@@ -111,7 +120,7 @@ const db = {
       return {rowsAffected: 0, rows: filtered};
     }
 
-    if (q.includes('FROM MESSAGES') && q.startsWith('SELECT')) {
+    if (q.includes('FROM MESSAGES') || (q.includes('AS RECENT') && q.includes('MESSAGES'))) {
       const cid = String(params?.[0] ?? '');
       const limit = Number(params?.[1] ?? 50);
       const tombs = new Set(
@@ -121,8 +130,9 @@ const db = {
       );
       const rows = table('messages')
         .filter(r => String(r.conversation_id) === cid && !tombs.has(String(r.id)))
-        .sort((a, b) => Number(a.created_at ?? 0) - Number(b.created_at ?? 0))
-        .slice(0, limit);
+        .sort((a, b) => Number(b.created_at ?? 0) - Number(a.created_at ?? 0))
+        .slice(0, limit)
+        .sort((a, b) => Number(a.created_at ?? 0) - Number(b.created_at ?? 0));
       return {rowsAffected: 0, rows};
     }
 
@@ -155,6 +165,23 @@ const db = {
       };
     }
 
+    if (q.startsWith('INSERT INTO TOMBSTONES')) {
+      table('tombstones').push({
+        entity_type: String(params?.[0] ?? ''),
+        entity_id: String(params?.[1] ?? ''),
+        tombstoned_at: Number(params?.[2] ?? 0),
+        reason: params?.[3] != null ? String(params[3]) : null,
+      });
+      return {rowsAffected: 1, rows: []};
+    }
+    if (q.includes('FROM TOMBSTONES') && q.startsWith('SELECT')) {
+      const et = String(params?.[0] ?? '');
+      const eid = String(params?.[1] ?? '');
+      const hit = table('tombstones').filter(
+        r => String(r.entity_type) === et && String(r.entity_id) === eid,
+      );
+      return {rowsAffected: 0, rows: hit.slice(0, 1).map(() => ({x: 1}))};
+    }
     return {rowsAffected: 0, rows: []};
   }),
   close: jest.fn(() => undefined),
