@@ -6,9 +6,6 @@ type Cleaner = () => void | Promise<void>;
 
 const cleaners = new Set<Cleaner>();
 
-/**
- * Enregistre un nettoyeur. Renvoie la fonction de désinscription.
- */
 export function registerMemberDataCleaner(fn: Cleaner): () => void {
   cleaners.add(fn);
   return () => {
@@ -17,16 +14,20 @@ export function registerMemberDataCleaner(fn: Cleaner): () => void {
 }
 
 /**
- * Exécute tous les nettoyeurs. Tolère les erreurs d'un nettoyeur
- * et n'interrompt jamais la boucle.
+ * Exécute tous les nettoyeurs. Continue après une erreur.
+ * Si au moins un a échoué, rejette avec la première erreur (après la boucle).
  */
 export async function clearMemberData(): Promise<void> {
   const list = Array.from(cleaners);
+  let firstError: unknown = null;
   for (const fn of list) {
     try {
       await fn();
-    } catch {
-      // un nettoyeur défaillant ne bloque pas les autres
+    } catch (e) {
+      if (firstError === null) firstError = e;
     }
+  }
+  if (firstError !== null) {
+    throw firstError;
   }
 }
