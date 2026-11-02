@@ -6,15 +6,10 @@ import {listMessages} from '../../../core/api/endpoints/messages';
 import type {Message} from '../../../core/realtime/events';
 import {startLive} from '../live/liveLocation';
 import type {RealtimeEvent} from '../../../core/realtime';
-import {
-  cacheGetString,
-  cacheSetString,
-  cacheDeleteByPrefix,
-} from '../../../core/storage';
+import {cacheDeleteByPrefix} from '../../../core/storage';
 import {registerMemberDataCleaner} from '../../../core/utils/memberData';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
-import {mergeMessages, sortMessagesAsc} from './mergeMessages';
-import {threadTexts} from '../texts';
+import {mergeMessages} from './mergeMessages';
 import {threadMetrics} from '../../../shared/theme/threadMetrics';
 import {
   doSend,
@@ -39,7 +34,6 @@ import {reloadPage1Merge} from './reloadPage1';
 import {loadThreadMessages} from './loadMessages';
 
 const CACHE_PREFIX = 'thread.messages.';
-const cacheKey = (id: string) => `${CACHE_PREFIX}${id}`;
 
 type ThreadStore = {
   conversationId: string | null;
