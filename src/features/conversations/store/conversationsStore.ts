@@ -28,6 +28,10 @@ import {conversationsMetrics as cm} from '../../../shared/theme/conversationsMet
 /** Délai de fraîcheur avant rechargement auto (ms). */
 const FRESH_MS = cm.listFreshMs;
 import {applyRealtimeEventToStore} from './applyEvent';
+import {
+  archiveListConversations,
+  archiveUpsertConversations,
+} from '../../../core/archive/hydrate';
 
 const CACHE_PREFIX = 'conversations.page1.';
 const cacheKey = (botId: string) => `${CACHE_PREFIX}${botId}`;
@@ -105,7 +109,6 @@ export const useConversationsStore = create<ConversationsStore>((set, get) => ({
     const botId = get().botId;
     if (!botId) return;
     if (get().loading && !force) return;
-    // Données fraîches (< 30 s) : pas de rechargement inutile
     if (
       !force &&
       get().lastLoadedAt > 0 &&
@@ -115,39 +118,59 @@ export const useConversationsStore = create<ConversationsStore>((set, get) => ({
       return;
     }
     set({loading: true, error: null});
+
+    // 1. Archive locale d'abord (source de vérité affichage)
+    const local = await archiveListConversations(botId);
+    if (get().botId !== botId) return;
+    if (local && local.length > 0 && get().items.length === 0) {
+      set({items: sortItems(local)});
+    }
+
+    // 2. Réseau
     const res = await listConversations(botId, {limit: 50});
     if (get().botId !== botId) return;
     if (!res.ok) {
-      const key = cacheKey(botId);
-      const cached = await cacheGetString(key);
-      if (get().botId !== botId) return;
-      if (cached) {
-        try {
-          const items = JSON.parse(cached) as ConversationSummary[];
-          set({
-            items: sortItems(items),
-            loading: false,
-            offline: res.status === 0,
-            error: null,
-          });
-          return;
-        } catch {
-          /* */
+      // secours MMKV si archive vide
+      if (!local || local.length === 0) {
+        const key = cacheKey(botId);
+        const cached = await cacheGetString(key);
+        if (get().botId !== botId) return;
+        if (cached) {
+          try {
+            const items = JSON.parse(cached) as ConversationSummary[];
+            set({
+              items: sortItems(items),
+              loading: false,
+              offline: res.status === 0,
+              error: null,
+            });
+            return;
+          } catch {
+            /* */
+          }
         }
       }
       set({
         loading: false,
-        error: res.error.message || conversationsTexts.loadError,
         offline: res.status === 0,
+        error:
+          get().items.length === 0
+            ? res.error.message || conversationsTexts.loadError
+            : null,
       });
       return;
     }
     const items = sortItems(res.data.items);
+    // 3. Upsert archive (n'efface jamais ce qui manque au serveur)
+    await archiveUpsertConversations(items);
     const key = cacheKey(botId);
     await cacheSetString(key, JSON.stringify(items));
     if (get().botId !== botId) return;
+    // Fusion : serveur gagne sur les ids présents ; local conserve le reste
+    const merged =
+      local && local.length > 0 ? mergeById(local, items) : items;
     set({
-      items,
+      items: sortItems(merged),
       nextCursor: res.data.next_cursor,
       loading: false,
       offline: false,
