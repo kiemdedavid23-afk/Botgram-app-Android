@@ -4,11 +4,7 @@
  * Un message reçu par le temps réel pendant la migration est upserté
  * ensuite par id (pas de perte).
  */
-import {
-  cacheGetString,
-  cacheSetString,
-  cacheDeleteByPrefix,
-} from '../storage/cache';
+import {cacheGetString, cacheSetString} from '../storage/cache';
 import type {ConversationSummary} from '../realtime/events';
 import type {Message} from '../realtime/messageTypes';
 import type {DB} from '@op-engineering/op-sqlite';
@@ -71,7 +67,6 @@ export async function migrateMmkvToArchive(
   // Les anciens caches page1/thread restent lisibles en secours jusqu'au
   // prochain clearMemberData ; on ne les efface pas ici pour éviter une
   // fenêtre vide si l'upsert a partiellement échoué.
-  void cacheDeleteByPrefix; // réservé clearMemberData / lots suivants
   return {conversations: convCount, messages: msgCount};
 }
 
