@@ -1,9 +1,10 @@
 /**
- * Actions message L6d — suppression sortante.
- * removeMessageLocally : branche pour archive 6 bis.
+ * Actions message L6d — suppression sortante + tombstone archive (6bis-c).
  */
 import {deleteMessage} from '../../../core/api/endpoints/messages';
 import type {Message} from '../../../core/realtime/events';
+import {archiveTombstone} from '../../../core/archive/hydrate';
+import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {threadTexts} from '../texts';
 import type {ThreadSlice} from './sendActions';
 
@@ -19,11 +20,25 @@ type Ctx = {
   ) => void;
 };
 
-/** Retrait local du fil (et futur archive). */
+/** Retrait local du fil + tombstone archive (13.11). */
 export function removeMessageLocally(
   items: Message[],
   messageId: string,
 ): Message[] {
+  fireAndForget(
+    archiveTombstone('message', messageId, 'user_deleted'),
+  );
+  return items.filter(m => m.id !== messageId);
+}
+
+/** Retrait suite événement serveur deleted (sans repasser user_deleted). */
+export function removeMessageFromEvent(
+  items: Message[],
+  messageId: string,
+): Message[] {
+  fireAndForget(
+    archiveTombstone('message', messageId, 'message_deleted'),
+  );
   return items.filter(m => m.id !== messageId);
 }
 
@@ -33,7 +48,6 @@ export async function doDeleteOutgoing(
 ): Promise<void> {
   if (message.direction !== 'out') return;
 
-  // local: never sent → retrait local uniquement
   if (message.id.startsWith('local:')) {
     ctx.set(s => ({
       items: removeMessageLocally(s.items, message.id),
@@ -42,9 +56,11 @@ export async function doDeleteOutgoing(
     return;
   }
 
-  // failed déjà côté serveur : DELETE peut encore s'appliquer ; tentative réseau
   const res = await deleteMessage(message.id);
-  if (ctx.get().conversationId && message.conversation_id !== ctx.get().conversationId) {
+  if (
+    ctx.get().conversationId &&
+    message.conversation_id !== ctx.get().conversationId
+  ) {
     return;
   }
 

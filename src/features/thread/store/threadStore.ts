@@ -32,6 +32,10 @@ import type {PickedFile} from './sendMediaActions';
 import {doDeleteOutgoing} from './messageActions';
 import {reloadPage1Merge} from './reloadPage1';
 import {loadThreadMessages} from './loadMessages';
+import {
+  archiveUpsertMessages,
+} from '../../../core/archive/hydrate';
+import {removeMessageFromEvent} from './messageActions';
 
 const CACHE_PREFIX = 'thread.messages.';
 
@@ -164,6 +168,7 @@ export const useThreadStore = create<ThreadStore>((set, get) => ({
       if (ev.conversation_id !== cid) return;
       if (ev.message) {
         const msg = ev.message;
+        fireAndForget(archiveUpsertMessages([msg]));
         set(s => ({
           items:
             msg.direction === 'out'
@@ -184,12 +189,13 @@ export const useThreadStore = create<ThreadStore>((set, get) => ({
       if (ev.conversation_id !== cid) return;
       if (ev.reason === 'deleted' && !ev.message) {
         set(s => ({
-          items: s.items.filter(m => m.id !== ev.message_id),
+          items: removeMessageFromEvent(s.items, ev.message_id),
         }));
         return;
       }
       if (ev.message) {
         const msg = ev.message;
+        fireAndForget(archiveUpsertMessages([msg]));
         set(s => ({
           items:
             msg.direction === 'out'
