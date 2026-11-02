@@ -5,6 +5,8 @@ export {
   clearTokens,
   getOrCreateMmkvKey,
   getOrCreateArchiveKey,
+  getArchiveKeyIfExists,
+  clearArchiveKey,
   type TokenPair,
 } from './secureStorage';
 
@@ -18,5 +20,6 @@ export {
   cacheDelete,
   cacheClearAll,
   cacheDeleteByPrefix,
+  cacheGetAllKeys,
   APPEARANCE_STORAGE_KEY,
 } from './cache';
