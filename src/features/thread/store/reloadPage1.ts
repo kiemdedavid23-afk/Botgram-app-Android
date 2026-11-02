@@ -2,6 +2,7 @@ import {listMessages} from '../../../core/api/endpoints/messages';
 import type {Message} from '../../../core/realtime/events';
 import {cacheSetString} from '../../../core/storage';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
+import {archiveUpsertMessages} from '../../../core/archive/hydrate';
 import {mergeMessages} from './mergeMessages';
 import {dropLocalNetworkDupes} from './retryErrors';
 import {threadMetrics} from '../../../shared/theme/threadMetrics';
@@ -43,6 +44,7 @@ export async function reloadPage1Merge(
     const merged = dropLocalNetworkDupes(mergeMessages(s.items, page1));
     const toCache = merged.slice(-threadMetrics.cacheLimit);
     fireAndForget(cacheSetString(cacheKey(cid), JSON.stringify(toCache)));
+    fireAndForget(archiveUpsertMessages(page1));
     const keepCursor =
       s.nextCursor !== null && s.items.length > page1.length
         ? s.nextCursor
