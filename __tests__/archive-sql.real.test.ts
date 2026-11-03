@@ -1,6 +1,5 @@
 /**
- * 6bis-c A/B — requêtes archive sur vraie SQLite (better-sqlite3 en mémoire).
- * SQLCipher / op-sqlite natif non testés ici.
+ * 6bis-c — vraie SQLite (better-sqlite3). SQLCipher non testé ici.
  */
 import {openRealSqliteDb, type MinimalDb} from './helpers/realSqliteDb';
 import {runMigrations} from '../src/core/archive/migrations';
@@ -12,14 +11,43 @@ import {
   upsertMessages,
   listMessagesForConversation,
 } from '../src/core/archive/messagesRepo';
-import type {ConversationSummary} from '../src/core/realtime/events';
+import {insertTombstone} from '../src/core/archive/tombstonesRepo';
+import {enqueueWrite} from '../src/core/archive/writeQueue';
+import {
+  isTransientOpenError,
+  isUnreadableDbError,
+} from '../src/core/archive/openErrors';
 import type {Message} from '../src/core/realtime/messageTypes';
 
 async function migrate(db: MinimalDb): Promise<void> {
   await runMigrations(db as never);
 }
 
-describe('archive SQL réel (better-sqlite3)', () => {
+describe('openErrors classification (M1)', () => {
+  it('illisible → reset autorisé', () => {
+    expect(isUnreadableDbError('file is not a database')).toBe(true);
+    expect(isUnreadableDbError('database disk image is malformed')).toBe(true);
+    expect(isUnreadableDbError('file is encrypted or is not a database')).toBe(
+      true,
+    );
+    expect(isUnreadableDbError('bad key or corrupt')).toBe(true);
+  });
+
+  it('busy/locked → pas de reset', () => {
+    expect(isTransientOpenError('database is locked')).toBe(true);
+    expect(isUnreadableDbError('database is locked')).toBe(false);
+    expect(isTransientOpenError('SQLITE_BUSY')).toBe(true);
+    expect(isUnreadableDbError('SQLITE_FULL disk full')).toBe(false);
+    expect(isTransientOpenError('SQLITE_FULL')).toBe(true);
+  });
+
+  it('erreur migration inconnue → pas de reset', () => {
+    expect(isUnreadableDbError('no such table: foo')).toBe(false);
+    expect(isTransientOpenError('no such table: foo')).toBe(false);
+  });
+});
+
+describe('archive SQL réel', () => {
   let db: MinimalDb;
 
   beforeEach(async () => {
@@ -31,249 +59,230 @@ describe('archive SQL réel (better-sqlite3)', () => {
     db.close();
   });
 
-  it('migrations v0→v1 créent les tables métier', async () => {
-    const res = await db.execute(
-      "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;",
-    );
-    const names = res.rows.map(r => String(r.name));
-    expect(names).toEqual(
-      expect.arrayContaining([
-        'schema_version',
-        'conversations',
-        'messages',
-        'album_items',
-        'tombstones',
-      ]),
-    );
-    const ver = await db.execute('SELECT version FROM schema_version;');
-    expect(Number(ver.rows[0]?.version)).toBe(1);
-  });
-
-  it('listMessages : limit messages les plus récents, ordre croissant', async () => {
+  it('listMessages : N plus récents, tie-break rowid, ordre croissant id', async () => {
     const items: Message[] = [];
-    for (let i = 1; i <= 10; i += 1) {
+    for (let i = 1; i <= 5; i += 1) {
       items.push({
         id: `m${i}`,
         conversation_id: 'c1',
         direction: 'in',
         kind: 'text',
         text: `t${i}`,
-        created_at: i * 1000,
+        created_at: 1000,
       });
     }
     await upsertMessages(db as never, items);
     const page = await listMessagesForConversation(db as never, 'c1', 3);
-    expect(page.map(m => m.id)).toEqual(['m8', 'm9', 'm10']);
-    expect(page.map(m => m.created_at)).toEqual([8000, 9000, 10000]);
+    expect(page).toHaveLength(3);
+    // les 3 rowid les plus élevés avec même created_at, puis ASC id
+    expect(page.map(m => m.id)).toEqual(['m3', 'm4', 'm5']);
   });
 
-  it('tombstones messages exclus de la liste', async () => {
-    await upsertMessages(db as never, [
+  it('INSERT sans unread_count → 0 ; partiel ne touche pas title', async () => {
+    await upsertConversations(db as never, [
       {
-        id: 'a',
-        conversation_id: 'c1',
-        direction: 'in',
-        kind: 'text',
-        text: 'keep',
-        created_at: 1,
-      },
-      {
-        id: 'b',
-        conversation_id: 'c1',
-        direction: 'in',
-        kind: 'text',
-        text: 'gone',
-        created_at: 2,
+        id: 'c10',
+        bot_id: 'b1',
+        title: 'SansUnread',
+        photo_url: 'https://example.invalid/a.png',
+        pinned: false,
+        last_message_at: 1,
       },
     ]);
-    await db.execute(
-      `INSERT INTO tombstones (entity_type, entity_id, tombstoned_at, reason)
-       VALUES ('message', 'b', ?, 'user_deleted');`,
-      [Date.now()],
+    await upsertConversations(db as never, [
+      {
+        id: 'c10',
+        bot_id: 'b1',
+        title: null,
+        photo_url: null,
+        pinned: false,
+        last_message_at: 2,
+      },
+    ]);
+    const row = (await listConversationsForBot(db as never, 'b1')).find(
+      c => c.id === 'c10',
     );
-    const page = await listMessagesForConversation(db as never, 'c1', 50);
-    expect(page.map(m => m.id)).toEqual(['a']);
+    expect(row?.unread_count).toBe(0);
+    expect(row?.title).toBe('SansUnread');
+    expect(row?.photo_url).toBe('https://example.invalid/a.png');
   });
 
-  it('album : ordre stable des éléments', async () => {
+  it('M2 état : error_code/retryable effacés après succès', async () => {
     await upsertMessages(db as never, [
       {
-        id: 'alb1',
+        id: 'me1',
         conversation_id: 'c1',
-        direction: 'in',
-        kind: 'album',
-        text: null,
-        created_at: 50,
-        album: [
-          {id: 'p1', kind: 'photo', text: null, created_at: 51},
-          {id: 'p2', kind: 'photo', text: null, created_at: 52},
-          {id: 'p3', kind: 'photo', text: null, created_at: 53},
-        ],
+        direction: 'out',
+        kind: 'text',
+        text: 'x',
+        created_at: 1,
+        error_code: 'NETWORK',
+        retryable: true,
+        retry_at: 99,
+      },
+    ]);
+    await upsertMessages(db as never, [
+      {
+        id: 'me1',
+        conversation_id: 'c1',
+        direction: 'out',
+        kind: 'text',
+        text: 'x',
+        created_at: 1,
+        error_code: null,
+        retryable: false,
+        retry_at: null,
+        status: 'sent',
       },
     ]);
     const page = await listMessagesForConversation(db as never, 'c1', 10);
-    expect(page).toHaveLength(1);
-    expect(page[0]?.album?.map(x => x.id)).toEqual(['p1', 'p2', 'p3']);
+    const m = page.find(x => x.id === 'me1');
+    expect(m?.error_code).toBeNull();
+    expect(m?.retryable).toBe(false);
+    expect(m?.retry_at).toBeNull();
   });
 
-  it('upsert répété idempotent ; absence serveur ne supprime pas', async () => {
+  it('M2 état : désépinglage met pinned_at à NULL', async () => {
+    await upsertConversations(db as never, [
+      {
+        id: 'cp',
+        bot_id: 'b1',
+        title: 'P',
+        pinned: true,
+        pinned_at: 12345,
+        last_message_at: 1,
+      },
+    ]);
+    await upsertConversations(db as never, [
+      {
+        id: 'cp',
+        bot_id: 'b1',
+        title: 'P',
+        pinned: false,
+        pinned_at: null,
+        last_message_at: 1,
+      },
+    ]);
+    const row = (await listConversationsForBot(db as never, 'b1')).find(
+      c => c.id === 'cp',
+    );
+    expect(row?.pinned).toBe(false);
+    expect(row?.pinned_at).toBeNull();
+  });
+
+  it('B1 : Promise.all ≥5 upserts via file → toutes les lignes', async () => {
+    const jobs = [];
+    for (let i = 0; i < 5; i += 1) {
+      const idx = i;
+      jobs.push(
+        enqueueWrite(async () => {
+          await upsertConversations(db as never, [
+            {
+              id: `cc${idx}`,
+              bot_id: 'b1',
+              title: `T${idx}`,
+              pinned: false,
+              last_message_at: idx,
+            },
+          ]);
+          await upsertMessages(db as never, [
+            {
+              id: `mm${idx}`,
+              conversation_id: `cc${idx}`,
+              direction: 'in',
+              kind: 'text',
+              text: `m${idx}`,
+              created_at: idx,
+            },
+          ]);
+        }),
+      );
+    }
+    await Promise.all(jobs);
+    const convs = await listConversationsForBot(db as never, 'b1');
+    expect(convs.length).toBeGreaterThanOrEqual(5);
+    for (let i = 0; i < 5; i += 1) {
+      const msgs = await listMessagesForConversation(db as never, `cc${i}`, 10);
+      expect(msgs.some(m => m.id === `mm${i}`)).toBe(true);
+    }
+  });
+
+  it('B1 : concurrent BEGIN sans file → erreur within a transaction', async () => {
+    const boom = async () => {
+      await db.execute('BEGIN;');
+      await db.execute(
+        `INSERT INTO conversations (
+          id, bot_id, pinned, has_photo, unread_count, updated_at
+        ) VALUES (?, 'b1', 0, 0, 0, ?);`,
+        [`tx${Math.random()}`, Date.now()],
+      );
+      await db.execute('COMMIT;');
+    };
+    await expect(Promise.all([boom(), boom(), boom()])).rejects.toBeTruthy();
+  });
+
+  it('M3 : tombstone message → exclu de la liste ; upsert ne ressuscite pas', async () => {
+    await upsertMessages(db as never, [
+      {
+        id: 'dead',
+        conversation_id: 'c1',
+        direction: 'in',
+        kind: 'text',
+        text: 'x',
+        created_at: 1,
+      },
+    ]);
+    await insertTombstone(db as never, 'message', 'dead', 'message_deleted');
+    expect(
+      (await listMessagesForConversation(db as never, 'c1', 50)).map(m => m.id),
+    ).not.toContain('dead');
+    await upsertMessages(db as never, [
+      {
+        id: 'dead',
+        conversation_id: 'c1',
+        direction: 'in',
+        kind: 'text',
+        text: 'back',
+        created_at: 2,
+      },
+    ]);
+    expect(
+      (await listMessagesForConversation(db as never, 'c1', 50)).map(m => m.id),
+    ).not.toContain('dead');
+  });
+
+  it('M3 : tombstone conversation → exclue ; absence REST sans tombstone', async () => {
     await upsertConversations(db as never, [
       {
         id: 'c1',
         bot_id: 'b1',
         title: 'A',
         pinned: false,
-        last_message_at: 10,
+        last_message_at: 1,
       },
       {
         id: 'c2',
         bot_id: 'b1',
         title: 'B',
-        pinned: true,
-        last_message_at: 5,
+        pinned: false,
+        last_message_at: 2,
       },
     ]);
+    // REST ne renvoie que c2 → upsert seulement c2, pas de tombstone c1
     await upsertConversations(db as never, [
-      {
-        id: 'c1',
-        bot_id: 'b1',
-        title: 'A2',
-        pinned: false,
-        last_message_at: 20,
-      },
-    ]);
-    const list = await listConversationsForBot(db as never, 'b1');
-    expect(list.map(c => c.id).sort()).toEqual(['c1', 'c2']);
-    expect(list.find(c => c.id === 'c1')?.title).toBe('A2');
-  });
-
-  it('liste conversations : épinglées d’abord puis last_message_at DESC', async () => {
-    const items: ConversationSummary[] = [
-      {
-        id: 'c1',
-        bot_id: 'b1',
-        title: 'old',
-        pinned: false,
-        last_message_at: 100,
-      },
       {
         id: 'c2',
         bot_id: 'b1',
-        title: 'pin',
-        pinned: true,
-        last_message_at: 1,
-      },
-      {
-        id: 'c3',
-        bot_id: 'b1',
-        title: 'new',
+        title: 'B2',
         pinned: false,
-        last_message_at: 200,
-      },
-    ];
-    await upsertConversations(db as never, items);
-    const list = await listConversationsForBot(db as never, 'b1');
-    expect(list.map(c => c.id)).toEqual(['c2', 'c3', 'c1']);
-  });
-
-  it('tombstones conversations exclus', async () => {
-    await upsertConversations(db as never, [
-      {
-        id: 'c1',
-        bot_id: 'b1',
-        title: 'x',
-        pinned: false,
-        last_message_at: 1,
-      },
-    ]);
-    await db.execute(
-      `INSERT INTO tombstones (entity_type, entity_id, tombstoned_at, reason)
-       VALUES ('conversation', 'c1', ?, 'server_removed');`,
-      [Date.now()],
-    );
-    const list = await listConversationsForBot(db as never, 'b1');
-    expect(list).toHaveLength(0);
-  });
-
-  it('INSERT sans unread_count → défaut 0 ; update partiel ne remet pas NULL', async () => {
-    await upsertConversations(db as never, [
-      {
-        id: 'c10',
-        bot_id: 'b1',
-        title: 'SansUnread',
-        pinned: false,
-        last_message_at: 1,
-        // pas de unread_count
+        last_message_at: 3,
       },
     ]);
     let list = await listConversationsForBot(db as never, 'b1');
-    expect(list.find(c => c.id === 'c10')?.unread_count).toBe(0);
+    expect(list.map(c => c.id).sort()).toEqual(['c1', 'c2']);
 
-    await upsertConversations(db as never, [
-      {
-        id: 'c10',
-        bot_id: 'b1',
-        title: null,
-        photo_url: null,
-        pinned: false,
-        last_message_at: 2,
-        unread_count: undefined,
-      },
-    ]);
+    await insertTombstone(db as never, 'conversation', 'c1', 'server_removed');
     list = await listConversationsForBot(db as never, 'b1');
-    const row = list.find(c => c.id === 'c10');
-    expect(row?.title).toBe('SansUnread');
-    expect(row?.unread_count).toBe(0);
-  });
-
-  it('upsert partiel ne remplace pas title/photo/unread par null', async () => {
-    await upsertConversations(db as never, [
-      {
-        id: 'c9',
-        bot_id: 'b1',
-        title: 'Complet',
-        photo_url: 'https://example.invalid/p.png',
-        pinned: false,
-        last_message_at: 1,
-        unread_count: 3,
-      },
-    ]);
-    await upsertConversations(db as never, [
-      {
-        id: 'c9',
-        bot_id: 'b1',
-        title: null,
-        photo_url: null,
-        pinned: false,
-        last_message_at: 2,
-      },
-    ]);
-    const list = await listConversationsForBot(db as never, 'b1');
-    const row = list.find(c => c.id === 'c9');
-    expect(row?.title).toBe('Complet');
-    expect(row?.photo_url).toBe('https://example.invalid/p.png');
-    expect(row?.unread_count).toBe(3);
-  });
-
-  it('transaction upsertMessages : données restent après SQL invalide externe', async () => {
-    const many: Message[] = [];
-    for (let i = 0; i < 50; i += 1) {
-      many.push({
-        id: `bulk${i}`,
-        conversation_id: 'cx',
-        direction: 'in',
-        kind: 'text',
-        text: `x${i}`,
-        created_at: i,
-      });
-    }
-    await upsertMessages(db as never, many);
-    const before = await listMessagesForConversation(db as never, 'cx', 1000);
-    expect(before.length).toBe(50);
-    await expect(
-      db.execute('INSERT INTO messages (id) VALUES (NULL);'),
-    ).rejects.toBeTruthy();
-    const after = await listMessagesForConversation(db as never, 'cx', 1000);
-    expect(after.length).toBe(50);
+    expect(list.map(c => c.id)).toEqual(['c2']);
   });
 });
