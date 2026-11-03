@@ -1,9 +1,8 @@
 /**
- * 6bis-c A — requêtes archive sur vraie SQLite (better-sqlite3 en mémoire).
+ * 6bis-c A/B — requêtes archive sur vraie SQLite (better-sqlite3 en mémoire).
  * SQLCipher / op-sqlite natif non testés ici.
  */
-import {openRealSqliteDb, execScript, type MinimalDb} from './helpers/realSqliteDb';
-import {MIGRATION_V1, SQL_SCHEMA_VERSION} from '../src/core/archive/schema';
+import {openRealSqliteDb, type MinimalDb} from './helpers/realSqliteDb';
 import {runMigrations} from '../src/core/archive/migrations';
 import {
   upsertConversations,
@@ -16,10 +15,7 @@ import {
 import type {ConversationSummary} from '../src/core/realtime/events';
 import type {Message} from '../src/core/realtime/messageTypes';
 
-// runMigrations attend le type DB op-sqlite ; MinimalDb est structurellement compatible
 async function migrate(db: MinimalDb): Promise<void> {
-  await execScript(db, SQL_SCHEMA_VERSION);
-  // runMigrations uses db.execute — compatible
   await runMigrations(db as never);
 }
 
@@ -198,9 +194,39 @@ describe('archive SQL réel (better-sqlite3)', () => {
     const list = await listConversationsForBot(db as never, 'b1');
     expect(list).toHaveLength(0);
   });
-});
 
-  it('upsert partiel ne remplace pas title par null', async () => {
+  it('INSERT sans unread_count → défaut 0 ; update partiel ne remet pas NULL', async () => {
+    await upsertConversations(db as never, [
+      {
+        id: 'c10',
+        bot_id: 'b1',
+        title: 'SansUnread',
+        pinned: false,
+        last_message_at: 1,
+        // pas de unread_count
+      },
+    ]);
+    let list = await listConversationsForBot(db as never, 'b1');
+    expect(list.find(c => c.id === 'c10')?.unread_count).toBe(0);
+
+    await upsertConversations(db as never, [
+      {
+        id: 'c10',
+        bot_id: 'b1',
+        title: null,
+        photo_url: null,
+        pinned: false,
+        last_message_at: 2,
+        unread_count: undefined,
+      },
+    ]);
+    list = await listConversationsForBot(db as never, 'b1');
+    const row = list.find(c => c.id === 'c10');
+    expect(row?.title).toBe('SansUnread');
+    expect(row?.unread_count).toBe(0);
+  });
+
+  it('upsert partiel ne remplace pas title/photo/unread par null', async () => {
     await upsertConversations(db as never, [
       {
         id: 'c9',
@@ -220,7 +246,6 @@ describe('archive SQL réel (better-sqlite3)', () => {
         photo_url: null,
         pinned: false,
         last_message_at: 2,
-        unread_count: null as unknown as number,
       },
     ]);
     const list = await listConversationsForBot(db as never, 'b1');
@@ -230,7 +255,7 @@ describe('archive SQL réel (better-sqlite3)', () => {
     expect(row?.unread_count).toBe(3);
   });
 
-  it('transaction upsertMessages : rollback si erreur au milieu', async () => {
+  it('transaction upsertMessages : données restent après SQL invalide externe', async () => {
     const many: Message[] = [];
     for (let i = 0; i < 50; i += 1) {
       many.push({
@@ -245,11 +270,10 @@ describe('archive SQL réel (better-sqlite3)', () => {
     await upsertMessages(db as never, many);
     const before = await listMessagesForConversation(db as never, 'cx', 1000);
     expect(before.length).toBe(50);
-    // Forcer une erreur : conversation_id NOT NULL — id null impossible via types ;
-    // on exécute un SQL invalide dans la même connexion pour vérifier isolation.
     await expect(
       db.execute('INSERT INTO messages (id) VALUES (NULL);'),
     ).rejects.toBeTruthy();
     const after = await listMessagesForConversation(db as never, 'cx', 1000);
     expect(after.length).toBe(50);
   });
+});
