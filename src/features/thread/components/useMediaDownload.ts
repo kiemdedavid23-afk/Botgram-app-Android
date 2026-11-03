@@ -1,7 +1,5 @@
 /**
- * Téléchargement d'un attachment pour les lecteurs (vidéo / audio / vocal) :
- * état local (chemin, progression, erreur) au-dessus de loadAttachmentToStorage.
- * Le fichier reste sur le téléphone : la lecture suivante est instantanée, même hors ligne.
+ * Téléchargement d'un attachment pour les lecteurs (vidéo / audio / vocal).
  */
 import {useCallback, useEffect, useRef, useState} from 'react';
 import NetInfo from '@react-native-community/netinfo';
@@ -11,13 +9,10 @@ import {onDownloadProgress} from '../../../core/media/native/nativeMedia';
 import {threadTexts as t} from '../texts';
 
 export type MediaDownload = {
-  /** Chemin local si le fichier est déjà sur le téléphone. */
   path: string | null;
   loading: boolean;
-  /** 0..1 (0 tant que la taille est inconnue). */
   progress: number;
   error: string | null;
-  /** Télécharge si besoin ; retourne le chemin local ou null en cas d'échec. */
   download: () => Promise<string | null>;
 };
 
@@ -31,6 +26,7 @@ export function useMediaDownload(
   const [error, setError] = useState<string | null>(null);
   const alive = useRef(true);
   const busy = useRef<Promise<string | null> | null>(null);
+  const autoStart = opts.autoStart === true;
 
   const download = useCallback((): Promise<string | null> => {
     if (busy.current) return busy.current;
@@ -41,7 +37,6 @@ export function useMediaDownload(
         if (alive.current) setPath(p);
         return p;
       }
-      // Message en cours d'envoi : rien à télécharger (seule la copie locale compte).
       if (messageId.startsWith('local:')) return null;
       if (alive.current) {
         setLoading(true);
@@ -64,7 +59,6 @@ export function useMediaDownload(
       if (!alive.current) return res.ok ? res.path : null;
       setLoading(false);
       if (!res.ok) {
-        // Annulé depuis la notification : retour à l'état de départ, sans message d'erreur.
         if (res.code !== 'cancelled') {
           setError(
             res.code === 'PAYLOAD_TOO_LARGE' ? t.mediaTooLarge : t.mediaLoadError,
@@ -92,14 +86,15 @@ export function useMediaDownload(
       .then(found => {
         if (!alive.current) return;
         if (found) setPath(storage.localPath(messageId));
-        else if (opts.autoStart) download().catch(() => {});
+        else if (autoStart) {
+          download().catch(() => undefined);
+        }
       })
-      .catch(() => {});
+      .catch(() => undefined);
     return () => {
       alive.current = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messageId]);
+  }, [messageId, autoStart, download]);
 
   return {path, loading, progress, error, download};
 }
