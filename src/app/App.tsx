@@ -3,12 +3,20 @@ import {StatusBar} from 'react-native';
 import {ThemeProvider, useTheme} from '../shared/theme';
 import {RootNavigator} from './RootNavigator';
 import {useRealtimeLifecycle} from './useRealtimeLifecycle';
-import {registerMediaStorageCleaner} from '../core/media/registerMediaCleaner';
+import {
+  registerMediaStorageCleaner,
+  purgeMediaTempOnBoot,
+} from '../core/media/registerMediaCleaner';
 import {
   bindArchiveStore,
   createOpSqliteArchiveStore,
   registerArchiveStoreCleaner,
 } from '../core/archive';
+import {
+  setCryptoProvider,
+  createQuickCryptoProvider,
+} from '../core/crypto';
+import {fireAndForget} from '../core/utils/fireAndForget';
 
 function AppStatusBar(): React.JSX.Element {
   const {mode} = useTheme();
@@ -22,10 +30,11 @@ function AppStatusBar(): React.JSX.Element {
 function AppInner(): React.JSX.Element {
   useRealtimeLifecycle();
   React.useEffect(() => {
+    setCryptoProvider(createQuickCryptoProvider());
     registerMediaStorageCleaner();
     bindArchiveStore(createOpSqliteArchiveStore());
     registerArchiveStoreCleaner();
-    // open lazy on first use; optional warm-up
+    fireAndForget(purgeMediaTempOnBoot());
   }, []);
   return (
     <>
