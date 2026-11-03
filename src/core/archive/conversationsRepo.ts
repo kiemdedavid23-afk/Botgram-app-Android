@@ -1,18 +1,14 @@
 /**
  * Upsert / lecture conversations (archive locale).
  * N'efface jamais une ligne absente du serveur (13.11).
- * Champs absents (undefined/null en entrée partielle) : ne pas écraser
- * une valeur déjà connue (COALESCE côté UPDATE).
+ *
+ * INSERT : colonnes NOT NULL → défauts (0), jamais NULL.
+ * UPDATE (ON CONFLICT) : COALESCE — champ absent/null n'écrase pas l'existant.
  */
 import type {DB} from '@op-engineering/op-sqlite';
 import type {ConversationSummary} from '../realtime/events';
 
 type Row = Record<string, unknown>;
-
-function bool01(v: boolean | undefined | null): number | null {
-  if (v === undefined || v === null) return null;
-  return v ? 1 : 0;
-}
 
 function rowToConversation(row: Row): ConversationSummary {
   return {
@@ -38,14 +34,25 @@ function rowToConversation(row: Row): ConversationSummary {
   };
 }
 
-/**
- * Règle d'écrasement (documentée) :
- * - id, bot_id : toujours pris à l'insert
- * - title, username, first_name, last_name, contact_id, chat_type,
- *   photo_url, initials, last_message_text, pinned_at, last_message_at,
- *   created_at : COALESCE — null/absent ne remplace pas l'existant
- * - pinned, has_photo, unread_count : COALESCE sur la valeur numérique
- */
+/** INSERT : bool → 0|1 ; UPDATE : null = « ne pas changer ». */
+function pinnedInsert(v: boolean | undefined | null): number {
+  return v === true ? 1 : 0;
+}
+
+function pinnedUpdate(v: boolean | undefined | null): number | null {
+  if (v === undefined || v === null) return null;
+  return v ? 1 : 0;
+}
+
+function unreadInsert(v: number | undefined | null): number {
+  return typeof v === 'number' && Number.isFinite(v) ? v : 0;
+}
+
+function unreadUpdate(v: number | undefined | null): number | null {
+  if (v === undefined || v === null) return null;
+  return Number.isFinite(v) ? v : null;
+}
+
 export async function upsertConversations(
   db: DB,
   items: ConversationSummary[],
@@ -55,6 +62,15 @@ export async function upsertConversations(
   try {
     const now = Date.now();
     for (const c of items) {
+      // Valeurs INSERT (NOT NULL → défauts)
+      const pinIns = pinnedInsert(c.pinned);
+      const photoIns = pinnedInsert(c.has_photo);
+      const unreadIns = unreadInsert(c.unread_count ?? null);
+      // Valeurs UPDATE (null = conserver)
+      const pinUpd = pinnedUpdate(c.pinned);
+      const photoUpd = pinnedUpdate(c.has_photo);
+      const unreadUpd = unreadUpdate(c.unread_count ?? null);
+
       await db.execute(
         `INSERT INTO conversations (
           id, bot_id, chat_type, title, username, first_name, last_name,
@@ -69,14 +85,14 @@ export async function upsertConversations(
           first_name=COALESCE(excluded.first_name, conversations.first_name),
           last_name=COALESCE(excluded.last_name, conversations.last_name),
           contact_id=COALESCE(excluded.contact_id, conversations.contact_id),
-          pinned=COALESCE(excluded.pinned, conversations.pinned),
+          pinned=COALESCE(?, conversations.pinned),
           pinned_at=COALESCE(excluded.pinned_at, conversations.pinned_at),
-          has_photo=COALESCE(excluded.has_photo, conversations.has_photo),
+          has_photo=COALESCE(?, conversations.has_photo),
           photo_url=COALESCE(excluded.photo_url, conversations.photo_url),
           initials=COALESCE(excluded.initials, conversations.initials),
           last_message_at=COALESCE(excluded.last_message_at, conversations.last_message_at),
           created_at=COALESCE(excluded.created_at, conversations.created_at),
-          unread_count=COALESCE(excluded.unread_count, conversations.unread_count),
+          unread_count=COALESCE(?, conversations.unread_count),
           last_message_text=COALESCE(excluded.last_message_text, conversations.last_message_text),
           updated_at=excluded.updated_at;`,
         [
@@ -88,16 +104,20 @@ export async function upsertConversations(
           c.first_name ?? null,
           c.last_name ?? null,
           c.contact_id ?? null,
-          bool01(c.pinned) ?? 0,
+          pinIns,
           c.pinned_at ?? null,
-          bool01(c.has_photo) ?? 0,
+          photoIns,
           c.photo_url ?? null,
           c.initials ?? null,
           c.last_message_at ?? null,
           c.created_at ?? null,
-          c.unread_count ?? null,
+          unreadIns,
           c.last_message_text ?? null,
           now,
+          // COALESCE params for UPDATE only
+          pinUpd,
+          photoUpd,
+          unreadUpd,
         ],
       );
     }
@@ -106,7 +126,7 @@ export async function upsertConversations(
     try {
       await db.execute('ROLLBACK;');
     } catch {
-      // rollback best-effort
+      /* best-effort */
     }
     throw e;
   }
