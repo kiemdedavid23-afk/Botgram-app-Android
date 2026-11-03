@@ -33,7 +33,10 @@
     "react-native-svg": "15.16.0",
     "zustand": "5.0.15",
     "react-native-blob-util": "0.25.1",
-    "@op-engineering/op-sqlite": "18.2.5"
+    "@op-engineering/op-sqlite": "18.2.5",
+    "react-native-quick-crypto": "1.1.8",
+    "react-native-nitro-modules": "0.33.2",
+    "react-native-quick-base64": "3.0.1"
   },
   "devDependencies": {
     "@babel/core": "7.28.4",

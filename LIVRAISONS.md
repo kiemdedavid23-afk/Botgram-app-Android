@@ -287,3 +287,102 @@ Le test `op-sqlite-guard.test.ts` accepte `import type … from '@op-engineering
 ```
 (à coller après npm ci local)
 ```
+
+## Correction CI 6bis-c (NOT NULL insert + tests)
+
+### Production
+- `conversationsRepo` : INSERT `pinned`/`has_photo`/`unread_count` → **0** si absent (jamais NULL) ; UPDATE via `COALESCE(?, col)` pour ne pas écraser
+- `messagesRepo` : colonnes NOT NULL (`id`, `conversation_id`, `direction`, `kind`, `updated_at`) toujours renseignées à l’INSERT
+
+### Tests
+- `archive-sql.real.test.ts` : tous les `it` dans le `describe` (portée `db`)
+- import `MIGRATION_V1` retiré (migration via `runMigrations`)
+- test ajouté : INSERT sans `unread_count` → 0 ; update partiel ne remet pas NULL
+
+### Signalé sans modification
+- `conversations-folder-filter.test.tsx` : `console.error` « not wrapped in act(...) » (hors périmètre 6bis-c)
+
+### Preuves CI
+```
+(à coller après npm ci local)
+```
+
+## Correction 6bis-c REFUSÉE → B1/M1/M2/M3
+
+### B1 Mutex écritures
+- `src/core/archive/writeQueue.ts` — file de promesses ; erreur n’arrête pas la file
+- Toute écriture store (upsert*, tombstone, migrate, clearAll, proofInsert) passe par `enqueueWrite`
+- `BEGIN` dans le `try` ; `ROLLBACK` protégé puis rethrow
+- Test : `Promise.all` 5 upserts via file → OK ; concurrent BEGIN sans file → rejet « within a transaction »
+
+### M1 Reset base
+- `openErrors.ts` : illisible (not a database / malformed / corrupt / bad key / encrypted) → reset
+- busy/locked/full → pas de reset ; erreur inconnue (ex. migration) → **pas** de suppression, erreur propagée
+- Tests unitaires de classification
+
+### M2 Upsert
+- Métadonnées COALESCE : title, photo_url, username, first_name, last_name, contact_id, chat_type, initials, last_message_at, created_at, text, parse_mode, buttons, attachments…
+- État (foi entrante, NULL inclus) : pinned, pinned_at, has_photo, unread_count, last_message_text, error_code, retryable, retry_at
+
+### M3 Tombstones / flux
+- `message.updated deleted` → `removeMessageFromEvent` → `archiveTombstone('message', …)` (`messageActions.ts`)
+- `conversation.changed removed` → `removeConversationFromEvent` → tombstone (`applyEvent.ts`)
+- Suppression user → `removeMessageLocally` / `removeConversationLocally`
+- Absence REST → upsert seulement, **aucun** tombstone (test SQL)
+- Tombstone non ressuscité par upsert ultérieur (test SQL)
+- Pagination fil : `loadMessages.ts` → `archiveListMessages` → `listMessagesForConversation`
+- Realtime écriture : `threadStore.applyRealtimeEvent` → `archiveUpsertMessages` sur message.new / message.updated
+
+### Tie-break
+- Messages : `ORDER BY created_at DESC, rowid DESC LIMIT` puis `ASC, id ASC`
+- Album : `created_at ASC, rowid ASC`
+
+### Preuves CI
+```
+(environnement agent : registry npm 502 — coller sorties locales typecheck/lint/jest)
+```
+
+## 6bis-d — Médias chiffrés, stockage, archive envois
+
+### Dépendances (exactes, package.json uniquement)
+- `react-native-quick-crypto`: 1.1.8
+- `react-native-nitro-modules`: 0.33.2 (version de génération du paquet)
+- `react-native-quick-base64`: 3.0.1
+- Pas d’appel à `install()` (pas de polyfill global)
+- Import quick-crypto **uniquement** dans `src/core/crypto/quickProvider.ts`
+
+### Schéma fichier `.enc`
+- En-tête 16 o : magic `BGME` | version=1 | block_size u32 BE (1 Mio)
+- Bloc : nonce 12 | ct_len u32 BE | ciphertext | tag GCM 16
+- AAD = index bloc u32 BE || is_last u8 (anti-réordonnancement / troncature)
+- Nonces : 12 o CSPRNG **distincts** par bloc
+
+### Clés
+- Clé SQLCipher archive **inchangée** (pas de migration base, pas de perte archive existante)
+- Nouvelle clé maîtresse Keychain `botgram.master.key` → HKDF-SHA256 → clé fichiers 32 o
+  (`botgram-media-files-v1` / salt `botgram-hkdf-salt-media-v1`)
+
+### Migration clair → `.enc`
+- À la volée au premier accès (`loadDecryptedMedia`) : chiffre, vérifie relecture, puis supprime le clair
+- Idempotente
+
+### Temp déchiffrés
+- `CacheDir/botgram-media-tmp/`, nom aléatoire
+- Purge : boot (`purgeMediaTempOnBoot`), `clearMemberData` (cleaner)
+- Limite : fichier ouvert via `actionViewIntent` peut rester lisible jusqu’à la prochaine purge
+
+### Réglages
+- `features/settings/StorageSettingsScreen.tsx` : espace utilisé, vider médias + confirmation
+- Textes dans `features/settings/texts.ts`
+
+### android/
+- Aucun changement manuel dans ce lot ; autolinking Nitro attendu. Si le build exige un flag CMake/NDK/minSdk → **arrêt signalé** (pas encore confronté au build CI).
+
+### Limites
+- quick-crypto natif + Keychain **non** exercés par jest (Node crypto pour tests)
+- Essai téléphone / APK requis
+
+### Preuves CI
+```
+(à coller localement — npm registry inaccessible dans l’agent)
+```
