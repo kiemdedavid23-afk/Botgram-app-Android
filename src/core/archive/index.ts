@@ -10,3 +10,5 @@ export {registerArchiveStoreCleaner} from './registerArchiveCleaner';
 export {SCHEMA_VERSION, ARCHIVE_DB_NAME} from './schema';
 export {archiveTexts} from './texts';
 export type {TombstoneEntity, TombstoneReason} from './tombstonesRepo';
+
+export {isTransientOpenError, isUnreadableDbError} from './openErrors';

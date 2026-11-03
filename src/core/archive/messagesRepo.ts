@@ -79,8 +79,8 @@ async function replaceAlbumItems(
 
 export async function upsertMessages(db: DB, items: Message[]): Promise<void> {
   if (items.length === 0) return;
-  await db.execute('BEGIN;');
   try {
+  await db.execute('BEGIN;');
   const now = Date.now();
   for (const m of items) {
     await db.execute(
@@ -106,9 +106,9 @@ export async function upsertMessages(db: DB, items: Message[]): Promise<void> {
         sent_at=COALESCE(excluded.sent_at, messages.sent_at),
         edited_at=COALESCE(excluded.edited_at, messages.edited_at),
         telegram_message_id=COALESCE(excluded.telegram_message_id, messages.telegram_message_id),
-        error_code=COALESCE(excluded.error_code, messages.error_code),
-        retryable=COALESCE(excluded.retryable, messages.retryable),
-        retry_at=COALESCE(excluded.retry_at, messages.retry_at),
+        error_code=excluded.error_code,
+        retryable=excluded.retryable,
+        retry_at=excluded.retry_at,
         client_message_id=COALESCE(excluded.client_message_id, messages.client_message_id),
         updated_at=excluded.updated_at;`,
       [
@@ -148,7 +148,8 @@ export async function upsertMessages(db: DB, items: Message[]): Promise<void> {
 
 async function loadAlbum(db: DB, albumMessageId: string): Promise<AlbumItem[]> {
   const res = await db.execute(
-    `SELECT * FROM album_items WHERE album_message_id = ? ORDER BY created_at ASC;`,
+    `SELECT * FROM album_items WHERE album_message_id = ?
+     ORDER BY created_at ASC, rowid ASC;`,
     [albumMessageId],
   );
   return (res.rows as Row[]).map(r => ({
@@ -181,10 +182,10 @@ export async function listMessagesForConversation(
            SELECT 1 FROM tombstones t
            WHERE t.entity_type = 'message' AND t.entity_id = m.id
          )
-       ORDER BY m.created_at DESC
+       ORDER BY m.created_at DESC, m.rowid DESC
        LIMIT ?
      ) AS recent
-     ORDER BY created_at ASC;`,
+     ORDER BY created_at ASC, id ASC;`,
     [conversationId, limit],
   );
   const out: Message[] = [];

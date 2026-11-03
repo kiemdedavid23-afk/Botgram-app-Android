@@ -27,39 +27,14 @@ import {
   type TombstoneReason,
 } from './tombstonesRepo';
 import {archiveTexts} from './texts';
+import {enqueueWrite} from './writeQueue';
+import {isTransientOpenError, isUnreadableDbError} from './openErrors';
 import type {ConversationSummary} from '../realtime/events';
 import type {Message} from '../realtime/messageTypes';
 
 let db: DB | null = null;
 let openPromise: Promise<DB> | null = null;
 let pendingResetMessage: string | null = null;
-
-function isTransientOpenError(message: string): boolean {
-  const m = message.toLowerCase();
-  return (
-    m.includes('locked') ||
-    m.includes('busy') ||
-    m.includes('sqlite_busy') ||
-    m.includes('sqlite_full') ||
-    m.includes('disk i/o') ||
-    m.includes('ioerr') ||
-    m.includes('unable to open database file')
-  );
-}
-
-function isUnreadableDbError(message: string): boolean {
-  if (isTransientOpenError(message)) return false;
-  const m = message.toLowerCase();
-  return (
-    m.includes('not a database') ||
-    m.includes('file is not a database') ||
-    m.includes('file is encrypted') ||
-    m.includes('hmac') ||
-    m.includes('unsupported file format') ||
-    m.includes('wrong key') ||
-    m.includes('encrypt')
-  );
-}
 
 async function deleteDbFile(): Promise<void> {
   const key = await getArchiveKeyIfExists();
@@ -91,34 +66,28 @@ async function openConnection(): Promise<DB> {
     if (isTransientOpenError(message)) {
       throw e;
     }
-    if (isUnreadableDbError(message) || true) {
-      // Fichier illisible / mauvaise clé : repartir à neuf (décision propriétaire).
-      // Les erreurs non classées comme transitoires suivent le même chemin
-      // après une seule tentative de delete+recreate.
-      try {
-        openPromise = null;
-        if (db) {
-          try {
-            db.close();
-          } catch {
-            /* */
-          }
-          db = null;
-        }
-        try {
-          await deleteDbFile();
-        } catch {
-          /* fichier absent */
-        }
-        await clearArchiveKey();
-        const conn = await openFresh();
-        pendingResetMessage = archiveTexts.resetUnreadable;
-        return conn;
-      } catch (e2) {
-        throw e2 instanceof Error ? e2 : new Error(message);
-      }
+    if (!isUnreadableDbError(message)) {
+      // Migration / erreur inconnue : ne rien supprimer
+      throw e;
     }
-    throw e;
+    openPromise = null;
+    if (db) {
+      try {
+        db.close();
+      } catch {
+        /* */
+      }
+      db = null;
+    }
+    try {
+      await deleteDbFile();
+    } catch {
+      /* fichier absent */
+    }
+    await clearArchiveKey();
+    const conn = await openFresh();
+    pendingResetMessage = archiveTexts.resetUnreadable;
+    return conn;
   }
 }
 
@@ -149,7 +118,10 @@ export function createOpSqliteArchiveStore(): ArchiveStore {
         if (isTransientOpenError(message)) {
           return {ok: false, reason: 'transient', message};
         }
-        return {ok: false, reason: 'unreadable', message};
+        if (isUnreadableDbError(message)) {
+          return {ok: false, reason: 'unreadable', message};
+        }
+        return {ok: false, reason: 'error', message};
       }
     },
 
@@ -172,11 +144,13 @@ export function createOpSqliteArchiveStore(): ArchiveStore {
     },
 
     async proofInsert(label: string) {
-      const conn = await ensureOpen();
-      await conn.execute(
-        'INSERT INTO archive_proof (label, created_at) VALUES (?, ?);',
-        [label, Date.now()],
-      );
+      return enqueueWrite(async () => {
+        const conn = await ensureOpen();
+        await conn.execute(
+          'INSERT INTO archive_proof (label, created_at) VALUES (?, ?);',
+          [label, Date.now()],
+        );
+      });
     },
 
     async proofCount() {
@@ -189,28 +163,34 @@ export function createOpSqliteArchiveStore(): ArchiveStore {
     },
 
     async clearAll() {
-      openPromise = null;
-      const existing = db;
-      db = null;
-      if (existing) {
-        existing.close();
-        existing.delete();
-      } else {
-        await deleteDbFile();
-      }
-      await clearArchiveKey();
-      pendingResetMessage = null;
+      return enqueueWrite(async () => {
+        openPromise = null;
+        const existing = db;
+        db = null;
+        if (existing) {
+          existing.close();
+          existing.delete();
+        } else {
+          await deleteDbFile();
+        }
+        await clearArchiveKey();
+        pendingResetMessage = null;
+      });
     },
 
     async migrateFromMmkv() {
-      const conn = await ensureOpen();
-      return migrateMmkvToArchive(conn, cacheGetAllKeys);
+      return enqueueWrite(async () => {
+        const conn = await ensureOpen();
+        return migrateMmkvToArchive(conn, cacheGetAllKeys);
+      });
     },
 
     async upsertConversations(items: ConversationSummary[]) {
       if (items.length === 0) return;
-      const conn = await ensureOpen();
-      await repoUpsertConversations(conn, items);
+      return enqueueWrite(async () => {
+        const conn = await ensureOpen();
+        await repoUpsertConversations(conn, items);
+      });
     },
 
     async listConversations(botId: string) {
@@ -220,8 +200,10 @@ export function createOpSqliteArchiveStore(): ArchiveStore {
 
     async upsertMessages(items: Message[]) {
       if (items.length === 0) return;
-      const conn = await ensureOpen();
-      await repoUpsertMessages(conn, items);
+      return enqueueWrite(async () => {
+        const conn = await ensureOpen();
+        await repoUpsertMessages(conn, items);
+      });
     },
 
     async listMessages(conversationId: string, limit: number) {
@@ -234,8 +216,10 @@ export function createOpSqliteArchiveStore(): ArchiveStore {
       entityId: string,
       reason: TombstoneReason,
     ) {
-      const conn = await ensureOpen();
-      await insertTombstone(conn, entityType, entityId, reason);
+      return enqueueWrite(async () => {
+        const conn = await ensureOpen();
+        await insertTombstone(conn, entityType, entityId, reason);
+      });
     },
   };
 }
