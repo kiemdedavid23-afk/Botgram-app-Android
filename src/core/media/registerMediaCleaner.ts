@@ -1,14 +1,21 @@
 import {registerMemberDataCleaner} from '../utils/memberData';
 import {getMediaStorage} from './MediaStorage';
-import {mediaTempClearAll} from '../storage/mediaFiles';
+import {
+  mediaTempClearAll,
+  setMediaPlainResolver,
+} from '../storage/mediaFiles';
 import {clearMasterKey} from '../storage/secureStorage';
+import {materializeTempPlain} from '../crypto/mediaCipher';
 
 let done = false;
 
-/** Boot : médias + dossier temp (13.5). */
+/** Boot : médias + dossier temp (13.5) + résolveur d'ouverture déchiffrée. */
 export function registerMediaStorageCleaner(): void {
-  if (done) return;
+  if (done) {
+    return;
+  }
   done = true;
+  setMediaPlainResolver(materializeTempPlain);
   registerMemberDataCleaner(async () => {
     await getMediaStorage().clearAll();
   });
