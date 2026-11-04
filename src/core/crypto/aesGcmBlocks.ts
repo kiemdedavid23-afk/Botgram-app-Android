@@ -25,20 +25,14 @@ export class MediaDecryptError extends Error {
 
 function u32be(n: number): Uint8Array {
   const b = new Uint8Array(4);
-  b[0] = (n >>> 24) & 0xff;
-  b[1] = (n >>> 16) & 0xff;
-  b[2] = (n >>> 8) & 0xff;
-  b[3] = n & 0xff;
+  new DataView(b.buffer).setUint32(0, n, false);
   return b;
 }
 
 function readU32be(buf: Uint8Array, off: number): number {
-  return (
-    ((buf[off]! << 24) |
-      (buf[off + 1]! << 16) |
-      (buf[off + 2]! << 8) |
-      buf[off + 3]!) >>>
-    0
+  return new DataView(buf.buffer, buf.byteOffset, buf.byteLength).getUint32(
+    off,
+    false,
   );
 }
 
