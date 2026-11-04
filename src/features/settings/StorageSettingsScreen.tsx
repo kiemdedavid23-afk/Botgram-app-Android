@@ -5,7 +5,7 @@ import React, {useCallback, useState} from 'react';
 import {View, Text, Pressable, Alert, StyleSheet} from 'react-native';
 import {useFocusEffect} from '@react-navigation/native';
 import {getMediaStorage} from '../../core/media/MediaStorage';
-import {settingsStorageTexts as t} from './texts';
+import {settingsStorageTexts as t} from './storageTexts';
 import {useTheme} from '../../shared/theme';
 import {fireAndForget} from '../../core/utils/fireAndForget';
 
