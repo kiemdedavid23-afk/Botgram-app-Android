@@ -70,6 +70,9 @@ jest.mock('../src/features/contacts/utils/findConversation', () => ({
   findConversationForContact: jest.fn(),
 }));
 
+// Premier rendu d'un FlatList à froid : lent sur un CI partagé.
+jest.setTimeout(30_000);
+
 const mockList = listContacts as unknown as jest.Mock;
 const mockSearch = searchContacts as unknown as jest.Mock;
 const mockFind = findConversationForContact as unknown as jest.Mock;

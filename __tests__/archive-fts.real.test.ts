@@ -50,7 +50,7 @@ describe('ensureFts', () => {
   });
 
   it('FTS indisponible : renvoie false sans lever d’erreur', async () => {
-    const db = await setup();
+    await setup();
     const failing = {
       execute: async (sql: string) => {
         if (sql.includes('sqlite_master')) return {rows: []};
