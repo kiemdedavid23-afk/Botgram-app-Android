@@ -14,7 +14,6 @@ export type TokenPair = {
 const ACCESS_KEY = 'access_token';
 const REFRESH_KEY = 'refresh_token';
 const ARCHIVE_KEY_KEY = 'botgram.archive.db.key';
-const MASTER_KEY_KEY = 'botgram.master.key';
 const MMKV_KEY_KEY = 'mmkv_encryption_key';
 
 async function setPassword(key: string, value: string): Promise<void> {
@@ -124,23 +123,4 @@ export async function getArchiveKeyIfExists(): Promise<string | null> {
 /** Efface la clé archive du Keychain (13.5 / clearAll). */
 export async function clearArchiveKey(): Promise<void> {
   await resetPassword(ARCHIVE_KEY_KEY);
-}
-
-
-/**
- * Clé maîtresse (Keychain) pour dérivation HKDF médias.
- * Distincte de la clé SQLCipher archive (inchangée, pas de migration base).
- */
-export async function getOrCreateMasterKey(): Promise<string> {
-  const existing = await getPassword(MASTER_KEY_KEY);
-  if (existing !== null && existing.length >= 32) {
-    return existing;
-  }
-  const generated = generateArchiveKey();
-  await setPassword(MASTER_KEY_KEY, generated);
-  return generated;
-}
-
-export async function clearMasterKey(): Promise<void> {
-  await resetPassword(MASTER_KEY_KEY);
 }

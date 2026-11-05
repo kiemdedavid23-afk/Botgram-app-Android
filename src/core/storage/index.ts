@@ -7,8 +7,6 @@ export {
   getOrCreateArchiveKey,
   getArchiveKeyIfExists,
   clearArchiveKey,
-  getOrCreateMasterKey,
-  clearMasterKey,
   type TokenPair,
 } from './secureStorage';
 
