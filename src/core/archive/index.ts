@@ -12,3 +12,6 @@ export {archiveTexts} from './texts';
 export type {TombstoneEntity, TombstoneReason} from './tombstonesRepo';
 
 export {isTransientOpenError, isUnreadableDbError} from './openErrors';
+export type {MessageSearchHit, MessageSearchResult} from './ftsRepo';
+export type {SnippetSegment} from './searchQuery';
+export {isSearchable, MIN_SEARCH_CHARS} from './searchQuery';

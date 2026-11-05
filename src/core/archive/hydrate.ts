@@ -4,6 +4,7 @@
 import {getArchiveStore} from './ArchiveStore';
 import type {ConversationSummary} from '../realtime/events';
 import type {Message} from '../realtime/messageTypes';
+import type {MessageSearchResult} from './ftsRepo';
 import type {
   TombstoneEntity,
   TombstoneReason,
@@ -89,4 +90,18 @@ export async function archiveTombstone(
 
 export function resetArchiveHydrateForTests(): void {
   migrationSucceeded = false;
+}
+
+/** Recherche plein texte locale ; null si l'archive n'est pas disponible. */
+export async function archiveSearchMessages(
+  botId: string,
+  query: string,
+  limit: number,
+): Promise<MessageSearchResult | null> {
+  try {
+    if (!(await ensureArchiveReady())) return null;
+    return await getArchiveStore().searchMessages(botId, query, limit);
+  } catch {
+    return null;
+  }
 }

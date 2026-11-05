@@ -3,6 +3,7 @@
  */
 import type {ConversationSummary} from '../realtime/events';
 import type {Message} from '../realtime/messageTypes';
+import type {MessageSearchResult} from './ftsRepo';
 import type {
   TombstoneEntity,
   TombstoneReason,
@@ -28,6 +29,12 @@ export type ArchiveStore = {
   listConversations: (botId: string) => Promise<ConversationSummary[]>;
   upsertMessages: (items: Message[]) => Promise<void>;
   listMessages: (conversationId: string, limit: number) => Promise<Message[]>;
+  /** Recherche plein texte locale dans les messages d'un bot. */
+  searchMessages: (
+    botId: string,
+    query: string,
+    limit: number,
+  ) => Promise<MessageSearchResult>;
   tombstone: (
     entityType: TombstoneEntity,
     entityId: string,

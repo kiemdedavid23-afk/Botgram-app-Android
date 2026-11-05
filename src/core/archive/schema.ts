@@ -1,6 +1,7 @@
 /**
  * Schéma archive locale 6bis-b (13.11).
- * FTS5 reporté à 6bis-e : text reste colonne simple.
+ * Index plein texte (FTS5) : créé à l'ouverture par ftsRepo.ensureFts (6bis-e), hors migrations,
+ * pour que l'archive reste utilisable si la build SQLite n'offre pas FTS5.
  * Suppressions = table tombstones uniquement (pas de tombstone_at sur conversations).
  */
 

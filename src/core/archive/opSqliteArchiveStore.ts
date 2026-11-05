@@ -29,6 +29,7 @@ import {
 import {archiveTexts} from './texts';
 import {enqueueWrite} from './writeQueue';
 import {archiveSizeBytes} from './sizeRepo';
+import {ensureFts, searchMessagesInDb} from './ftsRepo';
 import {isTransientOpenError, isUnreadableDbError} from './openErrors';
 import type {ConversationSummary} from '../realtime/events';
 import type {Message} from '../realtime/messageTypes';
@@ -36,6 +37,7 @@ import type {Message} from '../realtime/messageTypes';
 let db: DB | null = null;
 let openPromise: Promise<DB> | null = null;
 let pendingResetMessage: string | null = null;
+let ftsReady = false;
 
 async function deleteDbFile(): Promise<void> {
   const key = await getArchiveKeyIfExists();
@@ -56,6 +58,7 @@ async function openFresh(): Promise<DB> {
     );`,
   );
   await runMigrations(conn);
+  ftsReady = await ensureFts(conn);
   return conn;
 }
 
@@ -215,6 +218,11 @@ export function createOpSqliteArchiveStore(): ArchiveStore {
     async listMessages(conversationId: string, limit: number) {
       const conn = await ensureOpen();
       return listMessagesForConversation(conn, conversationId, limit);
+    },
+
+    async searchMessages(botId: string, query: string, limit: number) {
+      const conn = await ensureOpen();
+      return searchMessagesInDb(conn, botId, query, limit, ftsReady);
     },
 
     async tombstone(
