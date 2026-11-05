@@ -15,6 +15,8 @@ export const conversationsTexts = {
   emptyTitle: 'Aucune conversation',
   emptySubtitle: 'Les échanges de ce bot apparaîtront ici.',
   emptySearch: 'Aucun résultat',
+  messagesSection: 'Messages',
+  messageFromYou: 'Vous : ',
   retry: 'Réessayer',
   offlineBanner: 'Hors ligne — lecture seule',
   loadError: 'Erreur de chargement',
