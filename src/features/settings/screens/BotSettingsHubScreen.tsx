@@ -3,13 +3,21 @@
  */
 import React from 'react';
 import {View, Text, ScrollView, StyleSheet, Pressable} from 'react-native';
-import {Palette, MessageSquare, Globe, Shield, BookOpen} from 'lucide-react-native';
+import {
+  Palette,
+  MessageSquare,
+  Globe,
+  Shield,
+  HardDrive,
+  BookOpen,
+} from 'lucide-react-native';
 import {useTheme, settingsMetrics as sm, fontWeight} from '../../../shared/theme';
 import {useAuthStore} from '../../auth';
 import {SettingsHubRow} from '../components/SettingsHubRow';
 import {SettingsPage} from '../components/SettingsPage';
 import {SettingsCard, CardTitle, RowDivider} from '../components/ui';
 import {settingsTexts as t} from '../texts';
+import {settingsStorageTexts as st} from '../storageTexts';
 import {languageLabel} from '../languages';
 
 export type SettingsRoute =
@@ -19,6 +27,7 @@ export type SettingsRoute =
   | 'folders'
   | 'language'
   | 'permissions'
+  | 'storage'
   | 'account'
   | 'documentation';
 
@@ -93,6 +102,14 @@ export function BotSettingsHubScreen({onNavigate}: Props): React.JSX.Element {
             title={t.permissions}
             subtitle={t.permissionsSub}
             onPress={() => onNavigate('permissions')}
+          />
+          <Divider />
+          <SettingsHubRow
+            icon={icon(HardDrive)}
+            iconBg={colors.accent}
+            title={st.title}
+            subtitle={st.hubSubtitle}
+            onPress={() => onNavigate('storage')}
           />
         </SettingsCard>
 
