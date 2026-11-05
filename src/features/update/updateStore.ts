@@ -27,6 +27,8 @@ import {
 } from './installer';
 import {updateTexts as t} from './texts';
 
+let permissionSub: {remove: () => void} | null = null;
+
 const DISMISS_KEY = 'update.dismissedCode';
 const EVENT_CHECK_MIN_MS = 60_000;
 
@@ -111,10 +113,12 @@ export const useUpdateStore = create<UpdateStore>((set, get) => ({
     set({installError: null});
     if (!(await canInstallApks())) {
       set({installPhase: 'needsPermission'});
-      // Au retour des réglages, on reprend automatiquement.
+      // Au retour des réglages, on reprend automatiquement (un seul écouteur).
+      permissionSub?.remove();
       const sub = AppState.addEventListener('change', next => {
         if (next !== 'active') return;
         sub.remove();
+        permissionSub = null;
         fireAndForget(
           canInstallApks().then(ok => {
             if (ok) return get().startUpdate();
@@ -123,10 +127,12 @@ export const useUpdateStore = create<UpdateStore>((set, get) => ({
           }),
         );
       });
+      permissionSub = sub;
       try {
         await openInstallSettings();
       } catch {
         sub.remove();
+        permissionSub = null;
         set({installPhase: 'error', installError: t.errGeneric});
       }
       return;

@@ -3,11 +3,18 @@ import React from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {Download} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useTheme, getShadow, radii, fontWeight} from '../../shared/theme';
+import {
+  useTheme,
+  getShadow,
+  radii,
+  fontWeight,
+  updateMetrics as um,
+} from '../../shared/theme';
 import {fireAndForget} from '../../core/utils/fireAndForget';
 import {useAuthStore} from '../auth/store/authStore';
 import {useUpdateStore} from './updateStore';
 import {updateTexts as t} from './texts';
+import {installStatusText} from './statusText';
 
 export function UpdateBanner(): React.JSX.Element | null {
   const {colors, mode} = useTheme();
@@ -24,35 +31,32 @@ export function UpdateBanner(): React.JSX.Element | null {
   const installError = useUpdateStore(s => s.installError);
 
   const code = latest?.version_code ?? -1;
+  const status = installStatusText(phase, progress, installError);
   if (!signedIn || level !== 'optional' || dismissedCode === code) return null;
 
   return (
     <View
       pointerEvents="box-none"
-      style={[styles.wrap, {top: insets.top + 8}]}>
+      style={[styles.wrap, {top: insets.top + um.bannerTopGap}]}>
       <View style={[styles.card, {backgroundColor: colors.bgPrimary}, getShadow('md', mode)]}>
         <View style={[styles.icon, {backgroundColor: colors.accent}]}>
-          <Download size={18} color={colors.white} />
+          <Download size={um.iconSize} color={colors.white} />
         </View>
         <View style={styles.text}>
           <Text style={[styles.title, {color: colors.textPrimary}]}>{t.bannerTitle}</Text>
           <Text style={[styles.sub, {color: colors.textSecondary}]} numberOfLines={2}>
-            {phase === 'downloading'
-              ? t.downloading(progress > 0 ? Math.round(progress * 100) : null)
-              : phase === 'installing'
-                ? t.installing
-                : phase === 'needsPermission'
-                  ? t.needsPermission
-                  : phase === 'error' && installError
-                    ? installError
-                    : latest?.version_name
-                      ? t.bannerVersion(latest.version_name)
-                      : t.bannerBody}
+            {status ??
+              (latest?.version_name
+                ? t.bannerVersion(latest.version_name)
+                : t.bannerBody)}
           </Text>
           <View style={styles.actions}>
             {latest?.download_url && phase !== 'installing' ? (
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={
+                  phase === 'downloading' ? t.cancelA11y : t.updateA11y
+                }
                 onPress={phase === 'downloading' ? cancelUpdate : () => fireAndForget(startUpdate())}>
                 <Text style={[styles.action, {color: colors.accent}]}>
                   {phase === 'downloading' ? t.cancel : phase === 'error' ? t.retry : t.update}
@@ -60,7 +64,10 @@ export function UpdateBanner(): React.JSX.Element | null {
               </Pressable>
             ) : null}
             {phase !== 'downloading' ? (
-              <Pressable accessibilityRole="button" onPress={dismiss}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t.laterA11y}
+                onPress={dismiss}>
                 <Text style={[styles.action, {color: colors.textSecondary}]}>{t.later}</Text>
               </Pressable>
             ) : null}
@@ -72,12 +79,23 @@ export function UpdateBanner(): React.JSX.Element | null {
 }
 
 const styles = StyleSheet.create({
-  wrap: {position: 'absolute', left: 12, right: 12},
-  card: {flexDirection: 'row', gap: 12, padding: 12, borderRadius: radii.navPill},
-  icon: {width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center'},
+  wrap: {position: 'absolute', left: um.bannerInset, right: um.bannerInset},
+  card: {
+    flexDirection: 'row',
+    gap: um.bannerGap,
+    padding: um.bannerPad,
+    borderRadius: radii.navPill,
+  },
+  icon: {
+    width: um.iconBox,
+    height: um.iconBox,
+    borderRadius: um.iconRadius,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   text: {flex: 1},
-  title: {fontSize: 15, fontWeight: fontWeight.bold},
-  sub: {fontSize: 13, marginTop: 2},
-  actions: {flexDirection: 'row', gap: 24, marginTop: 8},
-  action: {fontSize: 14, fontWeight: fontWeight.bold},
+  title: {fontSize: um.titleFont, fontWeight: fontWeight.bold},
+  sub: {fontSize: um.subFont, marginTop: um.subGap},
+  actions: {flexDirection: 'row', gap: um.actionsGap, marginTop: um.actionsTop},
+  action: {fontSize: um.actionFont, fontWeight: fontWeight.bold},
 });

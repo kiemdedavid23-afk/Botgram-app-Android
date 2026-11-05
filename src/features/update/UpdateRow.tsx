@@ -5,11 +5,18 @@
 import React, {useCallback} from 'react';
 import {View, Text, Pressable, ActivityIndicator, StyleSheet} from 'react-native';
 import {RefreshCw} from 'lucide-react-native';
-import {useTheme, gestionMetrics as g, getShadow} from '../../shared/theme';
+import {
+  useTheme,
+  gestionMetrics as g,
+  getShadow,
+  fontWeight,
+  updateMetrics as um,
+} from '../../shared/theme';
 import {env} from '../../core/config/env';
 import {fireAndForget} from '../../core/utils/fireAndForget';
 import {useUpdateStore} from './updateStore';
 import {updateTexts as t} from './texts';
+import {installStatusText} from './statusText';
 
 export function UpdateRow(): React.JSX.Element {
   const {colors, mode} = useTheme();
@@ -34,23 +41,13 @@ export function UpdateRow(): React.JSX.Element {
     }
   }, [available, latest, startUpdate, check]);
 
-  let sub = t.settingsCurrent(env.appVersion, env.appBuild);
-  if (phase === 'downloading') {
-    sub = t.downloading(progress > 0 ? Math.round(progress * 100) : null);
-  } else if (phase === 'installing') {
-    sub = t.installing;
-  } else if (phase === 'needsPermission') {
-    sub = t.needsPermission;
-  } else if (phase === 'error' && installError) {
-    sub = installError;
-  } else if (checking) {
-    sub = t.settingsChecking;
-  } else if (available) {
-    sub = t.settingsAvailable(latest?.version_name ?? null);
-  } else if (result === 'uptodate') {
-    sub = t.settingsUpToDate(env.appVersion);
-  } else if (result === 'failed') {
-    sub = t.settingsFailed;
+  let sub = installStatusText(phase, progress, installError);
+  if (sub == null) {
+    if (checking) sub = t.settingsChecking;
+    else if (available) sub = t.settingsAvailable(latest?.version_name ?? null);
+    else if (result === 'uptodate') sub = t.settingsUpToDate(env.appVersion);
+    else if (result === 'failed') sub = t.settingsFailed;
+    else sub = t.settingsCurrent(env.appVersion, env.appBuild);
   }
 
   return (
@@ -61,6 +58,7 @@ export function UpdateRow(): React.JSX.Element {
       <View style={[styles.card, {backgroundColor: colors.bgPrimary}, getShadow('sm', mode)]}>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={available ? t.updateA11y : t.checkA11y}
           onPress={onPress}
           disabled={busy}
           style={styles.row}>
@@ -68,7 +66,7 @@ export function UpdateRow(): React.JSX.Element {
             {busy ? (
               <ActivityIndicator size="small" color={colors.accent} />
             ) : (
-              <RefreshCw size={18} color={colors.accent} />
+              <RefreshCw size={um.iconSize} color={colors.accent} />
             )}
           </View>
           <View style={styles.labels}>
@@ -88,7 +86,7 @@ const styles = StyleSheet.create({
   section: {gap: 10},
   sectionTitle: {
     fontSize: g.sectionTitleSize,
-    fontWeight: '700',
+    fontWeight: fontWeight.bold,
     letterSpacing: g.sectionTitleLetter * g.sectionTitleSize,
     textTransform: 'uppercase',
     paddingHorizontal: g.sectionHeadPadH,
@@ -97,18 +95,18 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: um.bannerGap,
     paddingVertical: g.prefRowPadV,
     paddingHorizontal: g.prefRowPadH,
   },
   icon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: um.iconBox,
+    height: um.iconBox,
+    borderRadius: um.rowIconRadius,
     alignItems: 'center',
     justifyContent: 'center',
   },
   labels: {flex: 1},
   label: {fontSize: g.prefLabelFont},
-  value: {fontWeight: '600'},
+  value: {fontWeight: fontWeight.semibold},
 });

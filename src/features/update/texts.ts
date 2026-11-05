@@ -32,5 +32,9 @@ export const updateTexts = {
   settingsUpToDate: (v: string) => `Vous avez la dernière version (${v})`,
   settingsAvailable: (v: string | null) =>
     v ? `Version ${v} disponible — appuyez pour mettre à jour` : 'Mise à jour disponible — appuyez pour mettre à jour',
+  updateA11y: 'Mettre à jour Botgram',
+  cancelA11y: 'Annuler le téléchargement',
+  laterA11y: 'Plus tard',
+  checkA11y: 'Rechercher une mise à jour',
   settingsFailed: 'Impossible de vérifier. Appuyez pour réessayer.',
 } as const;
