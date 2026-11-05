@@ -13,6 +13,7 @@ import {DiscussionsScreen} from '../screens/DiscussionsScreen';
 import {FoldersSettingsScreen} from '../screens/FoldersSettingsScreen';
 import {LanguageScreen} from '../screens/LanguageScreen';
 import {PermissionsScreen} from '../screens/PermissionsScreen';
+import {StorageSettingsScreen} from '../StorageSettingsScreen';
 import {ComingSoonScreen} from '../screens/ComingSoonScreen';
 import {settingsTexts as t} from '../texts';
 
@@ -69,6 +70,13 @@ export function BotSettingsStack(): React.JSX.Element {
     return (
       <View style={styles.root}>
         <PermissionsScreen onBack={goHub} />
+      </View>
+    );
+  }
+  if (route === 'storage') {
+    return (
+      <View style={styles.root}>
+        <StorageSettingsScreen onBack={goHub} />
       </View>
     );
   }
