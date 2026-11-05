@@ -448,3 +448,10 @@ Le test `op-sqlite-guard.test.ts` accepte `import type … from '@op-engineering
 - Non exercés par jest : Firebase, Notifee et la permission réels → essai téléphone avec un vrai `google-services.json` (secret du workflow `app.yml`).
 - Ne pas oublier côté Worker : secret `FCM_SERVICE_ACCOUNT` (PUSH.md).
 - `RootNavigator.tsx` dépassait déjà 300 lignes (dette R9, lot dette).
+
+## Corrections après CI (étapes 3, 7, 8)
+- Typecheck : `ListFooterComponent` de `ContactsScreen` renvoie `undefined` au lieu de `null`.
+- Lint : variable inutilisée retirée de `archive-fts.real.test.ts`.
+- `contacts-screen.test.tsx` : délai porté à 30 s (premier rendu d'un FlatList à froid, 5 s dépassées sur le CI).
+- Recherche FTS : `CROSS JOIN` pour fixer l'ordre des jointures (index plein texte d'abord). Au CI, deux recherches sur 20 000 messages ont pris 5 à 7 s (mesure locale : < 20 ms) ; cause probable : plan de requête différent selon la version de SQLite. Correction défensive, non reproduite localement : si `archive-load.real` échoue encore, envoyer les logs.
+- Étape 8 : 7 suites push/mise à jour vertes au CI.
