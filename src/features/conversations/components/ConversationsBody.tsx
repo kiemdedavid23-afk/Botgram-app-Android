@@ -2,6 +2,7 @@ import React, {useCallback} from 'react';
 import {
   View,
   FlatList,
+  ScrollView,
   Pressable,
   StyleSheet,
   ActivityIndicator,
@@ -11,6 +12,8 @@ import {EmptyScreen} from '../../../shared/components/EmptyScreen';
 import {conversationsMetrics as cm} from '../../../shared/theme/conversationsMetrics';
 import {conversationsTexts as t} from '../texts';
 import {ConversationRow} from './ConversationRow';
+import {MessageSearchResults} from './MessageSearchResults';
+import {useMessageSearch} from '../hooks/useMessageSearch';
 import {isBotfactorListItem} from '../../botfactor';
 import type {ConversationSummary} from '../../../core/api/endpoints/conversations';
 
@@ -60,6 +63,10 @@ export function ConversationsBody({
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
   const hideBadge = searchQuery.trim().length >= 1;
+  const messageHits = useMessageSearch(searchQuery);
+  const messageResults = (
+    <MessageSearchResults hits={messageHits} onOpen={onOpen} />
+  );
 
   const renderItem = useCallback(
     ({item}: {item: ConversationSummary}) => {
@@ -115,6 +122,9 @@ export function ConversationsBody({
       </Pressable>
     );
   }
+  if (filtered.length === 0 && messageHits.length > 0) {
+    return <ScrollView>{messageResults}</ScrollView>;
+  }
   if (filtered.length === 0) {
     return (
       <EmptyScreen
@@ -134,12 +144,15 @@ export function ConversationsBody({
       }}
       onEndReachedThreshold={0.4}
       ListFooterComponent={
-        loadingMore ? (
-          <ActivityIndicator
-            color={colors.accent}
-            style={styles.footerSpinner}
-          />
-        ) : undefined
+        <>
+          {loadingMore ? (
+            <ActivityIndicator
+              color={colors.accent}
+              style={styles.footerSpinner}
+            />
+          ) : null}
+          {messageResults}
+        </>
       }
     />
   );
