@@ -136,7 +136,7 @@ export function ContactsScreen({
               color={colors.accent}
               style={styles.footerSpinner}
             />
-          ) : null
+          ) : undefined
         }
       />
     );
