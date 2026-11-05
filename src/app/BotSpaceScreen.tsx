@@ -5,7 +5,7 @@
  * En-tête commun (photo du bot + menu ⋮ « Espace membre ») sur Échanges,
  * Paramètres et Profil du bot.
  * - Échanges : BotChatsStack (liste + fil).
- * - Contacts : écran provisoire.
+ * - Contacts : liste des contacts du bot (ouvre la conversation dans Échanges).
  * - Paramètres : page Paramètres actuelle (refonte à venir).
  * - Profil : profil Telegram du bot.
  */
@@ -31,7 +31,8 @@ import {
   BotBottomNav,
   type BotTabId,
 } from '../shared/components/BotBottomNav';
-import {EmptyScreen} from '../shared/components/EmptyScreen';
+import {ContactsScreen} from '../features/contacts';
+import {useOpenRequestStore} from '../features/conversations/store/openRequestStore';
 import {BotChatsStack} from '../features/conversations/navigation/BotChatsStack';
 import {useConversationsStore} from '../features/conversations/store/conversationsStore';
 import {useSelectionStore} from '../features/conversations/store/selectionStore';
@@ -78,6 +79,7 @@ export function BotSpaceScreen({onExit, onAddBot}: Props): React.JSX.Element {
   const bots = useBotsStore(s => s.bots);
   const selected = bots.find(b => b.selected) ?? bots[0];
   const botName = selected?.name ?? 'Bot';
+  const requestOpen = useOpenRequestStore(s => s.request);
 
   // Retour Android depuis un onglet secondaire → revient sur Échanges.
   // (Le fil ouvert dans BotChatsStack gère déjà son propre retour.)
@@ -210,7 +212,13 @@ export function BotSpaceScreen({onExit, onAddBot}: Props): React.JSX.Element {
           onOpenBotfactor={() => openFactor()}
         />
       ) : (
-        <EmptyScreen title="Contacts" subtitle="Bientôt disponible" />
+        <ContactsScreen
+          botId={selected?.id ?? null}
+          onOpenConversation={req => {
+            requestOpen(req);
+            setTab('chats');
+          }}
+        />
       )}
       {nav}
       {switcher}
