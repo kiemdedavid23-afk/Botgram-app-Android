@@ -69,3 +69,22 @@ jest.mock('lucide-react-native', () => {
     },
   );
 });
+
+jest.mock('@react-native-firebase/messaging', () => ({
+  getMessaging: jest.fn(() => ({})),
+  getToken: jest.fn(() => Promise.resolve('fcm-token')),
+  deleteToken: jest.fn(() => Promise.resolve()),
+  onMessage: jest.fn(() => jest.fn()),
+  onTokenRefresh: jest.fn(() => jest.fn()),
+  onNotificationOpenedApp: jest.fn(() => jest.fn()),
+  getInitialNotification: jest.fn(() => Promise.resolve(null)),
+  setBackgroundMessageHandler: jest.fn(),
+  subscribeToTopic: jest.fn(() => Promise.resolve()),
+  unsubscribeFromTopic: jest.fn(() => Promise.resolve()),
+}));
+
+jest.mock('@notifee/react-native', () => ({
+  __esModule: true,
+  default: {createChannel: jest.fn(() => Promise.resolve('id'))},
+  AndroidImportance: {DEFAULT: 3, HIGH: 4},
+}));

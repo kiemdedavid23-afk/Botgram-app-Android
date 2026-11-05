@@ -415,3 +415,36 @@ Le test `op-sqlite-guard.test.ts` accepte `import type … from '@op-engineering
 - **UI** : section « Messages » sous les conversations trouvées dans la liste des échanges (`MessageSearchResults`, `useMessageSearch`, délai 250 ms, hors ligne). Un appui ouvre la conversation (pas de saut au message précis en v1.0).
 - **Tests** : `search-query` (pur), `archive-fts.real` (vraie SQLite : accents, préfixe, tombstones, modification, suppression, requêtes piégées, repli LIKE), `archive-load.real` (20 000 messages / 40 conversations : recherche, lecture du fil, écritures concurrentes, tombstones), `message-search-results` (composant).
 - **Limites** : mesures de charge sur better-sqlite3, pas SQLCipher ni téléphone ; seuils volontairement larges.
+
+## Étape 7 — onglet Contacts (Claude)
+
+- **Données** : `GET /bots/:id/contacts` (pagination par curseur, 50 par page, plus récemment actifs d'abord) et `GET /bots/:id/search/contacts` (recherche serveur, 30 max, délai 300 ms). Un contact n'existe qu'après son premier message. Première page mise en cache (`contacts.page1.<botId>`) : affichée hors ligne avec bandeau.
+- **Store** `contactsStore` (zustand) : liste, pagination, recherche, état hors ligne ; vidé par `clearMemberData` (13.5).
+- **Ouvrir la fiche** : appui sur un contact → `findConversationForContact` (conversations chargées, puis archive locale, puis recherche serveur ; correspondance par `contact_id`, sinon discussion privée de même `username`). La **fiche contact existante** (`ContactProfileScreen`, la même que celle ouverte depuis le fil) s'affiche dans l'onglet Échanges via `openRequestStore` ; son bouton « Message » ouvre le fil ; retour = liste des échanges. Si introuvable : message explicite.
+- **UI** : `ContactsScreen`, `ContactListItem` ; textes dans `contacts/texts.ts`, dimensions dans `contactsMetrics.ts`, couleurs du thème.
+- **Tests** : `contacts-endpoints`, `contacts-store`, `contacts-find-conversation`, `open-request-store`, `contacts-screen`. Non exécutés ici (pas de jest) : le CI fait foi ; les fichiers ont seulement été transpilés sans erreur.
+- **Limites** : pas de temps réel sur les contacts ; retour de la fiche vers la liste des échanges (pas vers Contacts).
+
+## Étape 8 — notifications push + correction du code de mise à jour (Claude)
+
+### Push (FCM, PUSH.md)
+- **Firebase v26 = API modulaire seulement** (`getMessaging()`, `getToken(m)`…, l'API `messaging()` est supprimée). `@react-native-firebase/messaging` et `@notifee/react-native` ne sont importés que par `core/push/pushClient.ts` (test `push-guard`). Les appels natifs sont protégés : sans services Google, le push est désactivé, jamais l'app.
+- **Canaux Android** `messages` (importance haute) et `updates`, créés avant l'enregistrement (`ensureChannels`).
+- **Permission** POST_NOTIFICATIONS (Android 13+) : demandée **une seule fois par installation**, après la connexion et le premier bot, jamais au lancement. Refusée : aucun jeton envoyé.
+- **Jeton** : `POST /push/register {token, platform:"fcm", device}` à chaque démarrage connecté et à chaque `onTokenRefresh` (jamais deux fois le même jeton). Avant `signOut` : `POST /push/unregister`, puis jeton local détruit. Erreurs au mieux : le Worker coupe aussi les jetons des sessions révoquées. `clearMemberData` oublie le jeton retenu.
+- **Topic** `app-update-android-<canal>` : abonnement au démarrage. Notification `type=app_update` reçue app ouverte → vérification de mise à jour ; touchée → vérification manuelle.
+- **Toucher une notification de message** (app en arrière-plan ou fermée) : bot sélectionné si besoin, espace bot ouvert (`navigationRef`), fil ouvert via `openRequestStore.requestThread`. La cible attend session ouverte + bot chargé + navigation prête.
+- **Application ouverte** : le WebSocket/sondage remonte déjà les messages ; au retour au premier plan, le rattrapage `/updates` est celui du temps réel (inchangé, R6 respecté). Pas de second chemin.
+- **Fichiers** : `core/api/endpoints/push.ts`, `core/push/*`, `app/usePushLifecycle.ts`, `app/pushTargetStore.ts`, `app/navigationRef.ts` ; `index.js` (gestionnaire d'arrière-plan) ; `jest.setup.js` (mocks Firebase/Notifee).
+- **Tests** : `push-payload`, `push-endpoints`, `push-guard`, `push-registration`, `use-push-lifecycle`, `open-request-store`.
+
+### Correction du code de mise à jour (audit)
+- Tests ajoutés : `update-latest` (parseLatest, niveaux, textes d'état), `update-store` (check none/optional/required, échec, « Plus tard », téléchargement + installation, sans SHA-256, permission, fichier invalide, annulation).
+- Valeurs en dur → `shared/theme/updateMetrics.ts` ; `fontWeight` du thème ; libellés d'accessibilité (`texts.ts`) ; ternaires de la bannière remplacés par `statusText.ts` ; un seul écouteur de retour des réglages d'installation.
+
+### Limites connues
+- **Contenu du message du topic de mise à jour non vérifié** : on attend `data.type = "app_update"` ; sinon l'abonnement est inoffensif (Android affiche la notification) mais l'app ne lance pas la vérification (elle reste faite au démarrage et via l'en-tête `X-App-Update`).
+- Notification d'un topic : canal choisi par l'émetteur (`android.notification.channel_id`) ; sinon canal par défaut de Firebase.
+- Non exercés par jest : Firebase, Notifee et la permission réels → essai téléphone avec un vrai `google-services.json` (secret du workflow `app.yml`).
+- Ne pas oublier côté Worker : secret `FCM_SERVICE_ACCOUNT` (PUSH.md).
+- `RootNavigator.tsx` dépassait déjà 300 lignes (dette R9, lot dette).
