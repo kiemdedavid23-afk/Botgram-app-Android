@@ -4,6 +4,7 @@
 import {deleteMessage} from '../../../core/api/endpoints/messages';
 import type {Message} from '../../../core/realtime/events';
 import {archiveTombstone} from '../../../core/archive/hydrate';
+import {getMediaStorage} from '../../../core/media/MediaStorage';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {threadTexts} from '../texts';
 import type {ThreadSlice} from './sendActions';
@@ -20,7 +21,12 @@ type Ctx = {
   ) => void;
 };
 
-/** Retrait local du fil + tombstone archive (13.11). */
+/** Supprime le fichier média local du message (sans effet si aucun). */
+function dropLocalMedia(messageId: string): void {
+  fireAndForget(getMediaStorage().delete(messageId));
+}
+
+/** Retrait local du fil + tombstone archive (13.11) + fichier média local. */
 export function removeMessageLocally(
   items: Message[],
   messageId: string,
@@ -28,6 +34,7 @@ export function removeMessageLocally(
   fireAndForget(
     archiveTombstone('message', messageId, 'user_deleted'),
   );
+  dropLocalMedia(messageId);
   return items.filter(m => m.id !== messageId);
 }
 
@@ -39,6 +46,7 @@ export function removeMessageFromEvent(
   fireAndForget(
     archiveTombstone('message', messageId, 'message_deleted'),
   );
+  dropLocalMedia(messageId);
   return items.filter(m => m.id !== messageId);
 }
 
