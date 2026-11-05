@@ -126,12 +126,17 @@ function toHit(r: Row, tokens: string[]): MessageSearchHit {
   };
 }
 
+/**
+ * CROSS JOIN : fixe l'ordre des jointures (index plein texte d'abord).
+ * Sans lui, selon la version de SQLite, le planificateur peut parcourir tous
+ * les messages et interroger l'index ligne par ligne (secondes sur 20 000).
+ */
 async function runFts(db: DB, botId: string, tokens: string[], limit: number) {
   return db.execute(
     `${SELECT_HITS}
      FROM messages_fts
-     JOIN messages m ON m.rowid = messages_fts.rowid
-     JOIN conversations c ON c.id = m.conversation_id
+     CROSS JOIN messages m ON m.rowid = messages_fts.rowid
+     CROSS JOIN conversations c ON c.id = m.conversation_id
      WHERE messages_fts MATCH ? AND ${FILTERS}
      ORDER BY m.created_at DESC, m.rowid DESC LIMIT ?;`,
     [toMatchExpression(tokens), botId, limit],
