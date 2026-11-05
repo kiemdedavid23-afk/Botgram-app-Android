@@ -28,6 +28,7 @@ import {
 } from './tombstonesRepo';
 import {archiveTexts} from './texts';
 import {enqueueWrite} from './writeQueue';
+import {archiveSizeBytes} from './sizeRepo';
 import {isTransientOpenError, isUnreadableDbError} from './openErrors';
 import type {ConversationSummary} from '../realtime/events';
 import type {Message} from '../realtime/messageTypes';
@@ -160,6 +161,11 @@ export function createOpSqliteArchiveStore(): ArchiveStore {
       );
       const row = res.rows[0] as {c?: number} | undefined;
       return typeof row?.c === 'number' ? row.c : Number(row?.c) || 0;
+    },
+
+    async sizeBytes() {
+      const conn = await ensureOpen();
+      return archiveSizeBytes(conn);
     },
 
     async clearAll() {

@@ -21,6 +21,8 @@ export type ArchiveStore = {
   proofInsert: (label: string) => Promise<void>;
   proofCount: () => Promise<number>;
   clearAll: () => Promise<void>;
+  /** Taille de l'archive sur disque (octets). */
+  sizeBytes: () => Promise<number>;
   migrateFromMmkv: () => Promise<{conversations: number; messages: number}>;
   upsertConversations: (items: ConversationSummary[]) => Promise<void>;
   listConversations: (botId: string) => Promise<ConversationSummary[]>;
