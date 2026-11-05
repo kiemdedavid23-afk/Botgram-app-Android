@@ -11,6 +11,7 @@ import {
   useConversationsStore,
   conversationTitle,
 } from '../store/conversationsStore';
+import {useOpenRequestStore} from '../store/openRequestStore';
 import type {ConversationSummary} from '../../../core/api/endpoints/conversations';
 
 type OpenThread = {
@@ -70,6 +71,18 @@ export function BotChatsStack({
     },
     [items],
   );
+
+  // Ouverture demandée depuis un autre onglet (Contacts).
+  const pendingOpen = useOpenRequestStore(s => s.pending);
+  const consumeOpen = useOpenRequestStore(s => s.consume);
+  useEffect(() => {
+    if (!pendingOpen) return;
+    const req = consumeOpen();
+    if (req) {
+      setOpen(null);
+      setProfile({conversation: req.conversation, fromThread: false});
+    }
+  }, [pendingOpen, consumeOpen]);
 
   const onOpenProfileFromList = useCallback(
     (id: string) => {
