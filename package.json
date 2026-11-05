@@ -63,6 +63,7 @@
     "node": ">=20"
   },
   "op-sqlite": {
-    "sqlcipher": true
+    "sqlcipher": true,
+    "fts5": true
   }
 }

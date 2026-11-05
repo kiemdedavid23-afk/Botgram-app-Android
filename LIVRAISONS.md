@@ -406,3 +406,12 @@ Le test `op-sqlite-guard.test.ts` accepte `import type … from '@op-engineering
 ### Limites connues
 - Albums envoyés : pas de copie locale (seul l'envoi d'un fichier unique est conservé). Suppression d'une conversation : ses fichiers ne sont supprimés que par « Vider les médias ».
 - Essai sur téléphone requis : SQLCipher réel, taille d'archive, ouverture d'un document par une app externe.
+
+## 6bis-e — recherche locale dans les messages (Claude)
+
+- **Index** : table FTS5 `messages_fts` (tokenizer `unicode61 remove_diacritics 2` : sans accents ni casse), tenue à jour par 3 triggers sur `messages`. Créée à l'ouverture de l'archive (`ftsRepo.ensureFts`), avec rattrapage des messages existants ; hors migrations pour qu'un échec FTS5 n'empêche jamais l'archive de fonctionner. Ne pas faire de `VACUUM` (l'index utilise le `rowid`).
+- **Requête** : mots (lettres/chiffres seuls, 8 max, 2 caractères minimum), chacun entre guillemets avec préfixe → aucun opérateur FTS injectable. Résultats du bot courant, plus récents d'abord (50 max), messages et conversations tombstonés exclus.
+- **Repli sans FTS5** : `LIKE` (accents à saisir comme dans le texte). `package.json` : `"op-sqlite": {"sqlcipher": true, "fts5": true}` — la prise en compte de `fts5` par la build Android est à confirmer (logs de build : `SQLITE_ENABLE_FTS5`, ou essai téléphone).
+- **UI** : section « Messages » sous les conversations trouvées dans la liste des échanges (`MessageSearchResults`, `useMessageSearch`, délai 250 ms, hors ligne). Un appui ouvre la conversation (pas de saut au message précis en v1.0).
+- **Tests** : `search-query` (pur), `archive-fts.real` (vraie SQLite : accents, préfixe, tombstones, modification, suppression, requêtes piégées, repli LIKE), `archive-load.real` (20 000 messages / 40 conversations : recherche, lecture du fil, écritures concurrentes, tombstones), `message-search-results` (composant).
+- **Limites** : mesures de charge sur better-sqlite3, pas SQLCipher ni téléphone ; seuils volontairement larges.
