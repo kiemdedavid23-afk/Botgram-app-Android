@@ -78,6 +78,17 @@ export const conversationsMetrics = {
   searchIconSize: 18,
   searchRowGap: 8,
   searchHitSlop: 8,
+  /** résultats de recherche dans les messages (6bis-e) */
+  msgSearchDebounceMs: 250,
+  msgSearchLimit: 50,
+  msgSearchPadH: 16,
+  msgSearchPadV: 12,
+  msgSearchHeaderPadV: 8,
+  msgSearchHeaderSize: 13,
+  msgSearchTitleSize: 15,
+  msgSearchSnippetSize: 14,
+  msgSearchTimeSize: 12,
+  msgSearchGap: 2,
   /** Délai de fraîcheur liste avant rechargement auto (ms) */
   listFreshMs: 30_000,
 } as const;
