@@ -386,3 +386,23 @@ Le test `op-sqlite-guard.test.ts` accepte `import type … from '@op-engineering
 ```
 (à coller localement — npm registry inaccessible dans l’agent)
 ```
+
+## 6bis-d — reprise par Claude (Grok indisponible) : médias SANS chiffrement de fichiers en v1.0
+
+### Constat (audit du zip _35)
+- Le chiffrement `.enc` de la livraison précédente n'était pas branché : le téléchargement natif (Kotlin) écrit les fichiers en clair à `localPath`, et photos / audio / vidéo / vocaux lisent ce chemin directement. Le CI vert ne le détectait pas.
+- Décision (recommandation du coordinateur, non contredite par le propriétaire) : v1.0 **sans** chiffrement des fichiers médias. Protection = dossier privé de l'app (sandbox Android + chiffrement du téléphone), `allowBackup="false"`. Les messages restent chiffrés par SQLCipher. Chiffrement des médias envisagé en v1.1, par un composant natif (déchiffrement en flux).
+
+### Retiré
+- `react-native-quick-crypto`, `react-native-nitro-modules`, `react-native-quick-base64` (package.json) ; `src/core/crypto/*` ; `__tests__/media-crypto.test.ts` ; clé maîtresse Keychain (`secureStorage`) ; dossier temporaire déchiffré et sa purge ; suffixe `.enc` des fichiers.
+- Couche médias remise à l'état d'avant (stockage clair `<id>` dans `botgram-media/`).
+
+### Ajouté
+- `Réglages > Stockage` (`StorageSettingsScreen`, route `storage` du hub) : taille des médias, taille réelle de l'archive (`ArchiveStore.sizeBytes`, PRAGMA page_count × page_size), « Vider les médias » avec confirmation ; les messages ne sont jamais touchés.
+- Suppression d'un message (par l'utilisateur ou événement serveur) : le fichier média local est supprimé (`messageActions`), erreurs de suppression sans effet sur le fil.
+- Tests : `archive-size.real.test.ts` (vraie SQLite), `message-media-delete.test.ts`, `storage-settings.test.tsx`.
+- Textes : `settings/storageTexts.ts` ; `settings/texts.ts` restauré (écrasé par erreur dans la livraison précédente).
+
+### Limites connues
+- Albums envoyés : pas de copie locale (seul l'envoi d'un fichier unique est conservé). Suppression d'une conversation : ses fichiers ne sont supprimés que par « Vider les médias ».
+- Essai sur téléphone requis : SQLCipher réel, taille d'archive, ouverture d'un document par une app externe.
