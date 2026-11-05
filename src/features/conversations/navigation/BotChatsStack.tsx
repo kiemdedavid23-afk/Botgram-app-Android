@@ -84,6 +84,23 @@ export function BotChatsStack({
     }
   }, [pendingOpen, consumeOpen]);
 
+  // Toucher sur une notification push : ouvre directement le fil.
+  const pendingThreadId = useOpenRequestStore(s => s.pendingThreadId);
+  const consumeThread = useOpenRequestStore(s => s.consumeThread);
+  useEffect(() => {
+    if (!pendingThreadId) return;
+    const id = consumeThread();
+    if (!id) return;
+    const c = items.find(i => i.id === id);
+    setProfile(null);
+    setOpen({
+      id,
+      title: c ? conversationTitle(c) : '',
+      photoUrl: c?.photo_url,
+      initials: c?.initials,
+    });
+  }, [pendingThreadId, consumeThread, items]);
+
   const onOpenProfileFromList = useCallback(
     (id: string) => {
       setOpen(null);
