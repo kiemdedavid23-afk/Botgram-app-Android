@@ -9,6 +9,7 @@ import {create} from 'zustand';
 import {onSessionEvent, type SessionEndReason} from '../../../core/api/session';
 import {me, logout as logoutApi, type Member} from '../../../core/api/endpoints/auth';
 import {getRefreshToken, clearTokens, saveTokenPair} from '../../../core/storage';
+import {unregisterPush} from '../../../core/push';
 import {AppState} from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 
@@ -113,6 +114,11 @@ export const useAuthStore = create<AuthStore>(set => ({
   signOut: async () => {
     const ac = new AbortController();
     const t = setTimeout(() => ac.abort(), 5000);
+    try {
+      await unregisterPush();
+    } catch {
+      // au mieux : la session révoquée coupe de toute façon les notifications
+    }
     try {
       await logoutApi();
     } catch {
