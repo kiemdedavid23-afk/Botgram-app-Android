@@ -45,6 +45,7 @@ export {associateMetrics} from './associateMetrics';
 export {memberProfileMetrics} from './memberProfileMetrics';
 export {settingsMetrics} from './settingsMetrics';
 export {gestionMetrics} from './gestionMetrics';
+export {updateMetrics} from './updateMetrics';
 export {botProfileMetrics} from './botProfileMetrics';
 
 export {navMetrics} from './navMetrics';
