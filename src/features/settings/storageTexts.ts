@@ -1,6 +1,7 @@
 /** Textes réglages stockage (fr). */
 export const settingsStorageTexts = {
   title: 'Stockage',
+  hubSubtitle: 'Espace utilisé, vider les médias',
   spaceUsed: 'Espace utilisé',
   mediaFiles: 'Médias locaux',
   archiveDb: 'Archive messages',
@@ -12,6 +13,8 @@ export const settingsStorageTexts = {
   clearConfirmCancel: 'Annuler',
   clearDone: 'Médias locaux vidés.',
   unavailable: 'Indisponible',
+  archiveNote:
+    'Les messages de l’archive ne sont jamais supprimés automatiquement.',
   bytes: (n: number) => {
     if (n < 1024) {
       return `${n} o`;
