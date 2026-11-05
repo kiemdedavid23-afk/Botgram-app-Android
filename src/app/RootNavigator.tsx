@@ -55,6 +55,8 @@ import {
 import type {VerifyResult} from '../features/associate';
 import type {GuideSectionId} from '../features/associate/guideContent';
 import {BotSpaceScreen} from './BotSpaceScreen';
+import {navigationRef} from './navigationRef';
+import {usePushLifecycle} from './usePushLifecycle';
 import {ContextSwitcher} from './ContextSwitcher';
 import {useMemberSectionStore, type MemberSection} from './memberSectionStore';
 import {useBotsStore} from '../features/bots/store/botsStore';
@@ -340,6 +342,7 @@ export function RootNavigator(): React.JSX.Element {
   }, [boot]);
 
   useEffect(() => startUpdateWatcher(), []);
+  usePushLifecycle();
 
   const navTheme = {
     ...(mode === 'dark' ? DarkTheme : DefaultTheme),
@@ -368,7 +371,7 @@ export function RootNavigator(): React.JSX.Element {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer theme={navTheme}>
+      <NavigationContainer ref={navigationRef} theme={navTheme}>
         {devBanner}
         {content}
         <UpdateBanner />

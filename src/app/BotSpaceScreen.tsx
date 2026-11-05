@@ -80,6 +80,12 @@ export function BotSpaceScreen({onExit, onAddBot}: Props): React.JSX.Element {
   const selected = bots.find(b => b.selected) ?? bots[0];
   const botName = selected?.name ?? 'Bot';
   const requestOpen = useOpenRequestStore(s => s.request);
+  const pendingThreadId = useOpenRequestStore(s => s.pendingThreadId);
+
+  // Notification push touchée : retour sur Échanges, qui ouvre le fil.
+  useEffect(() => {
+    if (pendingThreadId) setTab('chats');
+  }, [pendingThreadId]);
 
   // Retour Android depuis un onglet secondaire → revient sur Échanges.
   // (Le fil ouvert dans BotChatsStack gère déjà son propre retour.)
