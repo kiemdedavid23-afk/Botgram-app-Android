@@ -1,29 +1,16 @@
 /**
- * Interface archive / cache médias (13.11) — fichiers .enc chiffrés.
+ * Interface archive / cache médias (13.11) — implémentation étape 6 via mediaFiles.
  */
 import {
   mediaFileExists,
+  mediaFileWrite,
+  mediaFileReadBase64,
   mediaFileDelete,
   mediaFileSize,
   mediaTotalSize,
   mediaClearAll,
   mediaFilePath,
 } from '../storage/mediaFiles';
-import {
-  storeEncryptedMedia,
-  loadDecryptedMedia,
-} from '../crypto/mediaCipher';
-
-function bytesToB64(bytes: Uint8Array): string {
-  if (typeof Buffer !== 'undefined') {
-    return Buffer.from(bytes).toString('base64');
-  }
-  let s = '';
-  for (let i = 0; i < bytes.length; i += 1) {
-    s += String.fromCharCode(bytes[i]!);
-  }
-  return btoa(s);
-}
 
 export type MediaStorage = {
   exists(messageId: string): Promise<boolean>;
@@ -38,18 +25,8 @@ export type MediaStorage = {
 
 export const defaultMediaStorage: MediaStorage = {
   exists: mediaFileExists,
-  async writeBase64(messageId, base64) {
-    await storeEncryptedMedia(messageId, base64);
-    return mediaFilePath(messageId);
-  },
-  async readBase64(messageId) {
-    try {
-      const plain = await loadDecryptedMedia(messageId);
-      return bytesToB64(plain);
-    } catch {
-      return null;
-    }
-  },
+  writeBase64: mediaFileWrite,
+  readBase64: mediaFileReadBase64,
   delete: mediaFileDelete,
   sizeOf: mediaFileSize,
   totalSize: mediaTotalSize,
@@ -63,6 +40,7 @@ export function getMediaStorage(): MediaStorage {
   return active;
 }
 
+/** Tests uniquement. */
 export function setMediaStorageForTests(storage: MediaStorage): void {
   active = storage;
 }
