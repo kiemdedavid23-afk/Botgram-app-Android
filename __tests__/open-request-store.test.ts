@@ -13,3 +13,11 @@ describe('openRequestStore', () => {
     expect(useOpenRequestStore.getState().consume()).toBeNull();
   });
 });
+
+describe('openRequestStore — fil par identifiant', () => {
+  it('requestThread puis consumeThread : une seule fois', () => {
+    useOpenRequestStore.getState().requestThread('c7');
+    expect(useOpenRequestStore.getState().consumeThread()).toBe('c7');
+    expect(useOpenRequestStore.getState().consumeThread()).toBeNull();
+  });
+});
