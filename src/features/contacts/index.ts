@@ -6,3 +6,5 @@ export {
   contactUsername,
   chatTypeLabel,
 } from './utils/format';
+export {ContactsScreen} from './screens/ContactsScreen';
+export type {OpenContactRequest} from './screens/ContactsScreen';

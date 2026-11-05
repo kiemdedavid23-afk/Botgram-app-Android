@@ -34,6 +34,14 @@ export const contactsTexts = {
   tooLarge: 'Fichier trop volumineux (max. 20 Mo)',
   loadError: 'Chargement impossible',
   noHandler: 'Aucune application pour ouvrir ce fichier',
+  // Onglet Contacts
+  listSearchPlaceholder: 'Rechercher un contact',
+  listEmpty: 'Aucun contact',
+  listEmptySubtitle: 'Un contact apparaît dès son premier message au bot.',
+  listEmptySearch: 'Aucun contact trouvé',
+  listRetry: 'Réessayer',
+  listOfflineBanner: 'Hors ligne — liste enregistrée',
+  conversationNotFound: 'Conversation introuvable pour ce contact.',
   // Informations
   labelFullName: 'Nom',
 } as const;
