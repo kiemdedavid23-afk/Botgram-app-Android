@@ -7,6 +7,7 @@ import {useTheme, botProfileMetrics as m} from '../../../shared/theme';
 import type {ColorTokens} from '../../../shared/theme';
 import {useAuthStore} from '../../auth';
 import {useBotsStore} from '../../bots';
+import {useAccess} from '../../accounts';
 import {useBotProfileStore} from '../store/botProfileStore';
 import {BotHero} from '../components/BotHero';
 import {IdentitySection} from '../components/IdentitySection';
@@ -68,6 +69,7 @@ export function BotProfileScreen({
   const {colors} = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const member = useAuthStore(s => s.member);
+  const access = useAccess();
   const bots = useBotsStore(s => s.bots);
   const loadBots = useBotsStore(s => s.load);
   const botId = member?.selected_bot_id ?? null;
@@ -111,7 +113,7 @@ export function BotProfileScreen({
       <View style={[styles.root, styles.center]}>
         <Text style={styles.emptyTitle}>{texts.noBotTitle}</Text>
         <Text style={styles.sub}>{texts.noBotSub}</Text>
-        {onAddBot ? (
+        {onAddBot && access.canLinkBot ? (
           <Pressable onPress={onAddBot} style={styles.cta}>
             <Text style={styles.ctaText}>{texts.noBotCta}</Text>
           </Pressable>
