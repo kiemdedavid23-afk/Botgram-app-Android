@@ -8,7 +8,7 @@ import type {
   NeedsProfile,
   VerifyParams,
 } from '../../../core/api/endpoints/auth';
-import {ACCOUNT_TYPES} from '../../accounts';
+import {ACCOUNT_TYPES} from '../../accounts/accountType';
 import {COUNTRIES} from '../data/lists';
 import {texts} from '../texts';
 
