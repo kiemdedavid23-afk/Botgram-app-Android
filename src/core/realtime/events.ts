@@ -99,6 +99,16 @@ export type BotChangedEvent = {
   reason?: string;
 };
 
+/** Équipe : arrivée, départ, retrait, rôle, transfert, modification (docs/WEBSOCKET.md). */
+export type WorkspaceChangedEvent = {
+  type: 'workspace.changed';
+  /** Absent chez certains émetteurs : le dédoublonnage ne s'applique alors pas. */
+  id?: string;
+  at: number;
+  workspace_id: string;
+  reason: string;
+};
+
 export type SessionRevokedEvent = {
   type: 'session.revoked';
   at: number;
@@ -126,6 +136,7 @@ export type RealtimeEvent =
   | ConversationReadEvent
   | ConversationChangedEvent
   | BotChangedEvent
+  | WorkspaceChangedEvent
   | SessionRevokedEvent
   | UpdatesEvent
   | ResyncEvent;
@@ -137,6 +148,7 @@ const KNOWN_TYPES = new Set([
   'conversation.read',
   'conversation.changed',
   'bot.changed',
+  'workspace.changed',
   'session.revoked',
 ]);
 
@@ -278,6 +290,16 @@ export function parseRealtimeEvent(raw: unknown): RealtimeEvent | null {
         at,
         bot_id: obj.bot_id,
         reason: typeof obj.reason === 'string' ? obj.reason : undefined,
+      };
+    }
+    case 'workspace.changed': {
+      if (typeof obj.workspace_id !== 'string') return null;
+      return {
+        type: 'workspace.changed',
+        id: typeof obj.id === 'string' ? obj.id : undefined,
+        at,
+        workspace_id: obj.workspace_id,
+        reason: typeof obj.reason === 'string' ? obj.reason : 'updated',
       };
     }
     default:
