@@ -3,7 +3,7 @@ import {
   accountTypeEmoji,
   accountTypeLabel,
   accountTypeOf,
-} from '../src/features/accounts';
+} from '../src/features/accounts/accountType';
 
 describe('type de compte', () => {
   it('un membre sans account_type est un particulier (ancien Worker)', () => {
