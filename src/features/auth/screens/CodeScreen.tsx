@@ -4,15 +4,17 @@ import {View, Text, TextInput, Pressable, StyleSheet, AppState} from 'react-nati
 import Clipboard from '@react-native-clipboard/clipboard';
 import {authColors, authMetrics, authUi, welcomeMetrics} from '../../../shared/theme/authColors';
 import {texts} from '../texts';
-import {verifyCode, requestCode} from '../../../core/api/endpoints/auth';
+import {verifyCode, requestCode, type AccountType} from '../../../core/api/endpoints/auth';
 import {useAuthStore} from '../store/authStore';
 import {AuthLightScaffold} from '../components/AuthLightScaffold';
 import {mailTargetFor, openMailApp} from '../utils/openMailApp';
+import {offeredAccountTypes} from '../utils/signup';
 
 type Props = {
   email: string;
   expiresIn: number;
-  onNeedsProfile: () => void;
+  /** Adresse inconnue : types de compte proposés par le Worker. */
+  onNeedsProfile: (offered: AccountType[]) => void;
   onSuccess: () => void;
   onBack: () => void;
 };
@@ -55,7 +57,7 @@ export function CodeScreen({email, expiresIn, onNeedsProfile, onSuccess, onBack}
     if (res.ok) {
       if ('needs_profile' in res.data) {
         setPendingCode(c);
-        onNeedsProfile();
+        onNeedsProfile(offeredAccountTypes(res.data));
       } else {
         await completeVerify(res.data);
         onSuccess();
