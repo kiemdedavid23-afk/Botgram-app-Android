@@ -28,6 +28,8 @@ type AuthStore = {
   upgradeLatest: string | null;
   email: string | null;
   pendingCode: string | null;
+  /** Heure d'arrivée du code en attente : il ne vaut que 6 minutes. */
+  pendingCodeAt: number | null;
   setEmail: (email: string | null) => void;
   setPendingCode: (code: string | null) => void;
   setMember: (m: Member | null) => void;
@@ -54,6 +56,7 @@ export async function applySignedOut(
     member: null,
     email: null,
     pendingCode: null,
+    pendingCodeAt: null,
     endReason,
     offline: false,
   });
@@ -67,9 +70,11 @@ export const useAuthStore = create<AuthStore>(set => ({
   upgradeLatest: null,
   email: null,
   pendingCode: null,
+  pendingCodeAt: null,
 
   setEmail: email => set({email}),
-  setPendingCode: code => set({pendingCode: code}),
+  setPendingCode: code =>
+    set({pendingCode: code, pendingCodeAt: code ? Date.now() : null}),
   setMember: m => set({member: m}),
 
   boot: async () => {
@@ -139,6 +144,7 @@ export const useAuthStore = create<AuthStore>(set => ({
       offline: false,
       endReason: null,
       pendingCode: null,
+      pendingCodeAt: null,
     });
   },
 }));
