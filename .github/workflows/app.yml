@@ -52,7 +52,7 @@ jobs:
             cd "$RUNNER_TEMP"
             npx --yes @react-native-community/cli@latest init Botgram \
               --version 0.88.0 \
-              --package-name com.botgram.dsi \
+              --package-name app.botsgram.dsi \
               --title Botgram \
               --skip-install \
               --skip-git-init \
@@ -101,26 +101,14 @@ jobs:
         run: |
           printf 'API_URL=%s\nAPP_CHANNEL=direct\n' "$API_URL" > .env
 
-      - name: Write google-services.json
-        env:
-          GS_PLAIN: ${{ secrets.GOOGLE_SERVICES_JSON }}
-          GS_B64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+      - name: Write fake google-services.json (test only, no real Firebase secret)
         run: |
           OUT=android/app/google-services.json
-          if [ -n "$GS_PLAIN" ]; then
-            printf '%s' "$GS_PLAIN" > "$OUT"
-            echo "google-services.json ecrit (secret GOOGLE_SERVICES_JSON)."
-          elif [ -n "$GS_B64" ]; then
-            echo "$GS_B64" | base64 -d > "$OUT"
-            echo "google-services.json ecrit (secret GOOGLE_SERVICES_JSON_BASE64)."
-          else
-            echo "::warning::Aucun secret Firebase : faux fichier, les notifications push ne marcheront pas."
-            printf '%s' '{"project_info":{"project_number":"000000000000","project_id":"botgram-ci-placeholder","storage_bucket":"botgram-ci-placeholder.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:000000000000:android:0000000000000000000000","android_client_info":{"package_name":"com.botgram.dsi"}},"api_key":[{"current_key":"placeholder"}]}],"configuration_version":"1"}' > "$OUT"
-          fi
-          # Verification : JSON valide et package com.botgram.dsi present
-          jq -e '[.client[].client_info.android_client_info.package_name] | index("com.botgram.dsi")' "$OUT" > /dev/null \
-            || { echo "::error::google-services.json invalide ou ne contient pas l'app com.botgram.dsi."; exit 1; }
-          echo "google-services.json OK."
+          echo "::notice::Faux google-services.json : les notifications push ne marcheront pas dans cet APK de test."
+          printf '%s' '{"project_info":{"project_number":"000000000000","project_id":"botgram-ci-placeholder","storage_bucket":"botgram-ci-placeholder.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:000000000000:android:0000000000000000000000","android_client_info":{"package_name":"app.botsgram.dsi"}},"api_key":[{"current_key":"placeholder"}]}],"configuration_version":"1"}' > "$OUT"
+          jq -e '[.client[].client_info.android_client_info.package_name] | index("app.botsgram.dsi")' "$OUT" > /dev/null \
+            || { echo "::error::Faux google-services.json invalide."; exit 1; }
+          echo "google-services.json (faux) OK."
 
       - name: Setup Gradle cache
         uses: gradle/actions/setup-gradle@v4
