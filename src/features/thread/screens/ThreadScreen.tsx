@@ -15,6 +15,7 @@ import {useTheme, useChatTheme} from '../../../shared/theme';
 import {GradientView} from '../../../shared/components/GradientView';
 import {threadMetrics as tm} from '../../../shared/theme/threadMetrics';
 import {useThreadStore} from '../store/threadStore';
+import {useAccess} from '../../accounts';
 import {messageTimestamp} from '../store/mergeMessages';
 import {MessageBubble} from '../components/MessageBubble';
 import {DaySeparator} from '../components/DaySeparator';
@@ -54,6 +55,7 @@ export function ThreadScreen({
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
   const chat = useChatTheme();
+  const access = useAccess();
   const open = useThreadStore(s => s.open);
   const close = useThreadStore(s => s.close);
   const items = useThreadStore(s => s.items);
@@ -231,7 +233,7 @@ export function ThreadScreen({
           </Text>
         ) : null}
         <ComposerBar
-          disabled={offline}
+          disabled={offline || !access.canWrite}
           sending={sending}
           onSend={send}
           onSendMedia={sendMedia}
