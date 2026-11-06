@@ -4,7 +4,7 @@
  *  - contenu CENTRÉ verticalement dans l'espace libre ;
  *  - clavier : KeyboardAvoidingView 'padding' (basé sur le chevauchement réel, donc sans
  *    double décalage si Android a déjà redimensionné la fenêtre) + ScrollView si l'écran est court ;
- *  - flèche retour et indicateur d'étape (1 e-mail, 2 code, 3 profil).
+ *  - flèche retour et indicateur d'étape (1 e-mail, 2 code, 3 type de compte, 4 profil).
  */
 import React from 'react';
 import {View, Pressable, ScrollView, StyleSheet, KeyboardAvoidingView} from 'react-native';
@@ -14,7 +14,9 @@ import {authColors, authMetrics, authUi} from '../../../shared/theme/authColors'
 import {shellMetrics as sm} from '../../../shared/theme/shellMetrics';
 import {StatusBarStrip} from '../../../shared/components/StatusBarStrip';
 
-type Props = {step: 1 | 2 | 3; onBack: () => void; children: React.ReactNode};
+const TOTAL_STEPS = 4;
+
+type Props = {step: 1 | 2 | 3 | 4; onBack: () => void; children: React.ReactNode};
 
 export function AuthLightScaffold({step, onBack, children}: Props): React.JSX.Element {
   const insets = useSafeAreaInsets();
@@ -34,8 +36,8 @@ export function AuthLightScaffold({step, onBack, children}: Props): React.JSX.El
           <View
             style={styles.dots}
             accessible
-            accessibilityLabel={`Étape ${step} sur 3`}>
-            {[1, 2, 3].map(i => (
+            accessibilityLabel={`Étape ${step} sur ${TOTAL_STEPS}`}>
+            {Array.from({length: TOTAL_STEPS}, (_, k) => k + 1).map(i => (
               <View
                 key={i}
                 style={[styles.dot, i <= step ? styles.dotOn : null, i === step ? styles.dotCurrent : null]}
