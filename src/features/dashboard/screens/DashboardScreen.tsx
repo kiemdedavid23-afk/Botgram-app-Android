@@ -10,6 +10,7 @@ import {
   Animated,
 } from 'react-native';
 import {useTheme, dashboardMetrics as dm} from '../../../shared/theme';
+import {useAccess} from '../../accounts';
 import {useAuthStore} from '../../auth/store/authStore';
 import {useBotsStore} from '../../bots/store/botsStore';
 import {useQuotaStore} from '../../member/store/quotaStore';
@@ -34,6 +35,7 @@ export function DashboardScreen({
 }: Props): React.JSX.Element {
   const {colors} = useTheme();
   const member = useAuthStore(s => s.member);
+  const access = useAccess();
   const bots = useBotsStore(s => s.bots);
   const loadBots = useBotsStore(s => s.load);
   const selectBot = useBotsStore(s => s.select);
@@ -132,7 +134,7 @@ export function DashboardScreen({
               }}
             />
           ))}
-          <AddBotSlot onPress={onAddBot} />
+          {access.canLinkBot ? <AddBotSlot onPress={onAddBot} /> : null}
         </View>
       </Animated.View>
 
