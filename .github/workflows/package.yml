@@ -1,0 +1,50 @@
+name: Renommer package
+
+on:
+  workflow_dispatch:
+    inputs:
+      new_package:
+        description: "Nouveau nom de package"
+        default: "app.botsgram.dsi"
+
+permissions:
+  contents: write
+
+jobs:
+  rename:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Renommer
+        env:
+          NEW: ${{ inputs.new_package }}
+        run: |
+          set -e
+          OLD="com.botgram.dsi"
+          echo "$NEW" | grep -Eq '^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$' \
+            || { echo "::error::Nom de package invalide : $NEW"; exit 1; }
+          J=android/app/src/main/java
+          OLD_DIR="$J/$(echo "$OLD" | tr . /)"
+          NEW_DIR="$J/$(echo "$NEW" | tr . /)"
+          if [ -d "$OLD_DIR" ]; then
+            mkdir -p "$(dirname "$NEW_DIR")"
+            mv "$OLD_DIR" "$NEW_DIR"
+            rmdir -p "$(dirname "$OLD_DIR")" 2>/dev/null || true
+          else
+            echo "Dossier $OLD_DIR absent : deja renomme ?"
+          fi
+          OLD_RE=$(echo "$OLD" | sed 's/\./\\./g')
+          grep -rIl "$OLD" android ARCHITECTURE.md 2>/dev/null \
+            | xargs -r sed -i "s/$OLD_RE/$NEW/g"
+          echo "--- Reste de l'ancien nom (hors workflows) :"
+          grep -rIn "$OLD" android ARCHITECTURE.md || echo "aucun"
+
+      - name: Commit et push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && { echo "Rien a commiter."; exit 0; }
+          git commit -m "Renommer le package en ${{ inputs.new_package }}"
+          git push
