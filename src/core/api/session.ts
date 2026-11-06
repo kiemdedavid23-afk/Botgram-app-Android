@@ -9,12 +9,20 @@ import {refresh as refreshEndpoint} from './endpoints/auth';
 import {parseLatest, type LatestBuild} from '../update/latest';
 import {getAccessToken, getRefreshToken, saveTokenPair, clearTokens} from '../storage';
 
-export type SessionEndReason = 'revoked' | 'session_expired' | 'invalid' | 'refresh_reuse';
+export type SessionEndReason =
+  | 'revoked'
+  | 'session_expired'
+  | 'invalid'
+  | 'refresh_reuse'
+  /** Retrait de l'entreprise (compte invité supprimé) : décidé par l'app, jamais renvoyé par le Worker. */
+  | 'access_removed';
 
 export type SessionEvent =
   | {type: 'ended'; reason: SessionEndReason}
   | {type: 'upgrade_required'; latest?: LatestBuild}
-  | {type: 'update'; level: 'none' | 'optional' | 'required'};
+  | {type: 'update'; level: 'none' | 'optional' | 'required'}
+  /** 403 FORBIDDEN : le rôle a pu changer, les espaces sont à relire. */
+  | {type: 'forbidden'};
 
 type Listener = (event: SessionEvent) => void;
 const listeners = new Set<Listener>();
@@ -136,6 +144,11 @@ export async function authedHttp<T>(
   if (!first.ok && first.status === 426) {
     const latest = parseLatest((first.error.details as {latest?: unknown} | undefined)?.latest);
     emit({type: 'upgrade_required', latest});
+    return first;
+  }
+
+  if (!first.ok && first.status === 403 && first.error.code === 'FORBIDDEN') {
+    emit({type: 'forbidden'});
     return first;
   }
 
