@@ -1,0 +1,32 @@
+package app.botsgram.dsi
+
+import android.app.Application
+import com.facebook.react.PackageList
+import com.facebook.react.ReactApplication
+import com.facebook.react.ReactHost
+import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
+import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
+import app.botsgram.dsi.media.MediaPackage
+
+class MainApplication : Application(), ReactApplication {
+
+  override val reactHost: ReactHost by lazy {
+    getDefaultReactHost(
+      context = applicationContext,
+      packageList =
+        PackageList(this).packages.apply {
+          // Packages that cannot be autolinked yet can be added manually here, for example:
+          // add(MyReactNativePackage())
+          add(OpenMailPackage())
+          add(MediaPackage())
+        },
+    )
+  }
+
+  override fun onCreate() {
+    super.onCreate()
+    // Diagnostic temporaire : garde la trace d'un plantage pour l'expliquer au lancement suivant.
+    CrashDiagnostics.install(this)
+    loadReactNative(this)
+  }
+}

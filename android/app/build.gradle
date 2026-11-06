@@ -91,9 +91,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.botgram.dsi"
+    namespace "app.botsgram.dsi"
     defaultConfig {
-        applicationId "com.botgram.dsi"
+        applicationId "app.botsgram.dsi"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode((envValue("APP_BUILD") ?: "1").toInteger())
