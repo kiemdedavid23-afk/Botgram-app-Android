@@ -26,13 +26,9 @@ import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {useTheme, space, fontSize, fontWeight, radii, rootNavigatorMetrics as rm} from '../shared/theme';
 import {useAuthStore} from '../features/auth/store/authStore';
 import {fireAndForget} from '../core/utils/fireAndForget';
-import {WelcomeScreen} from '../features/auth/screens/WelcomeScreen';
-import {EmailScreen} from '../features/auth/screens/EmailScreen';
-import {CodeScreen} from '../features/auth/screens/CodeScreen';
-import {ProfileScreen} from '../features/auth/screens/ProfileScreen';
+import {AuthFlow} from '../features/auth/AuthFlow';
 import {AccountDisabledScreen} from '../features/auth/screens/AccountDisabledScreen';
 import {UpgradeScreen} from '../features/auth/screens/UpgradeScreen';
-import {authColors} from '../shared/theme/authColors';
 import {BrandBar} from '../shared/components/BrandBar';
 import {HeaderAvatarButton} from '../shared/components/HeaderAvatarButton';
 import {
@@ -74,56 +70,6 @@ function Booting(): React.JSX.Element {
       <ActivityIndicator color={colors.accent} />
     </View>
   );
-}
-
-function AuthFlow(): React.JSX.Element {
-  const [step, setStep] = useState<'welcome' | 'email' | 'code' | 'profile'>('welcome');
-  const [email, setEmail] = useState('');
-  const [expires, setExpires] = useState(360);
-  const setStoreEmail = useAuthStore(s => s.setEmail);
-  const pendingCode = useAuthStore(s => s.pendingCode);
-  const endReason = useAuthStore(s => s.endReason);
-
-  if (step === 'welcome') {
-    return (
-      <View style={styles.flex}>
-        {endReason ? (
-          <View style={[styles.banner, {backgroundColor: authColors.bg}]}>
-            <Text style={[styles.bannerText, {color: authColors.danger}]}>
-              {endReason === 'revoked' ? 'Session révoquée' : 'Session expirée'}
-            </Text>
-          </View>
-        ) : null}
-        <WelcomeScreen onContinue={() => setStep('email')} />
-      </View>
-    );
-  }
-
-  if (step === 'email') {
-    return (
-      <EmailScreen
-        onSent={(e, exp) => {
-          setEmail(e);
-          setExpires(exp);
-          setStoreEmail(e);
-          setStep('code');
-        }}
-        onBack={() => setStep('welcome')}
-      />
-    );
-  }
-  if (step === 'code') {
-    return (
-      <CodeScreen
-        email={email}
-        expiresIn={expires}
-        onNeedsProfile={() => setStep('profile')}
-        onSuccess={() => {}}
-        onBack={() => setStep('email')}
-      />
-    );
-  }
-  return <ProfileScreen email={email} code={pendingCode ?? ''} onSuccess={() => {}} onBack={() => setStep('code')} />;
 }
 
 export type MemberStackParamList = {
