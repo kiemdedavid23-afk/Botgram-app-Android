@@ -83,4 +83,5 @@ export const texts = {
   incompleteProfile: 'Informations incomplètes. Vérifiez le formulaire.',
   restartCode: 'Demander un nouveau code',
   closeSheet: 'Fermer',
+  accessRemoved: 'Votre accès à l’entreprise a été retiré.',
 };

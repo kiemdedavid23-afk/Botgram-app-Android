@@ -9,6 +9,7 @@ import {authColors} from '../../shared/theme/authColors';
 import {rootNavigatorMetrics as rm} from '../../shared/theme';
 import {ACCOUNT_TYPES} from '../accounts';
 import {useAuthStore} from './store/authStore';
+import {texts} from './texts';
 import {WelcomeScreen} from './screens/WelcomeScreen';
 import {EmailScreen} from './screens/EmailScreen';
 import {CodeScreen} from './screens/CodeScreen';
@@ -34,7 +35,11 @@ export function AuthFlow(): React.JSX.Element {
         {endReason ? (
           <View style={[styles.banner, {backgroundColor: authColors.bg}]}>
             <Text style={[styles.bannerText, {color: authColors.danger}]}>
-              {endReason === 'revoked' ? 'Session révoquée' : 'Session expirée'}
+              {endReason === 'revoked'
+                ? 'Session révoquée'
+                : endReason === 'access_removed'
+                ? texts.accessRemoved
+                : 'Session expirée'}
             </Text>
           </View>
         ) : null}
