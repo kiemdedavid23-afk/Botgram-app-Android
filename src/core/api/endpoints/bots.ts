@@ -3,6 +3,7 @@
  * Tout passe par authedHttp. Aucun champ inventé.
  */
 import {authedHttp, type HttpResult} from '../session';
+import type {WorkspaceRef, WorkspaceRole} from './workspaces';
 
 export type BotStatus =
   | 'pending'
@@ -22,6 +23,9 @@ export type Bot = {
   created_at: number;
   connected_at: number | null;
   disconnected_at: number | null;
+  /** Espace du bot et rôle de la personne dedans (absents d'un ancien Worker). */
+  workspace?: WorkspaceRef;
+  role?: WorkspaceRole;
 };
 
 export type PreviewResponse = {
