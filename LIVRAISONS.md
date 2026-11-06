@@ -455,3 +455,86 @@ Le test `op-sqlite-guard.test.ts` accepte `import type … from '@op-engineering
 - `contacts-screen.test.tsx` : délai porté à 30 s (premier rendu d'un FlatList à froid, 5 s dépassées sur le CI).
 - Recherche FTS : `CROSS JOIN` pour fixer l'ordre des jointures (index plein texte d'abord). Au CI, deux recherches sur 20 000 messages ont pris 5 à 7 s (mesure locale : < 20 ms) ; cause probable : plan de requête différent selon la version de SQLite. Correction défensive, non reproduite localement : si `archive-load.real` échoue encore, envoyer les logs.
 - Étape 8 : 7 suites push/mise à jour vertes au CI.
+
+
+## Lot 1 — Inscription à trois chemins (Worker v16.14.7)
+
+### Créés
+- `src/features/accounts/{accountType.ts,index.ts}` — `accountTypeOf` (défaut `personal`), libellés, emoji : point d'aiguillage des futurs tableaux de bord et profils par type
+- `src/features/auth/AuthFlow.tsx` — parcours extrait de `RootNavigator` : accueil → e-mail → code → type → profil
+- `src/features/auth/screens/AccountTypeScreen.tsx` — choix Particulier / Entreprise / Invité (définitif)
+- `src/features/auth/components/{AuthField,CountrySheet,IdentityFields,AccountFields}.tsx`, `formStyles.ts` — découpage de l'ancien `ProfileScreen`
+- `src/features/auth/utils/signup.ts` — logique pure : validation, requête par type, erreurs du Worker
+- `__tests__/signup-utils.test.ts`, `account-type.test.ts`, `auth-verify-endpoint.test.ts`
+
+### Modifiés
+- `core/api/endpoints/auth.ts` — `AccountType`, `Member.account_type?`, `NeedsProfile.account_types / missing_by_type`, `VerifyParams` (champs entreprise et invité)
+- `features/auth/store/authStore.ts` — `pendingCodeAt` (le code e-mail vaut 6 minutes)
+- `features/auth/screens/CodeScreen.tsx` — `onNeedsProfile(types)`
+- `features/auth/screens/ProfileScreen.tsx` — champs selon le type, une seule requête finale, code périmé → nouveau code
+- `features/auth/components/AuthLightScaffold.tsx` — 4 étapes
+- `features/auth/texts.ts`, `app/RootNavigator.tsx` (AuthFlow retiré du fichier)
+
+### Comportement
+- Particulier : comme avant (organisation facultative) ; `account_type: 'personal'` envoyé explicitement
+- Entreprise : `company_name` requis (2 à 80), `company_sector` et `company_phone` facultatifs ; `company_country` non envoyé (le Worker reprend le pays de la personne)
+- Invité : `invite_code` normalisé (majuscules, sans tirets) ; avertissement sur la lecture des messages des clients ; aucune entreprise présentée comme vérifiée
+- Erreurs : `VALIDATION_ERROR` (par champ), `INVITE_INVALID` (message unique), `CODE_INVALID` / code périmé (bouton « Demander un nouveau code »), `COMPANY_NOT_ALLOWED`, `ACCOUNT_DISABLED`, `RATE_LIMITED`
+- Adresse déjà inscrite : inchangé (le Worker ignore les champs d'inscription)
+
+### Écarts
+- Lien d'invitation `join?code=` non traité (deep link prévu à un lot ultérieur)
+- Tableau de bord et profil identiques pour les trois types : Lot 2
+- `CodeScreen.tsx`, `RootNavigator.tsx` dépassaient déjà 300 lignes (dette R9)
+
+### Preuves CI
+```
+npm run typecheck
+npm run lint
+npm test -- --ci --coverage=false
+```
+*(Coller sorties réelles.)*
+
+
+## Lot 2 — Socle « espace et droits » (Worker v16.14.7)
+
+À appliquer après le Lot 1.
+
+### Créés
+- `src/core/api/endpoints/workspaces.ts` — types `Workspace`, `WorkspaceRole`, `WorkspaceRef` ; `GET /workspaces`
+- `src/features/accounts/access.ts` — droits purs : `computeAccess(type, rôle)`, `isAccessLost`
+- `src/features/accounts/useAccess.ts` — hook `useAccess()`
+- `src/features/accounts/store/workspaceStore.ts` — espaces : cache MMKV, TTL 3 min, single-flight, génération, `serverLoaded`
+- `__tests__/access.test.ts`, `realtime-workspace-event.test.ts`, `workspace-store.test.ts`, `session-forbidden.test.ts`
+
+### Modifiés
+- `core/api/session.ts` — événement `forbidden` sur 403 `FORBIDDEN` ; raison de fin `access_removed`
+- `core/api/endpoints/bots.ts` — `Bot.workspace?`, `Bot.role?`
+- `core/realtime/events.ts` — événement `workspace.changed` (`id` facultatif)
+- `app/useRealtimeLifecycle.ts` — espaces chargés à la connexion ; `workspace.changed` et `resync` relisent espaces et bots ; `ownership_transferred` et `role_changed` relisent le membre ; invité sans espace (lu en ligne) → déconnexion `access_removed`
+- `features/dashboard/screens/DashboardScreen.tsx`, `botprofile/screens/BotProfileScreen.tsx` — « Ajouter un bot » seulement si `canLinkBot`
+- `features/thread/screens/ThreadScreen.tsx` — champ de saisie désactivé sans droit d'écriture
+- `features/auth/AuthFlow.tsx`, `texts.ts` — bandeau « Votre accès à l'entreprise a été retiré. »
+- `features/auth/utils/signup.ts`, `__tests__/account-type.test.ts` — import direct de `accountType` (n'embarque pas le store dans les tests)
+- `__tests__/realtime-lifecycle.test.ts` — `listWorkspaces` et `me` simulés ; 5 cas ajoutés
+- `features/accounts/index.ts`
+
+### Comportement
+- Rôle inconnu (hors ligne, avant lecture) : particulier et entreprise = propriétaire ; invité = lecture seule
+- Un invité n'est jamais déconnecté hors ligne : seulement quand le Worker répond « aucun espace »
+- Un particulier n'est jamais déconnecté par cette règle
+- Une rafale de 403 ne relit les espaces qu'une fois toutes les 2 s
+
+### Écarts
+- Seul le champ de saisie est bloqué pour un lecteur ; les autres actions d'écriture (épingler, supprimer, réagir…) : Lot 5
+- Réglages du bot, suppression de conversation : réservés au propriétaire, Lot 3 (Gestion)
+- Règle « l'agent ne modifie que ses messages » : Lot 6, avec `sent_by`
+- Mise à jour forcée : à activer côté Worker une fois l'app publiée (l'app gère déjà `UPGRADE_REQUIRED`)
+
+### Preuves CI
+```
+npm run typecheck
+npm run lint
+npm test -- --ci --coverage=false
+```
+*(Coller sorties réelles.)*
