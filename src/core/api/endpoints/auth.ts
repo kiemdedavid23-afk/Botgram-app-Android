@@ -5,6 +5,9 @@
 import {http, type HttpResult} from '../http';
 import {authedHttp} from '../session';
 
+/** Type de compte fixé à l'inscription (définitif). Absent d'un ancien Worker : « personal ». */
+export type AccountType = 'personal' | 'company' | 'invited';
+
 export type Member = {
   id: string;
   email: string;
@@ -18,6 +21,7 @@ export type Member = {
   organization: string | null;
   selected_bot_id: string | null;
   created_at: number;
+  account_type?: AccountType;
 };
 
 export type RequestCodeResponse = {
@@ -38,6 +42,8 @@ export type VerifySuccess = {
 export type NeedsProfile = {
   needs_profile: true;
   missing: string[];
+  account_types?: AccountType[];
+  missing_by_type?: Partial<Record<AccountType, string[]>>;
 };
 
 export type VerifyResponse = VerifySuccess | NeedsProfile;
@@ -64,7 +70,11 @@ export async function requestCode(
   });
 }
 
-export async function verifyCode(params: {
+/**
+ * Connexion ou inscription (même appel). Les champs d'inscription sont ignorés
+ * par le Worker si l'adresse a déjà un compte.
+ */
+export type VerifyParams = {
   email: string;
   code: string;
   display_name?: string;
@@ -72,7 +82,17 @@ export async function verifyCode(params: {
   usage?: string;
   phone?: string;
   organization?: string;
-}): Promise<HttpResult<VerifyResponse>> {
+  account_type?: AccountType;
+  company_name?: string;
+  company_country?: string;
+  company_sector?: string;
+  company_phone?: string;
+  invite_code?: string;
+};
+
+export async function verifyCode(
+  params: VerifyParams,
+): Promise<HttpResult<VerifyResponse>> {
   return http<VerifyResponse>({
     method: 'POST',
     path: '/auth/code/verify',
