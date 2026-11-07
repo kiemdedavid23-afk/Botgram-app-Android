@@ -1,3 +1,4 @@
+import {getRights} from '../../../core/access/rights';
 import React from 'react';
 import {View, Text, StyleSheet, useWindowDimensions, Pressable, Alert} from 'react-native';
 import {useTheme, useChatTheme} from '../../../shared/theme';
@@ -55,7 +56,7 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
   }
 
   const confirmDelete = () => {
-    if (!onDelete || !isOut) return;
+    if (!onDelete || !isOut || !getRights().canWrite) return;
     Alert.alert(t.deleteMessageConfirmTitle, t.deleteMessageConfirmBody, [
       {text: t.cancel, style: 'cancel'},
       {
@@ -70,7 +71,7 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
 
   return (
     <Pressable
-      onLongPress={isOut ? confirmDelete : undefined}
+      onLongPress={isOut && getRights().canWrite ? confirmDelete : undefined}
       style={[
         styles.row,
         isOut ? styles.out : styles.in,
