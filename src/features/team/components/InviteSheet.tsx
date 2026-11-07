@@ -115,7 +115,7 @@ export function InviteSheet({visible, workspaceId, companyName, seats, pending, 
         placeholder="collegue@exemple.com"
         placeholderTextColor={p.inkSoft}
         maxLength={254}
-        style={[styles.input, {color: p.ink, borderColor: p.line, backgroundColor: p.surfaceAlt, borderRadius: p.radius}]}
+        style={[styles.input, {color: p.ink, borderColor: p.fieldBorder, backgroundColor: p.field, borderRadius: p.radius}]}
       />
       <Text style={[styles.label, {color: p.inkSoft}]}>Rôle</Text>
       <View style={styles.row}>
@@ -127,7 +127,7 @@ export function InviteSheet({visible, workspaceId, companyName, seats, pending, 
             onPress={() => setRole(r)}
             style={[
               styles.role,
-              {borderRadius: p.radius, borderColor: role === r ? p.accent : p.line, backgroundColor: role === r ? p.accentSoft : p.surface},
+              {borderRadius: p.radius, borderColor: role === r ? p.accent : p.line, backgroundColor: role === r ? p.accentSoft : p.optionBg},
             ]}>
             <Text style={{color: p.ink, fontWeight: '700'}}>{roleName(r)}</Text>
             <Text style={{color: p.inkSoft, fontSize: 12, marginTop: 2}}>{roleExplain(r)}</Text>

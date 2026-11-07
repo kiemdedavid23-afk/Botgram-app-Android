@@ -54,7 +54,7 @@ export function EditCompanySheet({visible, workspace, onClose}: Props): React.JS
         maxLength={extra?.max ?? 80}
         keyboardType={extra?.keyboardType}
         placeholderTextColor={p.inkSoft}
-        style={[styles.input, {color: p.ink, borderColor: p.line, backgroundColor: p.surfaceAlt, borderRadius: p.radius}]}
+        style={[styles.input, {color: p.ink, borderColor: p.fieldBorder, backgroundColor: p.field, borderRadius: p.radius}]}
       />
     </View>
   );
@@ -68,7 +68,7 @@ export function EditCompanySheet({visible, workspace, onClose}: Props): React.JS
         <Text style={[styles.label, {color: p.inkSoft}]}>Pays</Text>
         <Pressable
           onPress={() => setPick(v => !v)}
-          style={[styles.input, {borderColor: p.line, backgroundColor: p.surfaceAlt, borderRadius: p.radius}]}>
+          style={[styles.input, {borderColor: p.fieldBorder, backgroundColor: p.field, borderRadius: p.radius}]}>
           <Text style={{color: p.ink}}>{country ? countryLabel(country) : 'Choisir…'}</Text>
         </Pressable>
         {pick

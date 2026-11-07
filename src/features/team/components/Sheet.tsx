@@ -18,9 +18,22 @@ export function Sheet({visible, title, onClose, children}: SheetProps): React.JS
         style={[styles.overlay, {backgroundColor: p.overlay}]}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={[styles.sheet, {backgroundColor: p.surface, borderTopLeftRadius: p.radius + 6, borderTopRightRadius: p.radius + 6}]}>
-          <Text style={[styles.title, {color: p.ink, fontFamily: p.titleFont}]}>{title}</Text>
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.body}>
+        <View
+          style={[
+            styles.sheet,
+            {backgroundColor: p.surface, borderTopLeftRadius: p.sheetRadius, borderTopRightRadius: p.sheetRadius},
+          ]}>
+          {p.company ? <View style={[styles.handle, {backgroundColor: p.fieldBorder}]} /> : null}
+          <Text
+            style={[
+              styles.title,
+              {color: p.ink, fontFamily: p.titleFont, fontSize: p.company ? 22 : 19, paddingHorizontal: p.company ? 22 : 18},
+            ]}>
+            {title}
+          </Text>
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={[styles.body, {paddingHorizontal: p.company ? 22 : 18}]}>
             {children}
           </ScrollView>
         </View>
@@ -46,8 +59,12 @@ export function ConfirmBox({visible, title, body, confirmLabel, danger, busy, on
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={[styles.center, {backgroundColor: p.overlay}]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} />
-        <View style={[styles.dialog, {backgroundColor: p.surface, borderRadius: p.radius}]}>
-          <Text style={[styles.dTitle, {color: p.ink, fontFamily: p.titleFont}]}>{title}</Text>
+        <View
+          style={[
+            styles.dialog,
+            {backgroundColor: p.surface, borderRadius: p.cardRadius, padding: p.company ? 22 : 18},
+          ]}>
+          <Text style={[styles.dTitle, {color: p.ink, fontFamily: p.titleFont, fontSize: p.company ? 21 : 18}]}>{title}</Text>
           <Text style={[styles.dBody, {color: p.inkSoft}]}>{body}</Text>
           <View style={styles.dActions}>
             <Button p={p} label="Annuler" kind="ghost" disabled={busy} onPress={onCancel} />
@@ -72,15 +89,27 @@ export function Button({
   disabled?: boolean;
   onPress: () => void;
 }): React.JSX.Element {
-  const bg = kind === 'primary' ? p.accent : kind === 'danger' ? p.danger : p.surfaceAlt;
+  // Entreprise : le bouton discret est à contour (comme « Lier un nouveau bot ») ; sinon fond de surface.
+  const ghostBg = p.company ? 'transparent' : p.surfaceAlt;
+  const bg = kind === 'primary' ? p.accent : kind === 'danger' ? p.danger : ghostBg;
   const fg = kind === 'ghost' ? p.ink : p.onAccent;
   return (
     <Pressable
       accessibilityRole="button"
       disabled={disabled}
       onPress={onPress}
-      style={[styles.btn, {backgroundColor: bg, borderRadius: p.radius, opacity: disabled ? 0.5 : 1}]}>
-      <Text style={[styles.btnText, {color: fg, fontFamily: p.labelFont}]}>{label}</Text>
+      style={({pressed}) => [
+        styles.btn,
+        {
+          backgroundColor: bg,
+          borderRadius: p.radius,
+          borderWidth: kind === 'ghost' && p.company ? 1 : 0,
+          borderColor: p.ghostBorder,
+          paddingVertical: p.company ? 15 : 13,
+          opacity: disabled ? 0.5 : pressed ? 0.8 : 1,
+        },
+      ]}>
+      <Text style={[styles.btnText, {color: fg, fontFamily: p.labelFont, fontSize: p.company ? 15 : 14}]}>{label}</Text>
     </Pressable>
   );
 }
@@ -88,13 +117,14 @@ export function Button({
 const styles = StyleSheet.create({
   overlay: {flex: 1, justifyContent: 'flex-end'},
   sheet: {maxHeight: '90%', paddingTop: 18},
-  title: {fontSize: 19, fontWeight: '700', paddingHorizontal: 18, paddingBottom: 8},
-  body: {paddingHorizontal: 18, paddingBottom: 28, gap: 14},
+  handle: {alignSelf: 'center', width: 44, height: 5, borderRadius: 3, marginBottom: 14, marginTop: -6},
+  title: {fontWeight: '700', paddingBottom: 10},
+  body: {paddingBottom: 28, gap: 14},
   center: {flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20},
-  dialog: {width: '100%', maxWidth: 420, padding: 18, gap: 8},
-  dTitle: {fontSize: 18, fontWeight: '700'},
+  dialog: {width: '100%', maxWidth: 420, gap: 8},
+  dTitle: {fontWeight: '700'},
   dBody: {fontSize: 14, lineHeight: 21},
   dActions: {flexDirection: 'row', gap: 10, marginTop: 10},
-  btn: {flex: 1, paddingVertical: 13, alignItems: 'center', justifyContent: 'center'},
-  btnText: {fontSize: 14, fontWeight: '700'},
+  btn: {flex: 1, alignItems: 'center', justifyContent: 'center'},
+  btnText: {fontWeight: '700'},
 });

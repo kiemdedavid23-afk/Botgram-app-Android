@@ -32,7 +32,7 @@ export function MemberSheet({member, busy, error, onClose, onRole, onTransfer, o
             accessibilityState={{selected: on, disabled: busy}}
             disabled={busy || on}
             onPress={() => onRole(r)}
-            style={[styles.role, {borderRadius: p.radius, borderColor: on ? p.accent : p.line, backgroundColor: on ? p.accentSoft : p.surface}]}>
+            style={[styles.role, {borderRadius: p.radius, borderColor: on ? p.accent : p.line, backgroundColor: on ? p.accentSoft : p.optionBg}]}>
             <Text style={{color: p.ink, fontWeight: '700'}}>{roleName(r)}</Text>
             <Text style={{color: p.inkSoft, fontSize: 12, marginTop: 2}}>{roleExplain(r)}</Text>
           </Pressable>

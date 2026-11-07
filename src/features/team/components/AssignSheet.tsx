@@ -43,7 +43,7 @@ export function AssignSheet({visible, workspaceId, currentId, busy, onSelect, on
             accessibilityState={{selected: on, disabled: !!busy}}
             disabled={busy || on}
             onPress={() => onSelect(m.member_id)}
-            style={[styles.row, {borderRadius: p.radius, borderColor: on ? p.accent : p.line, backgroundColor: on ? p.accentSoft : p.surface}]}>
+            style={[styles.row, {borderRadius: p.radius, borderColor: on ? p.accent : p.line, backgroundColor: on ? p.accentSoft : p.optionBg}]}>
             <Text style={{color: p.ink, fontWeight: '700', flex: 1}} numberOfLines={1}>
               {m.display_name}{m.member_id === selfId ? ' (vous)' : ''}
             </Text>
