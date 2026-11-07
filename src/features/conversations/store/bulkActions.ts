@@ -2,6 +2,7 @@
  * Actions groupées sur plusieurs échanges (sélection, menu ⋮).
  * S'appuient sur les actions unitaires existantes : même comportement qu'une par une.
  */
+import {getRights} from '../../../core/access/rights';
 import {markConversationRead} from '../../../core/api/endpoints/messages';
 import {useConversationsStore} from './conversationsStore';
 import {useArchiveStore} from './archiveStore';
@@ -18,6 +19,7 @@ export async function markConversationsRead(ids: string[]): Promise<void> {
     const chunk = targets.slice(i, i + PARALLEL);
     await Promise.all(
       chunk.map(async id => {
+        if (!getRights().canWrite) return;
         const res = await markConversationRead(id);
         if (!res.ok) return;
         useConversationsStore.getState().applyRealtimeEvent({

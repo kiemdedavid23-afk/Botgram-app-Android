@@ -1,6 +1,7 @@
 /**
  * Actions conversation L6d — pin / delete + tombstone archive (6bis-c).
  */
+import {getRights, OWNER_ONLY_MESSAGE, READ_ONLY_MESSAGE} from '../../../core/access/rights';
 import {
   pinConversation,
   deleteConversation,
@@ -64,6 +65,10 @@ export async function doPinConversation(
   pinned: boolean,
   ctx: Ctx,
 ): Promise<void> {
+  if (!getRights().canWrite) {
+    ctx.set({error: READ_ONLY_MESSAGE});
+    return;
+  }
   const res = await pinConversation(id, pinned);
   if (!res.ok) {
     ctx.set({
@@ -85,6 +90,10 @@ export async function doDeleteConversation(
   id: string,
   ctx: Ctx,
 ): Promise<boolean> {
+  if (!getRights().canOwn) {
+    ctx.set({error: OWNER_ONLY_MESSAGE});
+    return false;
+  }
   const res = await deleteConversation(id);
   if (!res.ok) {
     ctx.set({
