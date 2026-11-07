@@ -31,20 +31,20 @@ export function useTeamPalette(): TeamPalette {
     return {
       company,
       bg: c.bg,
-      surface: c.surface,
-      surfaceAlt: c.surfaceAlt,
+      surface: c.card,
+      surfaceAlt: c.soft,
       ink: c.ink,
       inkSoft: c.inkSoft,
       line: c.line,
-      accent: c.navy,
-      onAccent: c.onNavy,
-      accentSoft: c.goldSoft,
+      accent: c.primary,
+      onAccent: c.onPrimary,
+      accentSoft: c.primarySoft,
       danger: c.bad,
       good: c.good,
-      overlay: 'rgba(8,17,27,0.55)',
-      radius: 4,
+      overlay: 'rgba(15,17,34,0.5)',
+      radius: 18,
       titleFont: companyFonts.display,
-      labelFont: companyFonts.label,
+      labelFont: companyFonts.value,
     };
   }
   return {
