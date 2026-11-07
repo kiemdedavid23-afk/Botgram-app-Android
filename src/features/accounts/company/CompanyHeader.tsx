@@ -1,45 +1,91 @@
 import React from 'react';
-import {View, Text, StatusBar, StyleSheet} from 'react-native';
+import {View, Text, Pressable, StatusBar, StyleSheet} from 'react-native';
+import {Plus, UserPlus} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {monogram, roleTag} from './companyLogic';
-import {companyFonts, companyMetrics as cm, useCompanyTheme} from './companyTheme';
+import {Avatar} from '../../../shared/components/Avatar';
+import {useTheme} from '../../../shared/theme';
+import {greetingWord, firstName} from '../../dashboard/logic';
 import {useWorkspaceStore} from '../store/workspaceStore';
+import {companyFonts, companyMetrics as cm, useCompanyTheme} from './companyTheme';
 
-/** En-tête entreprise : marine plein, monogramme doré, filet doré. Aucune marque Botgram. */
-export function CompanyHeader({right}: {right?: React.ReactNode}): React.JSX.Element {
+export type CompanyHeaderProps = {
+  /** Complet : salutation, avatar et trois boutons. Absent : barre compacte avec `right`. */
+  hello?: {
+    displayName: string;
+    onAvatar: () => void;
+    onAdd?: () => void;
+    onTeam?: () => void;
+    /** Bouton menu (HeaderMenu) rendu dans le troisième carré. */
+    menu: React.ReactNode;
+  };
+  right?: React.ReactNode;
+};
+
+function SquareButton({label, onPress, children}: {label: string; onPress: () => void; children: React.ReactNode}): React.JSX.Element {
   const t = useCompanyTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={({pressed}) => [styles.square, {backgroundColor: t.soft, opacity: pressed ? 0.7 : 1}]}>
+      {children}
+    </Pressable>
+  );
+}
+
+/** En-tête entreprise : sans marque Botgram, fond de page, salutation à gauche, carrés d'action à droite. */
+export function CompanyHeader({hello, right}: CompanyHeaderProps): React.JSX.Element {
+  const t = useCompanyTheme();
+  const {mode} = useTheme();
   const insets = useSafeAreaInsets();
   const ws = useWorkspaceStore(s => s.workspaces[0] ?? null);
-  const name = ws?.name || 'Votre entreprise';
+  const hour = new Date().getHours();
   return (
-    <View style={[styles.bar, {backgroundColor: t.navy, borderBottomColor: t.gold}]}>
-      <StatusBar barStyle="light-content" />
-      <View style={{height: insets.top, backgroundColor: t.navy}} />
-      <View style={styles.inner}>
-        <View style={[styles.mono, {borderColor: t.gold}]}>
-          <Text style={[styles.monoText, {color: t.gold}]}>{monogram(name)}</Text>
+    <View style={{backgroundColor: t.bg}}>
+      <StatusBar barStyle={mode === 'dark' ? 'light-content' : 'dark-content'} />
+      <View style={{height: insets.top}} />
+      {hello ? (
+        <View style={styles.row}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Changer de compte ou de bot" onPress={hello.onAvatar}>
+            <Avatar size={56} title={hello.displayName} />
+          </Pressable>
+          <View style={styles.greet}>
+            <Text style={[styles.hi, {color: t.inkSoft}]}>{`${greetingWord(hour)},`}</Text>
+            <Text style={[styles.name, {color: t.ink}]} numberOfLines={1}>
+              {firstName(hello.displayName) || hello.displayName}
+            </Text>
+          </View>
+          {hello.onAdd ? (
+            <SquareButton label="Lier un bot" onPress={hello.onAdd}>
+              <Plus size={22} color={t.ink} />
+            </SquareButton>
+          ) : null}
+          {hello.onTeam ? (
+            <SquareButton label="Équipe" onPress={hello.onTeam}>
+              <UserPlus size={21} color={t.ink} />
+            </SquareButton>
+          ) : null}
+          <View style={[styles.square, {backgroundColor: t.soft}]}>{hello.menu}</View>
         </View>
-        <View style={styles.titles}>
-          <Text style={[styles.name, {color: t.onNavy}]} numberOfLines={1}>
-            {name}
+      ) : (
+        <View style={styles.row}>
+          <Text style={[styles.compact, {color: t.ink}]} numberOfLines={1}>
+            {ws?.name ?? 'Entreprise'}
           </Text>
-          <Text style={[styles.sub, {color: t.gold}]} numberOfLines={1}>
-            {`Entreprise${ws ? ` · ${roleTag(ws.role)}` : ''}`}
-          </Text>
+          {right ? <View style={styles.right}>{right}</View> : null}
         </View>
-        {right ? <View style={styles.right}>{right}</View> : null}
-      </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  bar: {borderBottomWidth: 2},
-  inner: {flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, height: 60},
-  mono: {width: 38, height: 38, borderWidth: 1.5, borderRadius: cm.radius, alignItems: 'center', justifyContent: 'center'},
-  monoText: {fontFamily: companyFonts.display, fontSize: 16, fontWeight: '700'},
-  titles: {flex: 1},
-  name: {fontFamily: companyFonts.display, fontSize: 18, fontWeight: '700'},
-  sub: {fontFamily: companyFonts.label, fontSize: 10.5, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: '700', marginTop: 1},
+  row: {flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: cm.pageH, paddingTop: 8, paddingBottom: 14},
+  greet: {flex: 1, marginLeft: 6},
+  hi: {fontFamily: companyFonts.body, fontSize: 16},
+  name: {fontFamily: companyFonts.display, fontSize: 24, fontWeight: '700', letterSpacing: -0.3},
+  square: {width: cm.headerBtn + 2, height: cm.headerBtn + 2, borderRadius: cm.headerBtnRadius, alignItems: 'center', justifyContent: 'center'},
+  compact: {flex: 1, fontFamily: companyFonts.display, fontSize: 22, fontWeight: '700'},
   right: {flexDirection: 'row', alignItems: 'center'},
 });

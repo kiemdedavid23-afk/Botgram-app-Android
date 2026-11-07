@@ -1,5 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {ScrollView, View, Text, Pressable, StyleSheet} from 'react-native';
+import {Avatar} from '../../../shared/components/Avatar';
+import {GradientView} from '../../../shared/components/GradientView';
 import {useAuthStore} from '../../auth/store/authStore';
 import {useMemberStore} from '../../member/store/memberStore';
 import {EditProfileSheet} from '../../member/components/EditProfileSheet';
@@ -7,10 +9,9 @@ import {DeleteAccountDialog} from '../../member/components/DeleteAccountDialog';
 import {countryLabel, formatPhone, memberSince, usageLabel} from '../../member/utils/format';
 import {useWorkspaceStore} from '../store/workspaceStore';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
-import {monogram} from './companyLogic';
 import {companyFonts, companyMetrics as cm, useCompanyTheme} from './companyTheme';
 import {Rise} from './components/Rise';
-import {KeyValue, Panel, SectionLabel} from './components/Primitives';
+import {Card, CardTitle, Divider, KeyValue, OutlineButton} from './components/ui';
 
 export function CompanyProfileScreen(): React.JSX.Element {
   const t = useCompanyTheme();
@@ -26,69 +27,84 @@ export function CompanyProfileScreen(): React.JSX.Element {
     if (authMember) setMember(authMember);
   }, [authMember, setMember]);
 
-  if (!member) return <View style={{flex: 1, backgroundColor: t.bg}} />;
+  if (!member) return <View style={[styles.root, {backgroundColor: t.bg}]} />;
 
   return (
-    <View style={{flex: 1, backgroundColor: t.bg}}>
+    <View style={styles.root}>
+      <GradientView colors={[t.bg, t.bgGlow]} angle={165} style={StyleSheet.absoluteFill} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Rise index={0}>
-          <View style={[styles.card, {backgroundColor: t.navy}]}>
-            <View style={[styles.mono, {borderColor: t.gold}]}>
-              <Text style={[styles.monoText, {color: t.gold}]}>{monogram(member.display_name)}</Text>
-            </View>
-            <View style={styles.flex}>
-              <Text style={[styles.name, {color: t.onNavy}]} numberOfLines={1}>
+          <View style={[styles.hero, {shadowColor: t.primary}]}>
+            <GradientView colors={[t.primaryHi, t.primary]} angle={160} style={StyleSheet.absoluteFill} />
+            <Avatar size={64} title={member.display_name} />
+            <View style={styles.heroText}>
+              <Text style={styles.heroName} numberOfLines={1}>
                 {member.display_name}
               </Text>
-              <Text style={[styles.sub, {color: t.gold}]}>Responsable de l’entreprise</Text>
+              <Text style={styles.heroSub} numberOfLines={1}>
+                {`Responsable${ws ? ` · ${ws.name}` : ''}`}
+              </Text>
             </View>
           </View>
         </Rise>
 
         <Rise index={1}>
-          <SectionLabel>Responsable</SectionLabel>
-          <Panel>
-            <KeyValue label="E-mail" value={`${member.email}${member.email_verified ? ' ✓' : ''}`} />
-            <KeyValue label="Téléphone" value={formatPhone(member.phone)} />
-            <KeyValue label="Pays" value={countryLabel(member.country)} />
-            <KeyValue label="Usage" value={usageLabel(member.usage)} />
-            <KeyValue label="Membre depuis" value={memberSince(member.created_at)} last />
-          </Panel>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setEditing(true)}
-            style={[styles.btn, {borderColor: t.navy}]}>
-            <Text style={[styles.btnText, {color: t.navy}]}>Modifier mes informations</Text>
-          </Pressable>
+          <Card>
+            <CardTitle title="Mes informations" />
+            <View style={styles.rows}>
+              <KeyValue label="E-mail" value={`${member.email}${member.email_verified ? ' ✓' : ''}`} />
+              <Divider />
+              <KeyValue label="Téléphone" value={formatPhone(member.phone)} />
+              <Divider />
+              <KeyValue label="Pays" value={countryLabel(member.country)} />
+              <Divider />
+              <KeyValue label="Usage" value={usageLabel(member.usage)} />
+              <Divider />
+              <KeyValue label="Membre depuis" value={memberSince(member.created_at)} />
+            </View>
+            <View style={styles.btn}>
+              <OutlineButton label="Modifier mes informations" onPress={() => setEditing(true)} />
+            </View>
+          </Card>
         </Rise>
 
         {ws ? (
           <Rise index={2}>
-            <SectionLabel>Entreprise</SectionLabel>
-            <Panel rail>
-              <KeyValue label="Nom" value={ws.name} />
-              <KeyValue label="Secteur" value={ws.sector ?? ''} />
-              <KeyValue label="Pays" value={countryLabel(ws.country)} />
-              <KeyValue label="Téléphone" value={formatPhone(ws.phone)} last />
-            </Panel>
+            <Card>
+              <CardTitle title="Entreprise" />
+              <View style={styles.rows}>
+                <KeyValue label="Nom" value={ws.name} />
+                <Divider />
+                <KeyValue label="Secteur" value={ws.sector ?? ''} />
+                <Divider />
+                <KeyValue label="Pays" value={countryLabel(ws.country)} />
+                <Divider />
+                <KeyValue label="Téléphone" value={formatPhone(ws.phone)} />
+                <Divider />
+                <KeyValue label="Créée le" value={memberSince(ws.created_at)} />
+              </View>
+            </Card>
           </Rise>
         ) : null}
 
         <Rise index={3}>
-          <SectionLabel>Session</SectionLabel>
-          <Panel>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => {
-                fireAndForget(signOut());
-              }}
-              style={[styles.action, {borderBottomColor: t.line}]}>
-              <Text style={[styles.actionText, {color: t.ink}]}>Se déconnecter</Text>
-            </Pressable>
-            <Pressable accessibilityRole="button" onPress={() => setDeleting(true)} style={styles.action}>
-              <Text style={[styles.actionText, {color: t.bad}]}>Supprimer le compte</Text>
-            </Pressable>
-          </Panel>
+          <Card>
+            <CardTitle title="Session" />
+            <View style={styles.rows}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  fireAndForget(signOut());
+                }}
+                style={styles.action}>
+                <Text style={[styles.actionText, {color: t.ink}]}>Se déconnecter</Text>
+              </Pressable>
+              <Divider />
+              <Pressable accessibilityRole="button" onPress={() => setDeleting(true)} style={styles.action}>
+                <Text style={[styles.actionText, {color: t.bad}]}>Supprimer le compte</Text>
+              </Pressable>
+            </View>
+          </Card>
         </Rise>
       </ScrollView>
       <EditProfileSheet visible={editing} onClose={() => setEditing(false)} />
@@ -98,15 +114,25 @@ export function CompanyProfileScreen(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  flex: {flex: 1},
+  root: {flex: 1},
   content: {paddingHorizontal: cm.pageH, paddingTop: cm.pageTop, paddingBottom: cm.pageBottom, gap: cm.sectionGap},
-  card: {flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: cm.radius},
-  mono: {width: 52, height: 52, borderWidth: 1.5, borderRadius: cm.radius, alignItems: 'center', justifyContent: 'center'},
-  monoText: {fontFamily: companyFonts.display, fontSize: 20, fontWeight: '700'},
-  name: {fontFamily: companyFonts.display, fontSize: 20, fontWeight: '700'},
-  sub: {fontFamily: companyFonts.label, fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: '700', marginTop: 2},
-  btn: {marginTop: 10, borderWidth: 1, borderRadius: cm.radius, paddingVertical: 12, alignItems: 'center'},
-  btnText: {fontFamily: companyFonts.label, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1},
-  action: {paddingHorizontal: 14, paddingVertical: 15, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'transparent'},
-  actionText: {fontFamily: companyFonts.value, fontSize: 15},
+  hero: {
+    borderRadius: cm.cardRadius,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    padding: cm.cardPad,
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    shadowOffset: {width: 0, height: 10},
+    elevation: 5,
+  },
+  heroText: {flex: 1},
+  heroName: {fontFamily: companyFonts.display, fontSize: 24, fontWeight: '700', color: '#FFFFFF'},
+  heroSub: {fontFamily: companyFonts.body, fontSize: 15, color: 'rgba(255,255,255,0.85)', marginTop: 2},
+  rows: {marginTop: 8},
+  btn: {marginTop: 12},
+  action: {paddingVertical: 15},
+  actionText: {fontFamily: companyFonts.value, fontSize: 17},
 });

@@ -1,96 +1,113 @@
 /**
- * Habillage « entreprise » : volontairement distinct du thème Botgram.
- * Marine et or sur gris froid, angles droits, filets fins, titres à empattements,
- * étiquettes en capitales condensées. Suit le mode clair / sombre de l'app.
+ * Habillage « entreprise » : doux et aéré. Fond lavande très clair, grandes cartes très arrondies,
+ * un bleu vif pour l'élément principal, pastilles blanches pour les actions.
+ * Suit le mode clair / sombre de l'app ; polices système Android seulement.
  */
 import {useTheme} from '../../../shared/theme';
 
 export type CompanyTokens = {
+  /** Fond de page (haut du dégradé). */
   bg: string;
-  surface: string;
-  surfaceAlt: string;
+  /** Fond de page (bas du dégradé, halo bleuté). */
+  bgGlow: string;
+  /** Carte. */
+  card: string;
+  /** Liseré clair d'une carte. */
+  cardEdge: string;
+  /** Pastille / tuile blanche posée sur une carte. */
+  tile: string;
+  /** Petit bouton carré de l'en-tête. */
+  soft: string;
   ink: string;
   inkSoft: string;
   line: string;
-  lineStrong: string;
-  navy: string;
-  onNavy: string;
-  gold: string;
-  goldSoft: string;
+  chipBorder: string;
+  primary: string;
+  primaryHi: string;
+  primarySoft: string;
+  onPrimary: string;
   good: string;
   goodSoft: string;
   warn: string;
   warnSoft: string;
   bad: string;
   badSoft: string;
+  shadow: string;
 };
 
 const LIGHT: CompanyTokens = {
-  bg: '#EDF0F4',
-  surface: '#FFFFFF',
-  surfaceAlt: '#F6F8FA',
-  ink: '#0B2239',
-  inkSoft: '#586A7E',
-  line: '#D9E0E8',
-  lineStrong: '#B7C3D1',
-  navy: '#0F2A47',
-  onNavy: '#F4F7FB',
-  gold: '#B9852B',
-  goldSoft: '#F6EBD4',
-  good: '#1B8A5F',
-  goodSoft: '#DDF1E8',
-  warn: '#B87708',
-  warnSoft: '#FAEBCB',
-  bad: '#B83B32',
-  badSoft: '#F7DEDB',
+  bg: '#E8EBF5',
+  bgGlow: '#D9DEF6',
+  card: '#EEF0F8',
+  cardEdge: 'rgba(255,255,255,0.85)',
+  tile: '#FFFFFF',
+  soft: '#F1F3FA',
+  ink: '#2A2C3A',
+  inkSoft: '#767A90',
+  line: '#DDE0EC',
+  chipBorder: '#C5CADB',
+  primary: '#3F52FF',
+  primaryHi: '#6574FF',
+  primarySoft: '#E3E7FF',
+  onPrimary: '#FFFFFF',
+  good: '#14A36B',
+  goodSoft: '#D9F3E8',
+  warn: '#D68A0B',
+  warnSoft: '#FBEBCB',
+  bad: '#D8453B',
+  badSoft: '#F9DDDA',
+  shadow: '#3D4A9A',
 };
 
 const DARK: CompanyTokens = {
-  bg: '#08111B',
-  surface: '#101C2B',
-  surfaceAlt: '#0C1724',
-  ink: '#E7EEF6',
-  inkSoft: '#8DA0B5',
-  line: '#1F3046',
-  lineStrong: '#31475F',
-  navy: '#060D15',
-  onNavy: '#E7EEF6',
-  gold: '#E2B25C',
-  goldSoft: '#2B2414',
+  bg: '#0F1122',
+  bgGlow: '#171A38',
+  card: '#1A1D33',
+  cardEdge: 'rgba(255,255,255,0.06)',
+  tile: '#262A48',
+  soft: '#1F2340',
+  ink: '#ECEEF8',
+  inkSoft: '#9197B2',
+  line: '#2A2E4D',
+  chipBorder: '#3A3F63',
+  primary: '#6A79FF',
+  primaryHi: '#8794FF',
+  primarySoft: '#242A5C',
+  onPrimary: '#FFFFFF',
   good: '#3CC38D',
   goodSoft: '#12302A',
   warn: '#E4A93A',
   warnSoft: '#33290F',
   bad: '#EB6A60',
   badSoft: '#3A1B19',
+  shadow: '#000000',
 };
 
 /** Polices système Android : aucune police à embarquer. */
 export const companyFonts = {
-  /** Titres, grands chiffres. */
-  display: 'serif',
-  /** Étiquettes en capitales. */
-  label: 'sans-serif-condensed',
+  /** Titres de carte, grands chiffres. */
+  display: 'sans-serif-medium',
   /** Texte courant. */
   body: 'sans-serif',
-  /** Valeurs, chiffres de tableau. */
+  /** Valeurs, sous-titres appuyés. */
   value: 'sans-serif-medium',
 } as const;
 
 export const companyMetrics = {
   pageH: 16,
-  pageTop: 16,
+  pageTop: 4,
   pageBottom: 40,
-  sectionGap: 20,
-  /** Angles quasi droits : l'inverse des cartes arrondies de Botgram. */
-  radius: 4,
-  rail: 3,
-  monogram: 40,
-  labelSize: 11,
-  labelSpacing: 1.4,
+  sectionGap: 16,
+  cardRadius: 30,
+  cardPad: 20,
+  tile: 56,
+  tileRadius: 16,
+  arrowBtn: 34,
+  headerBtn: 38,
+  headerBtnRadius: 14,
+  chipRadius: 18,
 } as const;
 
 export function useCompanyTheme(): CompanyTokens {
-  const {mode} = useTheme();
-  return mode === 'dark' ? DARK : LIGHT;
+  return useTheme().mode === 'dark' ? DARK : LIGHT;
 }

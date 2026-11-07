@@ -1,23 +1,36 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {ScrollView, RefreshControl, View, Text, StyleSheet} from 'react-native';
+import {ScrollView, RefreshControl, View, StyleSheet} from 'react-native';
+import {GradientView} from '../../../shared/components/GradientView';
 import {useAccess} from '../useAccess';
 import {useWorkspaceStore} from '../store/workspaceStore';
 import {useBotsStore} from '../../bots/store/botsStore';
 import {useQuotaStore} from '../../member/store/quotaStore';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
-import {countryLabel, formatPhone, memberSince} from '../../member/utils/format';
-import {botState} from './companyLogic';
-import {companyFonts, companyMetrics as cm, useCompanyTheme} from './companyTheme';
+import {botState, clockLabel, TEAM_MAX} from './companyLogic';
+import {companyMetrics as cm, useCompanyTheme} from './companyTheme';
 import {Rise} from './components/Rise';
-import {KpiStrip} from './components/KpiStrip';
-import {QuotaPanel} from './components/QuotaPanel';
-import {BotsTable} from './components/BotsTable';
-import {TeamPanel} from './components/TeamPanel';
-import {KeyValue, Panel, SectionLabel} from './components/Primitives';
+import {HeroCarousel, type HeroSlide} from './components/HeroCarousel';
+import {BotsCard} from './components/BotsCard';
+import {TeamCard} from './components/TeamCard';
+import {ActionsCard} from './components/ActionsCard';
 
-type Props = {onAddBot: () => void; onOpenBot?: () => void; onOpenTeam?: () => void};
+type Props = {
+  onAddBot: () => void;
+  onOpenBot?: () => void;
+  onOpenTeam?: () => void;
+  onOpenGestion?: () => void;
+  onOpenProfile?: () => void;
+};
 
-export function CompanyDashboardScreen({onAddBot, onOpenBot, onOpenTeam}: Props): React.JSX.Element {
+const noop = (): void => undefined;
+
+export function CompanyDashboardScreen({
+  onAddBot,
+  onOpenBot,
+  onOpenTeam = noop,
+  onOpenGestion = noop,
+  onOpenProfile = noop,
+}: Props): React.JSX.Element {
   const t = useCompanyTheme();
   const access = useAccess();
   const ws = useWorkspaceStore(s => s.workspaces[0] ?? null);
@@ -44,88 +57,92 @@ export function CompanyDashboardScreen({onAddBot, onOpenBot, onOpenTeam}: Props)
 
   const online = bots.filter(b => botState(b.status) === 'online').length;
   const team = ws?.members_count ?? 1;
+  const reset = clockLabel(quota?.resets_at ?? null);
+  const used = quota?.used ?? null;
+  const limit = quota?.limit ?? null;
+
+  const slides: HeroSlide[] = [
+    {
+      label: 'Envois aujourd’hui',
+      value: used === null ? '–' : String(used),
+      of: limit === null ? undefined : `/ ${limit}`,
+      fill: used !== null && limit ? used / limit : undefined,
+      note: `Compteur partagé par l’équipe${reset ? ` · remis à zéro à ${reset}` : ''}`,
+    },
+    {
+      label: 'Bots en ligne',
+      value: String(online),
+      of: `/ ${bots.length}`,
+      fill: bots.length ? online / bots.length : 0,
+      note: bots.length ? 'Faites défiler pour voir le reste' : 'Aucun bot lié',
+    },
+    {
+      label: 'Équipe',
+      value: String(team),
+      of: `/ ${TEAM_MAX}`,
+      fill: team / TEAM_MAX,
+      note: team > 1 ? 'Personnes qui répondent à vos clients' : 'Invitez votre première personne',
+    },
+  ];
 
   return (
-    <ScrollView
-      style={{backgroundColor: t.bg}}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          tintColor={t.gold}
-          onRefresh={() => {
-            fireAndForget(onRefresh());
-          }}
-        />
-      }>
-      <Rise index={0}>
-        <KpiStrip
-          items={[
-            {label: 'Envois restants', value: quota ? String(quota.remaining) : '–', hint: 'aujourd’hui'},
-            {label: 'Bots actifs', value: `${online}/${bots.length}`, hint: 'en ligne'},
-            {label: 'Équipe', value: String(team), hint: team > 1 ? 'personnes' : 'personne'},
-          ]}
-        />
-      </Rise>
-
-      <Rise index={1}>
-        <SectionLabel>Quota d’envoi</SectionLabel>
-        <QuotaPanel
-          used={quota?.used ?? null}
-          limit={quota?.limit ?? null}
-          resetsAt={quota?.resets_at ?? null}
-        />
-      </Rise>
-
-      <Rise index={2}>
-        <SectionLabel right={String(bots.length)}>Bots de l’entreprise</SectionLabel>
-        <BotsTable
-          bots={bots}
-          busy={busy}
-          onLink={access.canLinkBot ? onAddBot : undefined}
-          onOpen={bot => {
-            fireAndForget(
-              selectBot(bot.id).then(res => {
-                if (res.ok) onOpenBot?.();
-              }),
-            );
-          }}
-        />
-      </Rise>
-
-      {ws ? (
+    <View style={styles.root}>
+      <GradientView colors={[t.bg, t.bgGlow]} angle={165} style={StyleSheet.absoluteFill} />
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            tintColor={t.primary}
+            onRefresh={() => {
+              fireAndForget(onRefresh());
+            }}
+          />
+        }>
+        <Rise index={0}>
+          <HeroCarousel title="Aujourd’hui" slides={slides} onOpen={onOpenGestion} openLabel="Ouvrir la gestion" />
+        </Rise>
+        <Rise index={1}>
+          <BotsCard
+            bots={bots}
+            busy={busy}
+            onGestion={onOpenGestion}
+            onLink={access.canLinkBot ? onAddBot : undefined}
+            onOpen={bot => {
+              fireAndForget(
+                selectBot(bot.id).then(res => {
+                  if (res.ok) onOpenBot?.();
+                }),
+              );
+            }}
+          />
+        </Rise>
+        {ws ? (
+          <Rise index={2}>
+            <TeamCard count={ws.members_count} ownerName={ws.owner.display_name} onOpen={onOpenTeam} />
+          </Rise>
+        ) : null}
         <Rise index={3}>
-          <SectionLabel>Équipe</SectionLabel>
-          <TeamPanel ownerName={ws.owner.display_name} count={ws.members_count} role={ws.role} onOpen={onOpenTeam} />
+          <ActionsCard
+            onInvite={access.canManageTeam ? onOpenTeam : undefined}
+            onTeam={onOpenTeam}
+            onGestion={onOpenGestion}
+            onProfile={onOpenProfile}
+            onLink={access.canLinkBot ? onAddBot : undefined}
+          />
         </Rise>
-      ) : null}
-
-      {ws ? (
-        <Rise index={4}>
-          <SectionLabel>Fiche entreprise</SectionLabel>
-          <Panel>
-            <KeyValue label="Secteur" value={ws.sector ?? ''} />
-            <KeyValue label="Pays" value={countryLabel(ws.country)} />
-            <KeyValue label="Téléphone" value={formatPhone(ws.phone)} />
-            <KeyValue label="Créée le" value={memberSince(ws.created_at)} last />
-          </Panel>
-        </Rise>
-      ) : (
-        <View style={styles.hint}>
-          <Text style={[styles.hintText, {color: t.inkSoft}]}>Chargement de la fiche entreprise…</Text>
-        </View>
-      )}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {flex: 1},
   content: {
     paddingHorizontal: cm.pageH,
     paddingTop: cm.pageTop,
     paddingBottom: cm.pageBottom,
     gap: cm.sectionGap,
   },
-  hint: {alignItems: 'center', padding: 12},
-  hintText: {fontFamily: companyFonts.body, fontSize: 13},
 });
