@@ -636,3 +636,33 @@ npm run lint
 npm test -- --ci --coverage=false
 ```
 *(Coller sorties réelles.)*
+
+## Lot 6 — Collaboration et publication
+
+### Créé
+- `features/thread/utils/sender.ts` — étiquette « envoyé par » (Vous / nom / Ancien membre ; rien pour un message ancien sans `sent_by`)
+- `features/team/components/AssignSheet.tsx` — choix de la personne en charge (propriétaire et agents) + « Libérer »
+- `RELEASE.md` — guide de publication avec le workflow « Release Android » existant (tag, mise à jour forcée, vérifications)
+- `__tests__/collaboration.test.ts`
+
+### Modifié
+- `core/realtime/messageTypes.ts`, `events.ts` — `sent_by`, `assigned_to`
+- `core/access/rights.ts` — rôle et identifiant de la personne ; `canDeleteMessage` : propriétaire = tous ses sortants, agent = les siens seulement, lecteur = aucun
+- `features/accounts/rightsSync.ts`, `access.ts`, `index.ts` — `isTeamWorkspace`
+- `core/api/endpoints/conversations.ts` — `assignConversation`, `unassignConversation`
+- `features/conversations/…` — store `assignConversation` (relit la conversation après l'appel), dossiers « Mes échanges » et « Non assignés » (entreprise seulement), étiquette « → nom » dans la liste, entrée « Assigner… » du menu du fil
+- `features/thread/components/MessageBubble.tsx`, `store/messageActions.ts`, `screens/ThreadScreen.tsx` — étiquette, droit de suppression, feuille d'assignation
+- `__tests__/rights-guards.test.ts` — adapté aux nouveaux droits
+
+### Écarts
+- Dossiers d'équipe calculés sur les conversations déjà chargées (pas de filtre serveur `assigned=`)
+- L'assignation se choisit depuis le fil ; pas encore depuis l'appui long de la liste
+- Aucun changement de version dans le code : le workflow du dépôt privé calcule build et nom depuis le tag ; la mise à jour forcée se coche au lancement (voir `RELEASE.md`)
+
+### Preuves CI (Lot 6)
+```
+npm run typecheck
+npm run lint
+npm test -- --ci --coverage=false
+```
+*(Coller sorties réelles.)*
