@@ -165,6 +165,19 @@ function MemberTabs({
   return (
     <View style={[styles.flex, {backgroundColor: colors.bgSecondary}]}>
       <AccountHeader
+        hello={{
+          displayName: member?.display_name ?? '',
+          onAvatar: () => setSwitcherOpen(true),
+          onAdd: access.canLinkBot ? () => navigation.navigate('AddBot') : undefined,
+          onTeam: access.canSeeTeam ? () => setSection('team') : undefined,
+          menu: (
+            <HeaderMenu
+              items={menuItems}
+              activeId={section}
+              onSelect={setSection}
+            />
+          ),
+        }}
         right={
           <View style={styles.headerRight}>
             <HeaderAvatarButton
@@ -202,6 +215,8 @@ function MemberTabs({
           onAddBot={() => navigation.navigate('AddBot')}
           onOpenBot={() => navigation.navigate('BotSpace')}
           onOpenTeam={() => setSection('team')}
+          onOpenGestion={() => setSection('gestion')}
+          onOpenProfile={() => setSection('member')}
         />
       ) : section === 'team' ? (
         <TeamScreen />
