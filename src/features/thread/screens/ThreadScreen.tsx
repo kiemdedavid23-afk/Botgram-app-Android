@@ -28,6 +28,8 @@ import {
   conversationSubtitle,
 } from '../../conversations/components/conversationMenu';
 import {ComposerBar} from '../components/ComposerBar';
+import {isTeamWorkspace, useWorkspaceStore} from '../../accounts';
+import {AssignSheet} from '../../team';
 import {threadTexts as t} from '../texts';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 import type {Message} from '../../../core/realtime/events';
@@ -83,6 +85,11 @@ export function ThreadScreen({
   );
   const pinConversation = useConversationsStore(s => s.pinConversation);
   const deleteConversation = useConversationsStore(s => s.deleteConversation);
+  const assignConversation = useConversationsStore(s => s.assignConversation);
+  const workspace = useWorkspaceStore(s => s.workspaces[0] ?? null);
+  const isTeam = isTeamWorkspace(workspace);
+  const [assignOpen, setAssignOpen] = React.useState(false);
+  const [assigning, setAssigning] = React.useState(false);
   const archived = useArchiveStore(s => !!s.ids[conversationId]);
   const archiveConv = useArchiveStore(s => s.archive);
   const unarchiveConv = useArchiveStore(s => s.unarchive);
@@ -127,6 +134,19 @@ export function ThreadScreen({
   const onTogglePin = useCallback(() => {
     fireAndForget(pinConversation(conversationId, !conversation?.pinned));
   }, [pinConversation, conversationId, conversation?.pinned]);
+
+  const onAssign = useCallback(
+    (memberId: string | null) => {
+      setAssigning(true);
+      fireAndForget(
+        assignConversation(conversationId, memberId).then(ok => {
+          setAssigning(false);
+          if (ok) setAssignOpen(false);
+        }),
+      );
+    },
+    [assignConversation, conversationId],
+  );
 
   const onToggleArchive = useCallback(() => {
     if (archived) {
@@ -179,6 +199,8 @@ export function ThreadScreen({
               archived={archived}
               offline={offline}
               onViewProfile={onPressAvatar}
+              onAssign={isTeam ? () => setAssignOpen(true) : undefined}
+              assignedName={conversation?.assigned_to?.display_name ?? null}
               onTogglePin={onTogglePin}
               onToggleArchive={onToggleArchive}
               onDelete={onDeleteConversation}
@@ -242,6 +264,16 @@ export function ThreadScreen({
           onSendLiveLocation={sendLiveLocation}
         />
       </KeyboardAvoidingView>
+      {isTeam ? (
+        <AssignSheet
+          visible={assignOpen}
+          workspaceId={workspace?.id ?? null}
+          currentId={conversation?.assigned_to?.id ?? null}
+          busy={assigning}
+          onSelect={onAssign}
+          onClose={() => setAssignOpen(false)}
+        />
+      ) : null}
     </View>
   );
 }
