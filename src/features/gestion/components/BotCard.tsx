@@ -25,6 +25,7 @@ type Props = {
   onResync: () => void;
   onDisconnect: () => void;
   onDelete: () => void;
+  canManage?: boolean;
 };
 
 export function BotCard({
@@ -35,12 +36,15 @@ export function BotCard({
   onResync,
   onDisconnect,
   onDelete,
+  canManage = true,
 }: Props): React.JSX.Element {
   const {colors, mode} = useTheme();
   const reduce = useReducedMotion();
   const connected = isBotConnected(bot.status);
   const webhook = webhookOf(bot);
-  const actions = botActionsAvailable(bot);
+  const actions = canManage
+    ? botActionsAvailable(bot)
+    : {retry: false, resync: false, disconnect: false, delete: false};
   const working = busyKey?.startsWith(`${bot.id}:`) ?? false;
   const pulse = useRef(new Animated.Value(0.5)).current;
 

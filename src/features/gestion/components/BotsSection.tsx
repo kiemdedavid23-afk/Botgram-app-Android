@@ -16,6 +16,8 @@ type Props = {
   onResync: (id: string) => void;
   onDisconnect: (id: string) => void;
   onDelete: (id: string) => void;
+  /** Faux pour agent/lecteur : aucune action sur les bots (le Worker les refuserait). */
+  canManage?: boolean;
 };
 
 export function BotsSection({
@@ -26,6 +28,7 @@ export function BotsSection({
   onResync,
   onDisconnect,
   onDelete,
+  canManage = true,
 }: Props): React.JSX.Element {
   const {colors, mode} = useTheme();
   return (
@@ -65,6 +68,7 @@ export function BotsSection({
             onResync={() => onResync(bot.id)}
             onDisconnect={() => onDisconnect(bot.id)}
             onDelete={() => onDelete(bot.id)}
+            canManage={canManage}
           />
         ))
       )}
