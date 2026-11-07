@@ -39,6 +39,8 @@ export function AuthFlow(): React.JSX.Element {
                 ? 'Session révoquée'
                 : endReason === 'access_removed'
                 ? texts.accessRemoved
+                : endReason === 'left_company'
+                ? texts.leftCompany
                 : 'Session expirée'}
             </Text>
           </View>

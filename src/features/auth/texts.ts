@@ -84,4 +84,7 @@ export const texts = {
   restartCode: 'Demander un nouveau code',
   closeSheet: 'Fermer',
   accessRemoved: 'Votre accès à l’entreprise a été retiré.',
+  leftCompany: 'Vous avez quitté l’entreprise. Votre compte a été supprimé.',
+  inviteUnused:
+    'Cette adresse avait déjà un compte : vous êtes connecté(e) avec, mais l’invitation n’a pas été utilisée. Pour rejoindre une entreprise, il faut une adresse e-mail qui n’a pas encore de compte Botgram.',
 };
