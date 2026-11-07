@@ -88,23 +88,23 @@ export function BotProfileScreen({
   const botUsername = bot?.username ?? undefined;
   const botTelegramId = bot ? String(bot.telegram_bot_id) : '';
   useEffect(() => {
-    if (!botId || !botName) return;
+    if (!botId || !botName || !access.canOwn) return;
     setLang(DEFAULT_LANG);
     fireAndForget(load(botId, {
       name: botName, username: botUsername, telegram_id: botTelegramId,
     }));
-  }, [botId, botName, botUsername, botTelegramId, load]);
+  }, [botId, botName, botUsername, botTelegramId, load, access.canOwn]);
 
   // Autres langues : lues seulement quand un onglet qui les affiche est ouvert
   // (Identité, Langues, Commandes) — jamais pour Infos — et après le premier affichage.
   useEffect(() => {
-    if (!botId || !hasProfile || tab === 'info') return undefined;
+    if (!botId || !hasProfile || tab === 'info' || !access.canOwn) return undefined;
     // Léger délai : le premier affichage de l'onglet passe avant les requêtes.
     const timer = setTimeout(() => {
       fireAndForget(loadLanguages(botId));
     }, 350);
     return () => clearTimeout(timer);
-  }, [botId, hasProfile, tab, loadLanguages]);
+  }, [botId, hasProfile, tab, loadLanguages, access.canOwn]);
 
   const currentTab = PROFILE_TABS.find(t => t.id === tab) ?? PROFILE_TABS[0]!;
 
@@ -118,6 +118,17 @@ export function BotProfileScreen({
             <Text style={styles.ctaText}>{texts.noBotCta}</Text>
           </Pressable>
         ) : null}
+      </View>
+    );
+  }
+
+  if (!access.canOwn) {
+    return (
+      <View style={[styles.root, styles.center]}>
+        <Text style={styles.emptyTitle}>{bot.name}</Text>
+        <Text style={styles.sub}>
+          Le profil du bot (nom, description, commandes) est réservé au propriétaire de l’entreprise.
+        </Text>
       </View>
     );
   }
