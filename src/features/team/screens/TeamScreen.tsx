@@ -1,5 +1,8 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {View, Text, ScrollView, Pressable, RefreshControl, StyleSheet} from 'react-native';
+import {Mail} from 'lucide-react-native';
+import {GradientView} from '../../../shared/components/GradientView';
+import {Rise} from '../../accounts/company/components/Rise';
 import {useAccess, useWorkspaceStore} from '../../accounts';
 import {useAuthStore} from '../../auth';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
@@ -14,13 +17,49 @@ import {
   sortMembers,
   TEAM_MAX,
 } from '../utils/teamLogic';
-import {useTeamPalette} from '../components/teamPalette';
+import {cardStyle, useTeamPalette, type TeamPalette} from '../components/teamPalette';
 import {Button, ConfirmBox} from '../components/Sheet';
 import {InviteSheet} from '../components/InviteSheet';
 import {MemberSheet} from '../components/MemberSheet';
 import {EditCompanySheet} from '../components/EditCompanySheet';
 
 type Confirm = {kind: 'remove' | 'transfer'; member: TeamMember} | {kind: 'revoke'; id: string; email: string};
+
+/** Titre de section : phrase en grand pour l'entreprise, capitales discrètes pour l'invité. */
+function SectionTitle({p, text}: {p: TeamPalette; text: string}): React.JSX.Element {
+  if (p.company) {
+    return <Text style={[styles.cTitle, {color: p.ink, fontFamily: p.titleFont}]}>{text}</Text>;
+  }
+  return <Text style={[styles.section, {color: p.inkSoft, fontFamily: p.labelFont}]}>{text.toUpperCase()}</Text>;
+}
+
+/** Lettre sur tuile blanche (entreprise, comme les bots du tableau de bord) ou carré uni (invité). */
+function MemberAvatar({p, name}: {p: TeamPalette; name: string}): React.JSX.Element {
+  const letter = (name.trim()[0] ?? '·').toUpperCase();
+  if (!p.company) {
+    return (
+      <View style={[styles.avatar, {backgroundColor: p.accent, borderRadius: p.radius}]}>
+        <Text style={{color: p.onAccent, fontWeight: '700'}}>{letter}</Text>
+      </View>
+    );
+  }
+  return (
+    <View style={[styles.tile, {backgroundColor: p.tile}]}>
+      <View style={[styles.tileLetter, {backgroundColor: p.accent}]}>
+        <Text style={{color: p.onAccent, fontWeight: '700', fontSize: 17, fontFamily: p.titleFont}}>{letter}</Text>
+      </View>
+    </View>
+  );
+}
+
+function MailTile({p}: {p: TeamPalette}): React.JSX.Element | null {
+  if (!p.company) return null;
+  return (
+    <View style={[styles.tile, {backgroundColor: p.tile}]}>
+      <Mail size={22} color={p.accent} />
+    </View>
+  );
+}
 
 export function TeamScreen(): React.JSX.Element {
   const p = useTeamPalette();
@@ -134,77 +173,104 @@ export function TeamScreen(): React.JSX.Element {
   };
   const ct = confirmText();
 
+  const rowPad = p.company ? styles.rowC : null;
+  const divider = {borderTopColor: p.line, borderTopWidth: StyleSheet.hairlineWidth};
+
   return (
     <View style={[styles.root, {backgroundColor: p.bg}]}>
+      {p.company ? <GradientView colors={[p.bg, p.bgGlow]} angle={165} style={StyleSheet.absoluteFill} /> : null}
       <ScrollView
         contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} tintColor={p.accent} onRefresh={() => fireAndForget(onRefresh())} />}>
-        <View style={styles.head}>
-          <Text style={[styles.title, {color: p.ink, fontFamily: p.titleFont}]}>Équipe</Text>
-          <Text style={{color: p.inkSoft, fontSize: 13}}>{`${ws.members_count} / ${TEAM_MAX} personnes`}</Text>
-        </View>
-        {offline ? <Text style={{color: p.inkSoft, fontSize: 12}}>Hors ligne : liste peut-être périmée.</Text> : null}
-        {notice ? (
-          <Pressable onPress={() => setNotice(null)} style={[styles.notice, {backgroundColor: p.accentSoft, borderRadius: p.radius}]}>
-            <Text style={{color: p.ink, fontSize: 13}}>{notice}</Text>
-          </Pressable>
-        ) : null}
-
-        {isOwner ? (
-          <View style={styles.actions}>
-            <Button p={p} label="Inviter" onPress={() => setInviting(true)} disabled={!!busy} />
-            <Button p={p} kind="ghost" label="Modifier l’entreprise" onPress={() => setEditing(true)} disabled={!!busy} />
-          </View>
-        ) : null}
-
-        <Text style={[styles.section, {color: p.inkSoft, fontFamily: p.labelFont}]}>PERSONNES</Text>
-        <View style={[styles.card, {backgroundColor: p.surface, borderColor: p.line, borderRadius: p.radius}]}>
-          {sorted.length === 0 && !loaded ? <Text style={[styles.empty, {color: p.inkSoft}]}>Chargement…</Text> : null}
-          {sorted.map((m, i) => {
-            const act = memberActions(isOwner, m, selfId);
-            const manageable = act.canChangeRole || act.canRemove || act.canTransfer;
-            return (
-              <Pressable
-                key={m.member_id}
-                disabled={!manageable}
-                onPress={() => {
-                  setSheetError(null);
-                  setSelected(m);
-                }}
-                style={[styles.row, i > 0 && {borderTopColor: p.line, borderTopWidth: StyleSheet.hairlineWidth}]}>
-                <View style={[styles.avatar, {backgroundColor: p.accent, borderRadius: p.radius}]}>
-                  <Text style={{color: p.onAccent, fontWeight: '700'}}>{(m.display_name.trim()[0] ?? '·').toUpperCase()}</Text>
-                </View>
-                <View style={styles.flex}>
-                  <Text style={{color: p.ink, fontSize: 15, fontWeight: '600'}} numberOfLines={1}>
-                    {m.display_name}{m.member_id === selfId ? ' (vous)' : ''}
-                  </Text>
-                  <Text style={{color: p.inkSoft, fontSize: 12.5}}>{roleName(m.role)}</Text>
-                </View>
-                {manageable ? <Text style={{color: p.accent, fontSize: 13, fontWeight: '700'}}>Gérer</Text> : null}
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {isOwner ? (
-          <>
-            <Text style={[styles.section, {color: p.inkSoft, fontFamily: p.labelFont}]}>{`INVITATIONS EN ATTENTE (${pending.length})`}</Text>
-            <View style={[styles.card, {backgroundColor: p.surface, borderColor: p.line, borderRadius: p.radius}]}>
-              {pending.length === 0 ? <Text style={[styles.empty, {color: p.inkSoft}]}>Aucune invitation en attente.</Text> : null}
-              {pending.map((i, k) => (
-                <View key={i.id} style={[styles.row, k > 0 && {borderTopColor: p.line, borderTopWidth: StyleSheet.hairlineWidth}]}>
-                  <View style={styles.flex}>
-                    <Text style={{color: p.ink, fontSize: 14.5, fontWeight: '600'}} numberOfLines={1}>{i.email}</Text>
-                    <Text style={{color: p.inkSoft, fontSize: 12.5}}>{`${roleName(i.role)} · ${expiryLabel(i.expires_at, now)}`}</Text>
-                  </View>
-                  <Pressable disabled={!!busy} onPress={() => setConfirm({kind: 'revoke', id: i.id, email: i.email})}>
-                    <Text style={{color: p.danger, fontSize: 13, fontWeight: '700'}}>Révoquer</Text>
-                  </Pressable>
-                </View>
-              ))}
+        <Rise index={0}>
+          <View style={styles.group}>
+            <View style={styles.head}>
+              <Text style={[styles.title, {color: p.ink, fontFamily: p.titleFont, fontSize: p.company ? 26 : 24}]}>Équipe</Text>
+              <Text style={{color: p.inkSoft, fontSize: p.company ? 14 : 13}}>{`${ws.members_count} / ${TEAM_MAX} personnes`}</Text>
             </View>
-          </>
+            {offline ? <Text style={{color: p.inkSoft, fontSize: 12}}>Hors ligne : liste peut-être périmée.</Text> : null}
+            {notice ? (
+              <Pressable onPress={() => setNotice(null)} style={[styles.notice, {backgroundColor: p.accentSoft, borderRadius: p.radius}]}>
+                <Text style={{color: p.ink, fontSize: 13}}>{notice}</Text>
+              </Pressable>
+            ) : null}
+            {isOwner ? (
+              <View style={styles.actions}>
+                <Button p={p} label="Inviter" onPress={() => setInviting(true)} disabled={!!busy} />
+                <Button p={p} kind="ghost" label="Modifier l’entreprise" onPress={() => setEditing(true)} disabled={!!busy} />
+              </View>
+            ) : null}
+          </View>
+        </Rise>
+
+        <Rise index={1}>
+          <View style={styles.group}>
+            <SectionTitle p={p} text="Personnes" />
+            <View style={cardStyle(p)}>
+              {sorted.length === 0 && !loaded ? <Text style={[styles.empty, {color: p.inkSoft}]}>Chargement…</Text> : null}
+              {sorted.map((m, i) => {
+                const act = memberActions(isOwner, m, selfId);
+                const manageable = act.canChangeRole || act.canRemove || act.canTransfer;
+                return (
+                  <Pressable
+                    key={m.member_id}
+                    accessibilityRole={manageable ? 'button' : undefined}
+                    accessibilityLabel={manageable ? `Gérer ${m.display_name}` : undefined}
+                    disabled={!manageable}
+                    onPress={() => {
+                      setSheetError(null);
+                      setSelected(m);
+                    }}
+                    style={[styles.row, rowPad, i > 0 && divider]}>
+                    <MemberAvatar p={p} name={m.display_name} />
+                    <View style={styles.flex}>
+                      <Text style={{color: p.ink, fontSize: p.company ? 17 : 15, fontWeight: '600', fontFamily: p.titleFont}} numberOfLines={1}>
+                        {m.display_name}{m.member_id === selfId ? ' (vous)' : ''}
+                      </Text>
+                      <Text style={{color: p.inkSoft, fontSize: p.company ? 14 : 12.5}}>{roleName(m.role)}</Text>
+                    </View>
+                    {manageable ? (
+                      p.company ? (
+                        <View style={[styles.pill, {backgroundColor: p.accentSoft}]}>
+                          <Text style={{color: p.accent, fontSize: 13, fontWeight: '700'}}>Gérer</Text>
+                        </View>
+                      ) : (
+                        <Text style={{color: p.accent, fontSize: 13, fontWeight: '700'}}>Gérer</Text>
+                      )
+                    ) : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        </Rise>
+
+        {isOwner ? (
+          <Rise index={2}>
+            <View style={styles.group}>
+              <SectionTitle p={p} text={`Invitations en attente (${pending.length})`} />
+              <View style={cardStyle(p)}>
+                {pending.length === 0 ? <Text style={[styles.empty, {color: p.inkSoft}]}>Aucune invitation en attente.</Text> : null}
+                {pending.map((i, k) => (
+                  <View key={i.id} style={[styles.row, rowPad, k > 0 && divider]}>
+                    <MailTile p={p} />
+                    <View style={styles.flex}>
+                      <Text style={{color: p.ink, fontSize: p.company ? 16 : 14.5, fontWeight: '600'}} numberOfLines={1}>{i.email}</Text>
+                      <Text style={{color: p.inkSoft, fontSize: p.company ? 14 : 12.5}}>{`${roleName(i.role)} · ${expiryLabel(i.expires_at, now)}`}</Text>
+                    </View>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Révoquer l’invitation de ${i.email}`}
+                      disabled={!!busy}
+                      onPress={() => setConfirm({kind: 'revoke', id: i.id, email: i.email})}>
+                      <Text style={{color: p.danger, fontSize: 13, fontWeight: '700'}}>Révoquer</Text>
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </Rise>
         ) : (
           <Text style={{color: p.inkSoft, fontSize: 13, lineHeight: 19}}>
             Seul le propriétaire invite, change les rôles et retire des personnes.
@@ -244,14 +310,19 @@ export function TeamScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   root: {flex: 1},
   flex: {flex: 1},
-  content: {padding: 16, paddingBottom: 40, gap: 12},
+  content: {paddingHorizontal: 16, paddingTop: 4, paddingBottom: 40, gap: 16},
+  group: {gap: 12},
   head: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline'},
-  title: {fontSize: 24, fontWeight: '700'},
+  title: {fontWeight: '700'},
   actions: {flexDirection: 'row', gap: 10},
   section: {fontSize: 11, fontWeight: '700', letterSpacing: 1.4, marginTop: 6},
-  card: {borderWidth: 1, overflow: 'hidden'},
+  cTitle: {fontSize: 22, fontWeight: '700', letterSpacing: -0.2, marginTop: 4},
   row: {flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14},
+  rowC: {gap: 16, padding: 16},
   avatar: {width: 38, height: 38, alignItems: 'center', justifyContent: 'center'},
+  tile: {width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center'},
+  tileLetter: {width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center'},
+  pill: {borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8},
   empty: {padding: 16, fontSize: 13},
   notice: {padding: 12},
 });
