@@ -11,6 +11,7 @@ import {
   View,
   ActivityIndicator,
   Text,
+  Pressable,
   StyleSheet,
   BackHandler,
 } from 'react-native';
@@ -25,6 +26,7 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {useTheme, space, fontSize, fontWeight, radii, rootNavigatorMetrics as rm} from '../shared/theme';
 import {useAuthStore} from '../features/auth/store/authStore';
+import {authTexts} from '../features/auth';
 import {fireAndForget} from '../core/utils/fireAndForget';
 import {AuthFlow} from '../features/auth/AuthFlow';
 import {AccountDisabledScreen} from '../features/auth/screens/AccountDisabledScreen';
@@ -109,6 +111,7 @@ function MemberTabs({
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const offline = useAuthStore(s => s.offline);
   const member = useAuthStore(s => s.member);
+  const inviteUnused = useAuthStore(s => s.inviteUnused);
   const access = useAccess();
   const menuItems = access.canSeeTeam
     ? MEMBER_MENU
@@ -183,6 +186,16 @@ function MemberTabs({
             Hors ligne
           </Text>
         </View>
+      ) : null}
+      {inviteUnused ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => useAuthStore.getState().setInviteUnused(false)}
+          style={[styles.banner, {backgroundColor: colors.bgTertiary}]}>
+          <Text style={[styles.bannerText, {color: colors.textSecondary}]}>
+            {authTexts.inviteUnused}
+          </Text>
+        </Pressable>
       ) : null}
       {section === 'dashboard' ? (
         <AccountDashboard

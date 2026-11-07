@@ -15,6 +15,7 @@ import {me} from '../core/api/endpoints/auth';
 import {
   accountTypeOf,
   isAccessLost,
+  startRightsSync,
   useWorkspaceStore,
 } from '../features/accounts';
 
@@ -30,6 +31,10 @@ export function useRealtimeLifecycle(): void {
   const workspaces = useWorkspaceStore(s => s.workspaces);
   const serverLoaded = useWorkspaceStore(s => s.serverLoaded);
   const unsubRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    startRightsSync();
+  }, []);
 
   useEffect(() => {
     if (authState !== 'signedIn') return;
