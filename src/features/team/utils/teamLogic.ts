@@ -194,3 +194,8 @@ export function buildCompanyPatch(
 export function isEmptyPatch(p: WorkspacePatch): boolean {
   return Object.keys(p).length === 0;
 }
+
+/** Personnes à qui une conversation peut être confiée : propriétaire et agents (pas les lecteurs). */
+export function assignableMembers(members: readonly TeamMember[]): TeamMember[] {
+  return sortMembers(members.filter(m => m.role === 'owner' || m.role === 'agent'));
+}
