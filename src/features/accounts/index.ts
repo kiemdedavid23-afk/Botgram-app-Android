@@ -4,7 +4,7 @@ export {
   accountTypeLabel,
   accountTypeEmoji,
 } from './accountType';
-export {computeAccess, isAccessLost} from './access';
+export {computeAccess, isAccessLost, isTeamWorkspace} from './access';
 export type {Access} from './access';
 export {useAccess} from './useAccess';
 export {useWorkspaceStore} from './store/workspaceStore';

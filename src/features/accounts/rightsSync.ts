@@ -6,10 +6,16 @@ import {accountTypeOf} from './accountType';
 import {useWorkspaceStore} from './store/workspaceStore';
 
 function sync(): void {
-  const type = accountTypeOf(useAuthStore.getState().member);
+  const member = useAuthStore.getState().member;
+  const type = accountTypeOf(member);
   const role = useWorkspaceStore.getState().workspaces[0]?.role ?? null;
   const a = computeAccess(type, role);
-  setRights({canWrite: a.canWrite, canOwn: a.canOwn});
+  setRights({
+    canWrite: a.canWrite,
+    canOwn: a.canOwn,
+    role: a.role,
+    memberId: member?.id ?? null,
+  });
 }
 
 let started = false;

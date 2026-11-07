@@ -9,6 +9,11 @@ import type {
   WorkspaceRole,
 } from '../../core/api/endpoints/workspaces';
 
+/** Un espace d'entreprise : badges « envoyé par », assignation, filtres d'équipe. */
+export function isTeamWorkspace(ws: Pick<Workspace, 'kind'> | null | undefined): boolean {
+  return ws?.kind === 'company';
+}
+
 export type Access = {
   role: WorkspaceRole;
   /** Faux tant que les espaces ne sont pas connus : rôle déduit du type de compte. */
