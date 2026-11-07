@@ -21,7 +21,7 @@ import {
   ListChecks,
 } from 'lucide-react-native';
 import {useTheme, space} from '../shared/theme';
-import {BrandBar} from '../shared/components/BrandBar';
+import {AccountHeader} from '../features/accounts/AccountScreens';
 import {HeaderAvatarButton} from '../shared/components/HeaderAvatarButton';
 import {
   HeaderMenu,
@@ -207,7 +207,7 @@ export function BotSpaceScreen({onExit, onAddBot}: Props): React.JSX.Element {
       </View>
     ) : (
     <View style={[styles.root, {backgroundColor: colors.bgSecondary}]}>
-      <BrandBar title="Botgram" right={headerRight} />
+      <AccountHeader right={headerRight} />
       {tab === 'settings' ? (
         <View style={styles.settingsBody}>
           <BotSettingsStack />

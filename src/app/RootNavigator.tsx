@@ -29,15 +29,17 @@ import {fireAndForget} from '../core/utils/fireAndForget';
 import {AuthFlow} from '../features/auth/AuthFlow';
 import {AccountDisabledScreen} from '../features/auth/screens/AccountDisabledScreen';
 import {UpgradeScreen} from '../features/auth/screens/UpgradeScreen';
-import {BrandBar} from '../shared/components/BrandBar';
 import {HeaderAvatarButton} from '../shared/components/HeaderAvatarButton';
 import {
   HeaderMenu,
   type HeaderMenuItem,
 } from '../shared/components/HeaderMenu';
-import {DashboardScreen} from '../features/dashboard/screens/DashboardScreen';
+import {
+  AccountHeader,
+  AccountDashboard,
+  AccountProfile,
+} from '../features/accounts/AccountScreens';
 import {AddBotScreen} from '../features/bots/screens/AddBotScreen';
-import {MemberProfileScreen} from '../features/member';
 import {GestionScreen} from '../features/gestion';
 import {
   AssociateIntroWrapper,
@@ -152,8 +154,7 @@ function MemberTabs({
 
   return (
     <View style={[styles.flex, {backgroundColor: colors.bgSecondary}]}>
-      <BrandBar
-        title="Botgram"
+      <AccountHeader
         right={
           <View style={styles.headerRight}>
             <HeaderAvatarButton
@@ -177,12 +178,12 @@ function MemberTabs({
         </View>
       ) : null}
       {section === 'dashboard' ? (
-        <DashboardScreen
+        <AccountDashboard
           onAddBot={() => navigation.navigate('AddBot')}
           onOpenBot={() => navigation.navigate('BotSpace')}
         />
       ) : section === 'member' ? (
-        <MemberProfileScreen onGoDashboard={() => setSection('dashboard')} />
+        <AccountProfile onGoDashboard={() => setSection('dashboard')} />
       ) : (
         <GestionScreen />
       )}
