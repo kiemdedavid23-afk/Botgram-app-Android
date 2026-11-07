@@ -14,6 +14,7 @@ import {useWorkspaceStore} from '../store/workspaceStore';
 import {useAccess} from '../useAccess';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {inviteRoleLabel} from './invitedLogic';
+import {LeaveCompanySection} from './LeaveCompanySection';
 
 export function InvitedProfileScreen(): React.JSX.Element {
   const {colors, mode} = useTheme();
@@ -64,6 +65,7 @@ export function InvitedProfileScreen(): React.JSX.Element {
             <ProfileRow icon={<Globe />} label="Pays" value={countryLabel(member.country)} />
           </View>
         </View>
+        <LeaveCompanySection />
         <ProfileSessionSection
           onLogout={() => {
             fireAndForget(signOut());
