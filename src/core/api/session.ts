@@ -15,7 +15,9 @@ export type SessionEndReason =
   | 'invalid'
   | 'refresh_reuse'
   /** Retrait de l'entreprise (compte invité supprimé) : décidé par l'app, jamais renvoyé par le Worker. */
-  | 'access_removed';
+  | 'access_removed'
+  /** Départ volontaire de l'entreprise (compte invité supprimé). */
+  | 'left_company';
 
 export type SessionEvent =
   | {type: 'ended'; reason: SessionEndReason}
