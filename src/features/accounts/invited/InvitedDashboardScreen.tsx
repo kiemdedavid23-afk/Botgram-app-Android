@@ -1,6 +1,6 @@
 /** Tableau de bord d'un compte invité : l'entreprise qui l'accueille, ses bots, le quota d'équipe. */
 import React, {useCallback, useEffect, useState} from 'react';
-import {View, Text, ScrollView, RefreshControl, StyleSheet} from 'react-native';
+import {View, Text, Pressable, ScrollView, RefreshControl, StyleSheet} from 'react-native';
 import {Building2} from 'lucide-react-native';
 import {useTheme, dashboardMetrics as dm, getShadow, radii} from '../../../shared/theme';
 import {useBotsStore} from '../../bots/store/botsStore';
@@ -13,9 +13,9 @@ import {useAccess} from '../useAccess';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {inviteRoleLabel, inviteRoleHint} from './invitedLogic';
 
-type Props = {onOpenBot?: () => void};
+type Props = {onOpenBot?: () => void; onOpenTeam?: () => void};
 
-export function InvitedDashboardScreen({onOpenBot}: Props): React.JSX.Element {
+export function InvitedDashboardScreen({onOpenBot, onOpenTeam}: Props): React.JSX.Element {
   const {colors, mode} = useTheme();
   const access = useAccess();
   const ws = useWorkspaceStore(s => s.workspaces[0] ?? null);
@@ -100,6 +100,12 @@ export function InvitedDashboardScreen({onOpenBot}: Props): React.JSX.Element {
         </View>
       </View>
 
+      {onOpenTeam ? (
+        <Pressable accessibilityRole="button" onPress={onOpenTeam} style={[styles.chip, styles.teamBtn, {backgroundColor: colors.accentSoft}]}>
+          <Text style={[styles.chipText, {color: colors.accent}]}>Voir l’équipe</Text>
+        </Pressable>
+      ) : null}
+
       <View style={styles.section}>
         <SectionHeader title="Quota de l’équipe" />
         <QuotaCard
@@ -126,6 +132,7 @@ const styles = StyleSheet.create({
   sub: {fontSize: 13, marginTop: 2},
   chip: {paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999},
   chipText: {fontSize: 12, fontWeight: '700'},
+  teamBtn: {alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 14},
   hint: {fontSize: 13, lineHeight: 19, marginTop: -8},
   section: {gap: dm.sectionInnerGap},
   list: {gap: dm.botListGap},
