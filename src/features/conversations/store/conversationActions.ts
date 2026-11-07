@@ -5,6 +5,9 @@ import {getRights, OWNER_ONLY_MESSAGE, READ_ONLY_MESSAGE} from '../../../core/ac
 import {
   pinConversation,
   deleteConversation,
+  assignConversation,
+  unassignConversation,
+  getConversation,
 } from '../../../core/api/endpoints/conversations';
 import type {ConversationSummary} from '../../../core/realtime/events';
 import {archiveTombstone, archiveUpsertConversations} from '../../../core/archive/hydrate';
@@ -109,4 +112,46 @@ export async function doDeleteConversation(
     return true;
   }
   return false;
+}
+
+/**
+ * Assigne (memberId) ou libère (null) une conversation d'entreprise.
+ * Le Worker décrit l'état final : on relit la conversation plutôt que de le deviner.
+ */
+export async function doAssignConversation(
+  id: string,
+  memberId: string | null,
+  ctx: Ctx,
+): Promise<boolean> {
+  if (!getRights().canWrite) {
+    ctx.set({error: READ_ONLY_MESSAGE});
+    return false;
+  }
+  const res =
+    memberId === null
+      ? await unassignConversation(id)
+      : await assignConversation(id, memberId);
+  if (!res.ok) {
+    ctx.set({
+      error:
+        res.status === 0
+          ? texts.errorNetwork
+          : res.error.code === 'FORBIDDEN'
+            ? READ_ONLY_MESSAGE
+            : texts.errorGeneric,
+    });
+    return false;
+  }
+  const fresh = await getConversation(id);
+  if (fresh.ok) {
+    const updated = fresh.data.conversation;
+    fireAndForget(archiveUpsertConversations([updated]));
+    ctx.set(s => ({
+      items: sortConversations(
+        s.items.map(c => (c.id === id ? {...c, ...updated} : c)),
+      ),
+      error: null,
+    }));
+  }
+  return true;
 }

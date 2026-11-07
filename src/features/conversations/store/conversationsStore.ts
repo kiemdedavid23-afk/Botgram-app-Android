@@ -5,6 +5,7 @@
 import {
   doPinConversation,
   doDeleteConversation,
+  doAssignConversation,
 } from './conversationActions';
 import {create} from 'zustand';
 import {
@@ -60,6 +61,8 @@ type ConversationsStore = {
   applyRealtimeEvent: (ev: RealtimeEvent) => void;
   pinConversation: (id: string, pinned: boolean) => Promise<void>;
   deleteConversation: (id: string) => Promise<boolean>;
+  /** null : libère la conversation. */
+  assignConversation: (id: string, memberId: string | null) => Promise<boolean>;
   clear: () => void;
 };
 
@@ -251,6 +254,10 @@ export const useConversationsStore = create<ConversationsStore>((set, get) => ({
 
   async deleteConversation(id) {
     return doDeleteConversation(id, {get, set});
+  },
+
+  async assignConversation(id, memberId) {
+    return doAssignConversation(id, memberId, {get, set});
   },
 
   clear() {

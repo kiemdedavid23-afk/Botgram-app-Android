@@ -1,6 +1,13 @@
 import type {ConversationSummary} from '../../../core/api/endpoints/conversations';
 
-export type FolderId = 'all' | 'personal' | 'work' | 'unread' | 'archive';
+export type FolderId =
+  | 'all'
+  | 'personal'
+  | 'work'
+  | 'unread'
+  | 'archive'
+  | 'mine'
+  | 'unassigned';
 
 type Slice = {
   items: ConversationSummary[];
@@ -47,9 +54,25 @@ export function selectFilteredItems(s: Slice): ConversationSummary[] {
   return list;
 }
 
+/** Dossiers d'équipe : « Mes échanges » et « Non assignés » (entreprise seulement). */
+export function applyTeamFilter(
+  list: ConversationSummary[],
+  folder: FolderId,
+  selfId: string | null,
+): ConversationSummary[] {
+  if (folder === 'mine') {
+    return list.filter(c => !!selfId && c.assigned_to?.id === selfId);
+  }
+  if (folder === 'unassigned') {
+    return list.filter(c => !c.assigned_to);
+  }
+  return list;
+}
+
 export function folderCounts(
   items: ConversationSummary[],
   archivedIds: Record<string, true> = {},
+  selfId: string | null = null,
 ): Record<FolderId, number> {
   const visible = items.filter(c => !archivedIds[c.id]);
   return {
@@ -59,6 +82,8 @@ export function folderCounts(
       c => c.chat_type === 'group' || c.chat_type === 'channel',
     ).length,
     unread: visible.filter(c => (c.unread_count ?? 0) > 0).length,
+    mine: visible.filter(c => !!selfId && c.assigned_to?.id === selfId).length,
+    unassigned: visible.filter(c => !c.assigned_to).length,
     archive: items.filter(c => !!archivedIds[c.id]).length,
   };
 }
