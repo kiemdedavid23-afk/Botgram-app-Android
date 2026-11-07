@@ -12,6 +12,7 @@ import {
   Trash2,
   type LucideIcon,
 } from 'lucide-react-native';
+import {getRights} from '../../../core/access/rights';
 import {conversationsTexts as ct} from '../texts';
 import {threadTexts as tt} from '../../thread/texts';
 
@@ -49,31 +50,38 @@ export function buildConversationMenu(o: Options): ConversationMenuItem[][] {
       },
     ]);
   }
-  groups.push([
-    {
+  const rights = getRights();
+  const organise: ConversationMenuItem[] = [];
+  // Épingler : écriture (agent, propriétaire). Archiver : local, pour tout le monde.
+  if (rights.canWrite) {
+    organise.push({
       id: 'pin',
       label: o.pinned ? ct.unpinAction : ct.pinAction,
       Icon: o.pinned ? PinOff : Pin,
       onPress: o.onTogglePin,
       disabled: !!o.offline,
-    },
-    {
-      id: 'archive',
-      label: o.archived ? ct.unarchiveAction : ct.archiveAction,
-      Icon: o.archived ? ArchiveRestore : Archive,
-      onPress: o.onToggleArchive,
-    },
-  ]);
-  groups.push([
-    {
-      id: 'delete',
-      label: ct.deleteConversation,
-      Icon: Trash2,
-      onPress: o.onDelete,
-      danger: true,
-      disabled: !!o.offline,
-    },
-  ]);
+    });
+  }
+  organise.push({
+    id: 'archive',
+    label: o.archived ? ct.unarchiveAction : ct.archiveAction,
+    Icon: o.archived ? ArchiveRestore : Archive,
+    onPress: o.onToggleArchive,
+  });
+  groups.push(organise);
+  // Supprimer une conversation : propriétaire seulement.
+  if (rights.canOwn) {
+    groups.push([
+      {
+        id: 'delete',
+        label: ct.deleteConversation,
+        Icon: Trash2,
+        onPress: o.onDelete,
+        danger: true,
+        disabled: !!o.offline,
+      },
+    ]);
+  }
   return groups;
 }
 
