@@ -25,6 +25,8 @@ type AuthStore = {
   member: Member | null;
   offline: boolean;
   endReason: SessionEndReason | null;
+  /** Vrai quand l'adresse avait déjà un compte : l'invitation saisie n'a pas servi. */
+  inviteUnused: boolean;
   upgradeLatest: string | null;
   email: string | null;
   pendingCode: string | null;
@@ -33,6 +35,7 @@ type AuthStore = {
   setEmail: (email: string | null) => void;
   setPendingCode: (code: string | null) => void;
   setMember: (m: Member | null) => void;
+  setInviteUnused: (v: boolean) => void;
   boot: () => Promise<void>;
   signOut: (message?: string) => Promise<void>;
   completeVerify: (result: {
@@ -58,6 +61,7 @@ export async function applySignedOut(
     pendingCode: null,
     pendingCodeAt: null,
     endReason,
+    inviteUnused: false,
     offline: false,
   });
 }
@@ -67,6 +71,7 @@ export const useAuthStore = create<AuthStore>(set => ({
   member: null,
   offline: false,
   endReason: null,
+  inviteUnused: false,
   upgradeLatest: null,
   email: null,
   pendingCode: null,
@@ -76,6 +81,7 @@ export const useAuthStore = create<AuthStore>(set => ({
   setPendingCode: code =>
     set({pendingCode: code, pendingCodeAt: code ? Date.now() : null}),
   setMember: m => set({member: m}),
+  setInviteUnused: v => set({inviteUnused: v}),
 
   boot: async () => {
     const rt = await getRefreshToken();
