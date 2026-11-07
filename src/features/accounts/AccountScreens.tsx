@@ -31,11 +31,14 @@ export function AccountHeader({right}: {right?: React.ReactNode}): React.JSX.Ele
 export function AccountDashboard(props: {
   onAddBot: () => void;
   onOpenBot?: () => void;
+  onOpenTeam?: () => void;
 }): React.JSX.Element {
   const type = useType();
   if (type === 'company') return <CompanyDashboardScreen {...props} />;
-  if (type === 'invited') return <InvitedDashboardScreen onOpenBot={props.onOpenBot} />;
-  return <DashboardScreen {...props} />;
+  if (type === 'invited') {
+    return <InvitedDashboardScreen onOpenBot={props.onOpenBot} onOpenTeam={props.onOpenTeam} />;
+  }
+  return <DashboardScreen onAddBot={props.onAddBot} onOpenBot={props.onOpenBot} />;
 }
 
 export function AccountProfile({onGoDashboard}: {onGoDashboard?: () => void}): React.JSX.Element {
