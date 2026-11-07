@@ -31,7 +31,13 @@ import {
   pinConversations,
 } from '../store/bulkActions';
 import {SelectionBar} from '../components/SelectionBar';
-import {applyArchiveVisibility} from '../store/filters';
+import {
+  applyArchiveVisibility,
+  applyTeamFilter,
+  type FolderId,
+} from '../store/filters';
+import {useAuthStore} from '../../auth';
+import {isTeamWorkspace, useWorkspaceStore} from '../../accounts';
 import {conversationsTexts as t} from '../texts';
 import {FoldersBar} from '../components/FoldersBar';
 import {ArchiveRow, ArchiveHeader} from '../components/ArchivedBar';
@@ -88,14 +94,25 @@ export function ConversationsScreen({
     fireAndForget(hydrateArchive());
   }, [hydrateArchive]);
 
+  const selfId = useAuthStore(s => s.member?.id ?? null);
+  const isTeam = useWorkspaceStore(s => isTeamWorkspace(s.workspaces[0]));
+  // Hors entreprise, un dossier d'équipe resté sélectionné retombe sur « Tous ».
+  const activeFolder: FolderId =
+    !isTeam && (folder === 'mine' || folder === 'unassigned') ? 'all' : folder;
+
   const filtered = useMemo(
-    () => applyArchiveVisibility(baseFiltered, folder, archivedIds),
-    [baseFiltered, folder, archivedIds],
+    () =>
+      applyTeamFilter(
+        applyArchiveVisibility(baseFiltered, activeFolder, archivedIds),
+        activeFolder,
+        selfId,
+      ),
+    [baseFiltered, activeFolder, archivedIds, selfId],
   );
 
   const counts = useMemo(
-    () => folderCounts(items, archivedIds),
-    [items, archivedIds],
+    () => folderCounts(items, archivedIds, selfId),
+    [items, archivedIds, selfId],
   );
 
   const {searchQuery, searching, onSearchChange, clearSearch} =
@@ -292,7 +309,12 @@ export function ConversationsScreen({
         <ArchiveHeader count={counts.archive} onBack={() => setFolder('all')} />
       ) : (
         <>
-          <FoldersBar folder={folder} counts={counts} onSelect={setFolder} />
+          <FoldersBar
+            folder={activeFolder}
+            counts={counts}
+            onSelect={setFolder}
+            team={isTeam}
+          />
           {counts.archive > 0 && searchQuery.trim().length === 0 ? (
             <ArchiveRow
               count={counts.archive}
