@@ -47,6 +47,8 @@ export const texts = {
   errorCodeInvalid: 'Code invalide ou expiré.',
   errorEmailNotVerified: 'Votre e-mail doit être vérifié pour supprimer le compte.',
   errorRateLimit: 'Trop de requêtes. Réessayez plus tard.',
+  errorHasMembers:
+    'Des personnes travaillent encore dans votre entreprise. Transférez d’abord la propriété (menu Équipe), puis vous pourrez supprimer ce compte.',
   errorCleanupPending: 'Suppression déjà en cours. Réessayez dans quelques instants.',
   noDefaultBot: 'Aucun',
   selectCountry: 'Choisir un pays',
