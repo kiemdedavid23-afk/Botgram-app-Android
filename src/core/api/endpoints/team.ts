@@ -125,3 +125,14 @@ export function patchWorkspace(
   if (patch.phone !== undefined) body.phone = patch.phone;
   return authedHttp({method: 'PATCH', path: base(workspaceId), body});
 }
+
+/** Départ volontaire d'un invité : son compte est supprimé (confirm doit valoir true). */
+export function leaveWorkspace(
+  workspaceId: string,
+): Promise<HttpResult<{left: boolean; account_deleted: boolean}>> {
+  return authedHttp({
+    method: 'POST',
+    path: `${base(workspaceId)}/leave`,
+    body: {confirm: true},
+  });
+}
