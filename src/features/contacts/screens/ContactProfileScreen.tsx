@@ -31,6 +31,7 @@ import {
 } from '../utils/format';
 import {contactsTexts as t} from '../texts';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
+import {useAccess} from '../../accounts';
 
 type Props = {
   conversation: ConversationSummary;
@@ -53,6 +54,7 @@ export function ContactProfileScreen({
     s => s.items.find(i => i.id === conversation.id)?.pinned ?? conversation.pinned ?? false,
   );
   const offline = useConversationsStore(s => s.offline);
+  const canWrite = useAccess().canWrite;
   const pinConversation = useConversationsStore(s => s.pinConversation);
 
   const fade = React.useRef(new Animated.Value(reduce ? 1 : 0)).current;
@@ -108,7 +110,7 @@ export function ContactProfileScreen({
           />
           <ContactActions
             pinned={pinned}
-            pinDisabled={offline}
+            pinDisabled={offline || !canWrite}
             onMessage={onMessage}
             onTogglePin={() => {
               fireAndForget(pinConversation(conversation.id, !pinned));
