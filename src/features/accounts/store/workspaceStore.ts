@@ -33,6 +33,8 @@ type WorkspaceStore = {
   load: (force?: boolean) => Promise<void>;
   /** L'espace de la personne (le premier, il n'y en a qu'un). */
   current: () => Workspace | null;
+  /** Remplace un espace par la version renvoyée par le Worker (modification, transfert). */
+  upsert: (ws: Workspace) => void;
   clear: () => void;
 };
 
@@ -107,6 +109,14 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
   },
 
   current: () => get().workspaces[0] ?? null,
+
+  upsert: ws => {
+    const list = get().workspaces.some(w => w.id === ws.id)
+      ? get().workspaces.map(w => (w.id === ws.id ? ws : w))
+      : [ws, ...get().workspaces];
+    set({workspaces: list});
+    fireAndForget(cacheSetString(CACHE_KEY, JSON.stringify(list)));
+  },
 
   clear: () => {
     set(s => ({
