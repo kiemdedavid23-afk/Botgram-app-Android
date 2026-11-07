@@ -13,6 +13,7 @@ jest.mock('../src/core/api/endpoints/workspaces', () => ({
 const mockList = listWorkspaces as jest.Mock;
 const mockCacheGet = storage.cacheGetString as jest.Mock;
 const mockCacheSet = storage.cacheSetString as jest.Mock;
+const mockCacheDelete = storage.cacheDelete as jest.Mock;
 
 const WS = {
   id: 'c_1',
@@ -45,8 +46,11 @@ const fail = (status: number) => ({
 describe('workspaceStore', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    useWorkspaceStore.getState().clear();
+    // Le module est mocké automatiquement : ses fonctions renvoient undefined, pas une promesse.
     mockCacheGet.mockResolvedValue(undefined);
+    mockCacheSet.mockResolvedValue(undefined);
+    mockCacheDelete.mockResolvedValue(undefined);
+    useWorkspaceStore.getState().clear();
   });
 
   it('charge les espaces, expose le rôle et met en cache', async () => {
