@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, Text, StyleSheet} from 'react-native';
+import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {monogram, roleTag, teamFill, TEAM_MAX} from '../companyLogic';
 import type {WorkspaceRole} from '../../../../core/api/endpoints/workspaces';
 import {companyFonts, companyMetrics as cm, useCompanyTheme} from '../companyTheme';
@@ -9,10 +9,12 @@ type Props = {
   ownerName: string;
   count: number;
   role: WorkspaceRole;
+  /** Ouvre l'écran Équipe. */
+  onOpen?: () => void;
 };
 
 /** Effectif de l'équipe et responsable ; le détail des personnes arrive avec l'écran Équipe. */
-export function TeamPanel({ownerName, count, role}: Props): React.JSX.Element {
+export function TeamPanel({ownerName, count, role, onOpen}: Props): React.JSX.Element {
   const t = useCompanyTheme();
   return (
     <Panel>
@@ -41,6 +43,14 @@ export function TeamPanel({ownerName, count, role}: Props): React.JSX.Element {
           <View style={[styles.fill, {backgroundColor: t.navy, width: `${teamFill(count) * 100}%`}]} />
         </View>
       </View>
+      {onOpen ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={onOpen}
+          style={[styles.open, {borderTopColor: t.line}]}>
+          <Text style={[styles.openText, {color: t.gold}]}>Gérer l’équipe</Text>
+        </Pressable>
+      ) : null}
     </Panel>
   );
 }
@@ -58,6 +68,8 @@ const styles = StyleSheet.create({
   footTop: {flexDirection: 'row', alignItems: 'baseline'},
   count: {fontFamily: companyFonts.display, fontSize: 20, fontWeight: '700'},
   max: {fontFamily: companyFonts.body, fontSize: 13, fontWeight: '400'},
+  open: {borderTopWidth: StyleSheet.hairlineWidth, paddingVertical: 13, alignItems: 'center'},
+  openText: {fontFamily: companyFonts.label, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1},
   track: {height: 4, borderRadius: 2, overflow: 'hidden'},
   fill: {height: 4},
 });
