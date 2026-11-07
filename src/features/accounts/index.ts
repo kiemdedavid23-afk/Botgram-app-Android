@@ -8,3 +8,4 @@ export {computeAccess, isAccessLost} from './access';
 export type {Access} from './access';
 export {useAccess} from './useAccess';
 export {useWorkspaceStore} from './store/workspaceStore';
+export {startRightsSync} from './rightsSync';
