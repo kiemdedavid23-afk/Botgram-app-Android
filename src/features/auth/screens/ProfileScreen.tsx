@@ -111,6 +111,10 @@ export function ProfileScreen({
       }
       setPendingCode(null);
       await completeVerify(res.data);
+      // Adresse devenue inscrite entre-temps : le Worker ignore l'invitation, sans erreur.
+      if (accountType === 'invited' && !res.data.is_new) {
+        useAuthStore.getState().setInviteUnused(true);
+      }
       onSuccess();
       return;
     }
