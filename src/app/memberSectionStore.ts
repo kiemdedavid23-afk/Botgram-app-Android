@@ -5,7 +5,7 @@
  */
 import {create} from 'zustand';
 
-export type MemberSection = 'dashboard' | 'member' | 'gestion';
+export type MemberSection = 'dashboard' | 'team' | 'member' | 'gestion';
 
 type State = {
   section: MemberSection;

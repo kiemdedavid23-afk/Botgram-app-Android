@@ -20,7 +20,7 @@ import {
   DarkTheme,
   useFocusEffect,
 } from '@react-navigation/native';
-import {LayoutDashboard, UserRound, Settings} from 'lucide-react-native';
+import {LayoutDashboard, UserRound, Settings, Users} from 'lucide-react-native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {useTheme, space, fontSize, fontWeight, radii, rootNavigatorMetrics as rm} from '../shared/theme';
@@ -41,6 +41,8 @@ import {
 } from '../features/accounts/AccountScreens';
 import {AddBotScreen} from '../features/bots/screens/AddBotScreen';
 import {GestionScreen} from '../features/gestion';
+import {TeamScreen} from '../features/team';
+import {useAccess} from '../features/accounts';
 import {
   AssociateIntroWrapper,
   AssociateReadyWrapper,
@@ -91,6 +93,7 @@ const MemberStack = createNativeStackNavigator<MemberStackParamList>();
 
 const MEMBER_MENU: ReadonlyArray<HeaderMenuItem<MemberSection>> = [
   {id: 'dashboard', label: 'Tableau de bord', Icon: LayoutDashboard},
+  {id: 'team', label: 'Équipe', Icon: Users},
   {id: 'member', label: 'Profil', Icon: UserRound},
   {id: 'gestion', label: 'Gestion', Icon: Settings},
 ];
@@ -106,6 +109,10 @@ function MemberTabs({
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const offline = useAuthStore(s => s.offline);
   const member = useAuthStore(s => s.member);
+  const access = useAccess();
+  const menuItems = access.canSeeTeam
+    ? MEMBER_MENU
+    : MEMBER_MENU.filter(i => i.id !== 'team');
 
   // Relance de l'app : retour direct dans l'espace bot si c'est là qu'on l'avait quittée.
   // Lecture du cache local seulement : aucune connexion nécessaire.
@@ -163,7 +170,7 @@ function MemberTabs({
               onPress={() => setSwitcherOpen(true)}
             />
             <HeaderMenu
-              items={MEMBER_MENU}
+              items={menuItems}
               activeId={section}
               onSelect={setSection}
             />
@@ -181,7 +188,10 @@ function MemberTabs({
         <AccountDashboard
           onAddBot={() => navigation.navigate('AddBot')}
           onOpenBot={() => navigation.navigate('BotSpace')}
+          onOpenTeam={() => setSection('team')}
         />
+      ) : section === 'team' ? (
+        <TeamScreen />
       ) : section === 'member' ? (
         <AccountProfile onGoDashboard={() => setSection('dashboard')} />
       ) : (
