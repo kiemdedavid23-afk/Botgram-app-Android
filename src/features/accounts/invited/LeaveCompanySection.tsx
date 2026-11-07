@@ -47,7 +47,9 @@ export function LeaveCompanySection(): React.JSX.Element | null {
         <Text style={{color: colors.danger, fontWeight: '600', fontSize: 15}}>Quitter l’entreprise</Text>
       </Pressable>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => !busy && setOpen(false)}>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => {
+          if (!busy) setOpen(false);
+        }}>
         <View style={[styles.overlay, {backgroundColor: colors.overlay}]}>
           <View style={[styles.dialog, {backgroundColor: colors.bgPrimary}, getShadow('md', mode)]}>
             <Text style={[styles.dTitle, {color: colors.textPrimary}]}>{LEAVE_TITLE}</Text>
