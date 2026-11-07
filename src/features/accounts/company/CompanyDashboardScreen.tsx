@@ -15,9 +15,9 @@ import {BotsTable} from './components/BotsTable';
 import {TeamPanel} from './components/TeamPanel';
 import {KeyValue, Panel, SectionLabel} from './components/Primitives';
 
-type Props = {onAddBot: () => void; onOpenBot?: () => void};
+type Props = {onAddBot: () => void; onOpenBot?: () => void; onOpenTeam?: () => void};
 
-export function CompanyDashboardScreen({onAddBot, onOpenBot}: Props): React.JSX.Element {
+export function CompanyDashboardScreen({onAddBot, onOpenBot, onOpenTeam}: Props): React.JSX.Element {
   const t = useCompanyTheme();
   const access = useAccess();
   const ws = useWorkspaceStore(s => s.workspaces[0] ?? null);
@@ -96,7 +96,7 @@ export function CompanyDashboardScreen({onAddBot, onOpenBot}: Props): React.JSX.
       {ws ? (
         <Rise index={3}>
           <SectionLabel>Équipe</SectionLabel>
-          <TeamPanel ownerName={ws.owner.display_name} count={ws.members_count} role={ws.role} />
+          <TeamPanel ownerName={ws.owner.display_name} count={ws.members_count} role={ws.role} onOpen={onOpenTeam} />
         </Rise>
       ) : null}
 
