@@ -1,6 +1,7 @@
 /**
  * Envoi / retry / marquer lu (L5d) — actions hors create() pour R9.
  */
+import {getRights} from '../../../core/access/rights';
 import {
   sendMessage,
   sendContact,
@@ -78,7 +79,7 @@ export async function doSend(
   ctx: SetGet,
 ): Promise<void> {
   const {conversationId, offline} = ctx.get();
-  if (!conversationId || offline) return;
+  if (!conversationId || offline || !getRights().canWrite) return;
   const trimmed = text.trim();
   if (!trimmed || trimmed.length > tm.maxMessageLength) return;
 
@@ -134,7 +135,7 @@ export async function doSendLocation(
   ctx: SetGet,
 ): Promise<Message | null> {
   const {conversationId, offline} = ctx.get();
-  if (!conversationId || offline) return null;
+  if (!conversationId || offline || !getRights().canWrite) return null;
   if (
     !Number.isFinite(loc.latitude) ||
     !Number.isFinite(loc.longitude) ||
@@ -219,7 +220,7 @@ export async function doSendContact(
   ctx: SetGet,
 ): Promise<void> {
   const {conversationId, offline} = ctx.get();
-  if (!conversationId || offline) return;
+  if (!conversationId || offline || !getRights().canWrite) return;
   const phone = contact.phone_number.trim();
   const first = contact.first_name.trim();
   if (!phone || !first) return;
@@ -298,7 +299,7 @@ export async function doRetry(
   ctx: SetGet,
 ): Promise<void> {
   const {conversationId} = ctx.get();
-  if (!conversationId) return;
+  if (!conversationId || !getRights().canWrite) return;
   const current = ctx.get().items.find(m => m.id === messageId);
   if (!current?.retryable) return;
   if (current.retry_at && current.retry_at > Date.now()) return;
@@ -383,6 +384,11 @@ export async function doResendSameId(
 export async function doMarkRead(ctx: SetGet): Promise<void> {
   const {conversationId, offline, lastReadMarked} = ctx.get();
   if (!conversationId || offline || lastReadMarked) return;
+  // Lecteur : pas de requête (le Worker la refuserait) ; la lecture n'est pas enregistrée.
+  if (!getRights().canWrite) {
+    ctx.set({lastReadMarked: true});
+    return;
+  }
 
   const row = useConversationsStore
     .getState()

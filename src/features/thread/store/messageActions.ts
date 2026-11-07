@@ -1,6 +1,7 @@
 /**
  * Actions message L6d — suppression sortante + tombstone archive (6bis-c).
  */
+import {getRights} from '../../../core/access/rights';
 import {deleteMessage} from '../../../core/api/endpoints/messages';
 import type {Message} from '../../../core/realtime/events';
 import {archiveTombstone} from '../../../core/archive/hydrate';
@@ -54,7 +55,7 @@ export async function doDeleteOutgoing(
   message: Message,
   ctx: Ctx,
 ): Promise<void> {
-  if (message.direction !== 'out') return;
+  if (message.direction !== 'out' || !getRights().canWrite) return;
 
   if (message.id.startsWith('local:')) {
     ctx.set(s => ({
