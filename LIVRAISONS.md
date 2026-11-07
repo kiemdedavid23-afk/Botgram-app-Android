@@ -538,3 +538,101 @@ npm run lint
 npm test -- --ci --coverage=false
 ```
 *(Coller sorties réelles.)*
+
+## Lot 3 — Un tableau de bord et un profil par type de compte
+
+### Créé
+- `features/accounts/AccountScreens.tsx` — en-tête, tableau de bord et profil choisis selon le type (fichier non exporté par `accounts/index`, évite le cycle avec `auth`)
+- `features/accounts/company/` — style entreprise : `companyTheme.ts` (marine, or, serif, angles droits), `companyLogic.ts`, `CompanyHeader.tsx` (sans barre Botgram), `CompanyDashboardScreen.tsx`, `CompanyProfileScreen.tsx`, `components/` (Rise, Primitives, KpiStrip, QuotaPanel, BotsTable, TeamPanel)
+- `features/accounts/invited/` — `InvitedDashboardScreen.tsx`, `InvitedProfileScreen.tsx`, `invitedLogic.ts` (style Botgram, contenu propre à l'invité)
+- `__tests__/company-logic.test.ts`
+
+### Modifié
+- `app/RootNavigator.tsx`, `app/BotSpaceScreen.tsx` — en-tête et écrans via `AccountScreens` (l'entreprise ne voit plus la barre « Botgram »)
+- `features/gestion/screens/GestionScreen.tsx`, `components/BotsSection.tsx`, `components/BotCard.tsx` — actions sur les bots (réessayer, resynchroniser, déconnecter, supprimer) réservées au propriétaire
+- Particulier : tableau de bord et profil inchangés
+
+### Écarts
+- Le corps de Gestion garde le thème Botgram sous l'en-tête entreprise
+- Pas de lien « Voir l'équipe » : arrive avec le Lot 4
+- « Quitter l'entreprise » (invité) : Lot 5
+- Les onglets du bot (espace bot) gardent leur thème ; seul l'en-tête change
+
+### Preuves CI (Lot 3)
+```
+npm run typecheck
+npm run lint
+npm test -- --ci --coverage=false
+```
+*(Coller sorties réelles.)*
+
+## Lot 4 — Équipe (propriétaire de l'entreprise)
+
+### Créé
+- `core/api/endpoints/team.ts` — personnes, rôles, retrait, transfert, invitations (créer, lister, révoquer), modification de l'entreprise
+- `features/team/` — `index.ts`, `store/teamStore.ts`, `utils/teamLogic.ts` (places, expiration, règles d'actions, messages d'erreur du Worker, validation de l'entreprise), `screens/TeamScreen.tsx`, `components/` (`InviteSheet`, `MemberSheet`, `EditCompanySheet`, `Sheet` + boîte de confirmation, `teamPalette`)
+- `__tests__/team-logic.test.ts`, `__tests__/team-store.test.ts`
+
+### Modifié
+- `app/memberSectionStore.ts`, `app/RootNavigator.tsx` — section « Équipe » dans le menu (entreprise et invité) ; ouvre `TeamScreen`
+- `features/accounts/store/workspaceStore.ts` — `upsert(ws)` (remplace l'espace avec la réponse du Worker)
+- `features/accounts/AccountScreens.tsx`, `company/CompanyDashboardScreen.tsx`, `company/components/TeamPanel.tsx`, `invited/InvitedDashboardScreen.tsx` — « Gérer l'équipe » (entreprise) et « Voir l'équipe » (invité)
+
+### Comportement
+- Propriétaire : inviter (rôle Agent ou Lecteur, envoi par e-mail facultatif), code affiché une seule fois avec copier et partager, liste et révocation des invitations en attente, changer un rôle, retirer, transférer, modifier nom, pays, secteur, téléphone
+- Agent et lecteur : liste des personnes en lecture seule
+- Bloqué avant l'envoi : équipe pleine (personnes + invitations ≥ 10, sauf réinvitation de la même adresse qui remplace l'ancienne), adresse invalide, actions sur le propriétaire ou sur soi
+- Retrait : avertit que le compte invité est supprimé ; transfert : affiche les conséquences (devenir invité Agent, plus de bots ni d'équipe)
+- Après transfert : espace et type de compte relus ; la liste suit les changements du nombre de personnes
+- Erreurs `INVITE_EMAIL_REGISTERED`, `WORKSPACE_LIMIT_REACHED`, `CONFLICT`, `RATE_LIMITED`, `FORBIDDEN` (`owner_role`), `WORKSPACE_HAS_MEMBERS` traduites ; `FORBIDDEN` et `NOT_FOUND` relisent espaces et listes
+
+### Écarts
+- Suppression du compte propriétaire avec `WORKSPACE_HAS_MEMBERS` : message prêt dans `describeTeamError`, branché au Lot 5 (écran de suppression)
+- Le code d'invitation n'est pas conservé : perdu à la fermeture, il faut révoquer et réinviter
+- Hypothèse : `member.id` = `member_id` de la liste des personnes (sert à repérer « vous »)
+
+### Preuves CI (Lot 4)
+```
+npm run typecheck
+npm run lint
+npm test -- --ci --coverage=false
+```
+*(Coller sorties réelles.)*
+
+## Lot 5 — Parcours invité
+
+### Créé
+- `core/access/rights.ts` — droits lisibles par les couches basses (`canWrite`, `canOwn`), permissifs tant que le rôle est inconnu
+- `features/accounts/rightsSync.ts` — recopie type de compte + rôle vers `rights` (démarré par `useRealtimeLifecycle`)
+- `features/accounts/invited/LeaveCompanySection.tsx`, `leaveLogic.ts` — « Quitter l'entreprise » avec confirmation explicite
+- `__tests__/rights-guards.test.ts`
+
+### Modifié
+- `core/api/endpoints/team.ts` — `leaveWorkspace` (`POST /workspaces/:id/leave { confirm: true }`)
+- `core/api/session.ts`, `features/auth/*` — raison de fin `left_company` et bannière « Vous avez quitté l'entreprise. Votre compte a été supprimé. » ; indicateur `inviteUnused` + message neutre (adresse déjà inscrite) affiché en haut de l'espace membre
+- Lecteur (aucune requête envoyée) : `thread/store/sendActions.ts` (envoi, position, contact, relance, marquer lu), `thread/store/messageActions.ts` (suppression de message), `conversations/store/conversationActions.ts` (épingler), `bulkActions.ts` (marquer lu en lot), `thread/components/MessageBubble.tsx` (appui long sans suppression), `contacts/screens/ContactProfileScreen.tsx` (épingler grisé)
+- Propriétaire seulement : suppression de conversation (store + menu), profil du bot (`botprofile/screens/BotProfileScreen.tsx` : aucune lecture ni écriture, message explicatif)
+- `conversations/components/conversationMenu.ts` — menu du fil et appui long : épingler masqué pour un lecteur, supprimer masqué sauf propriétaire, archiver (local) toujours présent
+- `member/utils/deleteErrors.ts`, `member/texts.ts` — `WORKSPACE_HAS_MEMBERS` : « Transférez d'abord la propriété… » (reporté du Lot 4)
+- `features/accounts/invited/InvitedProfileScreen.tsx` — section « Quitter l'entreprise »
+- `app/RootNavigator.tsx`, `app/useRealtimeLifecycle.ts`, `features/auth/index.ts`
+
+### Comportement
+- Agent : lit, répond, épingle, marque lu ; ne supprime pas une conversation, ne touche pas au profil du bot
+- Lecteur : lecture seule ; peut archiver (local), couper les notifications et choisir un bot
+- Départ : le compte est supprimé côté Worker ; l'app efface la session locale et revient à la connexion avec le message
+- Adresse déjà inscrite entre l'invitation et son usage : connexion normale + message neutre, sans erreur
+
+### Écarts
+- Un lecteur n'enregistre pas la lecture : les compteurs « non lus » restent
+- Suppression d'un message sortant par un agent : règle « uniquement les siens » au Lot 6 (avec `sent_by`)
+- Écrans « Ajouter un bot » : toujours masqués pour l'invité, mais `ACCOUNT_TYPE_NOT_ALLOWED` n'a pas de message dédié
+- Le thème de l'espace bot reste celui de Botgram pour l'entreprise
+
+### Preuves CI (Lot 5)
+```
+npm run typecheck
+npm run lint
+npm test -- --ci --coverage=false
+```
+*(Coller sorties réelles.)*
