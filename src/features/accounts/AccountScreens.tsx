@@ -8,7 +8,7 @@ import {BrandBar} from '../../shared/components/BrandBar';
 import {DashboardScreen} from '../dashboard/screens/DashboardScreen';
 import {MemberProfileScreen} from '../member/screens/MemberProfileScreen';
 import {accountTypeOf} from './accountType';
-import {CompanyHeader} from './company/CompanyHeader';
+import {CompanyHeader, type CompanyHeaderProps} from './company/CompanyHeader';
 import {CompanyDashboardScreen} from './company/CompanyDashboardScreen';
 import {CompanyProfileScreen} from './company/CompanyProfileScreen';
 import {InvitedDashboardScreen} from './invited/InvitedDashboardScreen';
@@ -18,11 +18,20 @@ function useType() {
   return accountTypeOf(useAuthStore(s => s.member));
 }
 
-/** Entreprise : en-tête propre, sans la barre Botgram. Autres : barre Botgram. */
-export function AccountHeader({right}: {right?: React.ReactNode}): React.JSX.Element {
+/**
+ * Entreprise : en-tête propre, sans la barre Botgram (salutation complète si `hello` est fourni,
+ * barre compacte avec `right` sinon). Autres : barre Botgram.
+ */
+export function AccountHeader({
+  right,
+  hello,
+}: {
+  right?: React.ReactNode;
+  hello?: CompanyHeaderProps['hello'];
+}): React.JSX.Element {
   const type = useType();
   return type === 'company' ? (
-    <CompanyHeader right={right} />
+    <CompanyHeader right={right} hello={hello} />
   ) : (
     <BrandBar title="Botgram" right={right} />
   );
@@ -32,6 +41,8 @@ export function AccountDashboard(props: {
   onAddBot: () => void;
   onOpenBot?: () => void;
   onOpenTeam?: () => void;
+  onOpenGestion?: () => void;
+  onOpenProfile?: () => void;
 }): React.JSX.Element {
   const type = useType();
   if (type === 'company') return <CompanyDashboardScreen {...props} />;
