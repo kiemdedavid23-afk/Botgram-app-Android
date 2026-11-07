@@ -18,22 +18,22 @@ const menu = () =>
     .map(i => i.id);
 
 describe('droits côté app', () => {
-  afterEach(() => setRights({canWrite: true, canOwn: true}));
+  afterEach(() => setRights({}));
 
   it('permissif par défaut', () => {
-    expect(getRights()).toEqual({canWrite: true, canOwn: true});
+    expect(getRights()).toEqual({canWrite: true, canOwn: true, role: 'owner', memberId: null});
   });
 
   it('lecteur : ni écriture ni actions propriétaire', () => {
     const a = computeAccess('invited', 'viewer');
-    setRights({canWrite: a.canWrite, canOwn: a.canOwn});
-    expect(getRights()).toEqual({canWrite: false, canOwn: false});
+    setRights({canWrite: a.canWrite, canOwn: a.canOwn, role: a.role, memberId: 'me'});
+    expect(getRights()).toMatchObject({canWrite: false, canOwn: false, role: 'viewer'});
     expect(menu()).toEqual(['archive']);
   });
 
   it('agent : écrit, mais ne supprime pas une conversation', () => {
     const a = computeAccess('invited', 'agent');
-    setRights({canWrite: a.canWrite, canOwn: a.canOwn});
+    setRights({canWrite: a.canWrite, canOwn: a.canOwn, role: a.role, memberId: 'me'});
     expect(menu()).toEqual(['pin', 'archive']);
   });
 
