@@ -82,3 +82,25 @@ export async function deleteConversation(
     body: {confirm: true},
   });
 }
+
+/** POST /conversations/:id/assign { member_id } — propriétaire ou agent d'une entreprise. */
+export async function assignConversation(
+  id: string,
+  memberId: string,
+): Promise<HttpResult<unknown>> {
+  return authedHttp<unknown>({
+    method: 'POST',
+    path: `/conversations/${id}/assign`,
+    body: {member_id: memberId},
+  });
+}
+
+/** DELETE /conversations/:id/assign — libère la conversation. */
+export async function unassignConversation(
+  id: string,
+): Promise<HttpResult<unknown>> {
+  return authedHttp<unknown>({
+    method: 'DELETE',
+    path: `/conversations/${id}/assign`,
+  });
+}
