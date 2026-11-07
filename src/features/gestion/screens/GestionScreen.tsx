@@ -7,6 +7,7 @@ import {View, Text, ScrollView, Pressable, StyleSheet, Switch} from 'react-nativ
 import {useTheme, gestionMetrics as g} from '../../../shared/theme';
 import {useBotsStore} from '../../bots';
 import {useAuthStore} from '../../auth';
+import {useAccess} from '../../accounts';
 import {useMemberStore} from '../../member';
 import {me} from '../../../core/api/endpoints/auth';
 import {useGestionStore} from '../store/gestionStore';
@@ -37,6 +38,7 @@ export function GestionScreen(): React.JSX.Element {
   const disconnect = useBotsStore(s => s.disconnect);
   const deleteBot = useBotsStore(s => s.deleteBot);
   const member = useAuthStore(s => s.member);
+  const access = useAccess();
   const setMember = useMemberStore(s => s.setMember);
   const sessions = useGestionStore(s => s.sessions);
   const sessionsLoading = useGestionStore(s => s.sessionsLoading);
@@ -162,6 +164,7 @@ export function GestionScreen(): React.JSX.Element {
             setConfirm({kind: 'disconnect', botId: id});
           }}
           onDelete={id => setConfirm({kind: 'delete', botId: id})}
+          canManage={access.canOwn}
         />
 
         <DevicesSection
