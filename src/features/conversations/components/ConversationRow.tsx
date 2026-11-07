@@ -153,6 +153,11 @@ export function ConversationRow({
             {time}
           </Text>
         </View>
+        {item.assigned_to ? (
+          <Text numberOfLines={1} style={[styles.assigned, {color: colors.accent}]}>
+            {`→ ${item.assigned_to.display_name}`}
+          </Text>
+        ) : null}
         <View style={styles.row}>
           <Text
             numberOfLines={1}
@@ -235,6 +240,7 @@ const styles = StyleSheet.create({
   },
   title: {fontSize: cm.titleSize, flexShrink: 1},
   preview: {fontSize: cm.previewSize},
+  assigned: {fontSize: 11.5, fontWeight: '700', marginTop: 1},
   previewFlex: {flex: cm.previewFlex},
   badge: {
     height: cm.badgeMinSize,

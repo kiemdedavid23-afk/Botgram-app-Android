@@ -10,6 +10,7 @@ import {
   Archive,
   ArchiveRestore,
   Trash2,
+  UserPlus,
   type LucideIcon,
 } from 'lucide-react-native';
 import {getRights} from '../../../core/access/rights';
@@ -17,7 +18,7 @@ import {conversationsTexts as ct} from '../texts';
 import {threadTexts as tt} from '../../thread/texts';
 
 export type ConversationMenuItem = {
-  id: 'profile' | 'pin' | 'archive' | 'delete';
+  id: 'profile' | 'assign' | 'pin' | 'archive' | 'delete';
   label: string;
   Icon: LucideIcon;
   onPress: () => void;
@@ -32,6 +33,10 @@ type Options = {
   /** Épingler / supprimer passent par le serveur. */
   offline?: boolean;
   onViewProfile?: () => void;
+  /** Entreprise seulement : ouvre la feuille d'assignation. */
+  onAssign?: () => void;
+  /** Nom de la personne en charge, pour l'afficher dans l'entrée du menu. */
+  assignedName?: string | null;
   onTogglePin: () => void;
   onToggleArchive: () => void;
   onDelete: () => void;
@@ -51,6 +56,17 @@ export function buildConversationMenu(o: Options): ConversationMenuItem[][] {
     ]);
   }
   const rights = getRights();
+  if (o.onAssign && rights.canWrite) {
+    groups.push([
+      {
+        id: 'assign',
+        label: o.assignedName ? ct.assignedTo(o.assignedName) : ct.assignAction,
+        Icon: UserPlus,
+        onPress: o.onAssign,
+        disabled: !!o.offline,
+      },
+    ]);
+  }
   const organise: ConversationMenuItem[] = [];
   // Épingler : écriture (agent, propriétaire). Archiver : local, pour tout le monde.
   if (rights.canWrite) {

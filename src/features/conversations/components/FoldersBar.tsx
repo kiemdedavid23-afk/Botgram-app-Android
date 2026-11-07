@@ -10,6 +10,8 @@ type Props = {
   folder: FolderId;
   counts: Record<FolderId, number>;
   onSelect: (f: FolderId) => void;
+  /** Entreprise : ajoute « Mes échanges » et « Non assignés ». */
+  team?: boolean;
 };
 
 /**
@@ -23,7 +25,12 @@ const FOLDERS: Array<{id: FolderId; label: string}> = [
   {id: 'unread', label: t.folderUnread},
 ];
 
-export function FoldersBar({folder, counts, onSelect}: Props): React.JSX.Element {
+const TEAM_FOLDERS: Array<{id: FolderId; label: string}> = [
+  {id: 'mine', label: t.folderMine},
+  {id: 'unassigned', label: t.folderUnassigned},
+];
+
+export function FoldersBar({folder, counts, onSelect, team = false}: Props): React.JSX.Element {
   const {colors, mode} = useTheme();
   return (
     <View
@@ -49,7 +56,7 @@ export function FoldersBar({folder, counts, onSelect}: Props): React.JSX.Element
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tabs}>
-          {FOLDERS.map(f => (
+          {(team ? [...FOLDERS, ...TEAM_FOLDERS] : FOLDERS).map(f => (
             <FolderTab
               key={f.id}
               id={f.id}
