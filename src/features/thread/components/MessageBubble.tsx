@@ -1,4 +1,7 @@
-import {getRights} from '../../../core/access/rights';
+import {canDeleteMessage} from '../../../core/access/rights';
+import {isTeamWorkspace, useWorkspaceStore} from '../../accounts';
+import {useAuthStore} from '../../auth';
+import {senderLabel} from '../utils/sender';
 import React from 'react';
 import {View, Text, StyleSheet, useWindowDimensions, Pressable, Alert} from 'react-native';
 import {useTheme, useChatTheme} from '../../../shared/theme';
@@ -33,6 +36,10 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
   const chat = useChatTheme();
   const {width} = useWindowDimensions();
   const isOut = message.direction === 'out';
+  const selfId = useAuthStore(s => s.member?.id ?? null);
+  const isTeam = useWorkspaceStore(s => isTeamWorkspace(s.workspaces[0]));
+  const sender = senderLabel(message, selfId, isTeam);
+  const canDelete = canDeleteMessage(message);
   const bubbleBg = isOut ? chat.bubbleOut : chat.bubbleIn;
   const textColor = isOut ? chat.bubbleOutText : chat.bubbleInText;
   const timeColor = isOut ? chat.timeOut : chat.timeIn;
@@ -56,7 +63,7 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
   }
 
   const confirmDelete = () => {
-    if (!onDelete || !isOut || !getRights().canWrite) return;
+    if (!onDelete || !isOut || !canDelete) return;
     Alert.alert(t.deleteMessageConfirmTitle, t.deleteMessageConfirmBody, [
       {text: t.cancel, style: 'cancel'},
       {
@@ -71,7 +78,7 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
 
   return (
     <Pressable
-      onLongPress={isOut && getRights().canWrite ? confirmDelete : undefined}
+      onLongPress={isOut && canDelete ? confirmDelete : undefined}
       style={[
         styles.row,
         isOut ? styles.out : styles.in,
@@ -86,6 +93,11 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
             borderRadius: appearance.cornerRadius,
           },
         ]}>
+        {sender ? (
+          <Text numberOfLines={1} style={[styles.sender, {color: timeColor}]}>
+            {sender}
+          </Text>
+        ) : null}
         {message.kind === 'photo' ? (
           <MediaPhoto
             messageId={message.id}
@@ -202,6 +214,7 @@ export function MessageBubble({message, onRetry, onResendSame, onResendNew, onRe
 }
 
 const styles = StyleSheet.create({
+  sender: {fontSize: 11.5, fontWeight: '700', marginBottom: 2, opacity: 0.85},
   row: {marginVertical: tm.listGap / 2},
   in: {alignSelf: 'flex-start'},
   out: {alignSelf: 'flex-end'},

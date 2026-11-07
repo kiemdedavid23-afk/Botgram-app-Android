@@ -26,6 +26,8 @@ type Props = {
   /** Pin / suppression exigent le réseau. */
   offline: boolean;
   onViewProfile?: () => void;
+  onAssign?: () => void;
+  assignedName?: string | null;
   onTogglePin: () => void;
   onToggleArchive: () => void;
   onDelete: () => void;
@@ -36,6 +38,8 @@ export function ThreadMenu({
   archived,
   offline,
   onViewProfile,
+  onAssign,
+  assignedName,
   onTogglePin,
   onToggleArchive,
   onDelete,
@@ -49,6 +53,8 @@ export function ThreadMenu({
     archived,
     offline,
     onViewProfile,
+    onAssign,
+    assignedName,
     onTogglePin,
     onToggleArchive,
     onDelete,
