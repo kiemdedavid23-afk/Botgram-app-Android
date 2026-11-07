@@ -24,6 +24,14 @@ export type ConversationSummary = {
   created_at?: number;
   unread_count?: number;
   last_message_text?: string | null;
+  /** Entreprise seulement : personne en charge ; `null` = libre ; absent = particulier. */
+  assigned_to?: AssignedTo | null;
+};
+
+export type AssignedTo = {
+  id: string;
+  display_name: string;
+  assigned_at?: number;
 };
 
 import type {

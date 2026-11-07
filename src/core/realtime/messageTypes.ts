@@ -32,7 +32,14 @@ export type Message = {
   contact?: ContactPayload | null;
   /** Position (kind `location` / `venue`, Worker v15.6). */
   location?: LocationPayload | null;
+  /**
+   * Auteur d'un message sortant d'entreprise. `null` : auteur supprimé ;
+   * absent : message antérieur à la v16.1 (ne pas confondre avec `null`).
+   */
+  sent_by?: SentBy | null;
 };
+
+export type SentBy = {id: string; display_name: string};
 
 export type ContactPayload = {
   phone_number: string;
