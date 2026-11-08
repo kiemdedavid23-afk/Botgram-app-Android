@@ -3,7 +3,8 @@
  */
 import React from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
-import {useTheme, associateMetrics as m} from '../../../shared/theme';
+import {associateMetrics as m} from '../../../shared/theme';
+import {useFlowColors} from '../../accounts/company/flowColors';
 import {AssociateShell} from '../components/AssociateShell';
 import {useAssociateStore, type VerifyResult} from '../store/associateStore';
 import {texts, verifyMessage} from '../texts';
@@ -26,7 +27,7 @@ export function AssociateVerifyScreen({
   onBackToken,
   onBack,
 }: Props): React.JSX.Element {
-  const {colors} = useTheme();
+  const colors = useFlowColors();
   const preview = useAssociateStore(s => s.preview);
   const canAdvance = ADVANCE.has(result);
   const isError = !canAdvance;
@@ -80,7 +81,7 @@ export function AssociateVerifyScreen({
         <Pressable
           onPress={onConfirm}
           style={[styles.btn, {backgroundColor: colors.accent}]}>
-          <Text style={[styles.btnText, {color: colors.white}]}>
+          <Text style={[styles.btnText, {color: colors.onAccent}]}>
             {texts.nextConfirm}
           </Text>
         </Pressable>

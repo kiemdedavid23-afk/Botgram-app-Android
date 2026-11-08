@@ -20,13 +20,14 @@ import {
 } from 'react-native';
 import {Info, AlertTriangle} from 'lucide-react-native';
 import {
-  useTheme,
   space,
   radii,
   fontSize,
   fontWeight,
 } from '../../../shared/theme';
-import {ScreenHeader} from '../../../shared/components/ScreenHeader';
+import {useFlowColors} from '../../accounts/company/flowColors';
+import {companyMetrics as cm} from '../../accounts/company/companyTheme';
+import {FlowPage} from '../../accounts/company/components/FlowPage';
 import {texts} from '../texts';
 import {
   GUIDE_INTRO,
@@ -53,7 +54,7 @@ function Inline({
   text: string;
   style?: StyleProp<TextStyle>;
 }): React.JSX.Element {
-  const {colors} = useTheme();
+  const colors = useFlowColors();
   const parts = text.split(INLINE_RE).filter(p => p !== '');
   return (
     <Text style={style}>
@@ -91,7 +92,7 @@ function Inline({
 }
 
 function Block({block}: {block: GuideBlock}): React.JSX.Element {
-  const {colors} = useTheme();
+  const colors = useFlowColors();
   const body = [styles.body, {color: colors.textPrimary}];
 
   switch (block.t) {
@@ -209,7 +210,7 @@ export function AssociateGuideScreen({
   onBack,
   section,
 }: Props): React.JSX.Element {
-  const {colors} = useTheme();
+  const colors = useFlowColors();
   const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const ys = useRef<Partial<Record<GuideSectionId, number>>>({});
   const jumped = useRef(false);
@@ -237,8 +238,7 @@ export function AssociateGuideScreen({
   };
 
   return (
-    <View style={[styles.root, {backgroundColor: colors.bgSecondary}]}>
-      <ScreenHeader title={texts.guideTitle} onBack={onBack} />
+    <FlowPage title={texts.guideTitle} onBack={onBack}>
       <View style={[styles.track, {backgroundColor: colors.bgTertiary}]}>
         <View
           style={[
@@ -299,12 +299,12 @@ export function AssociateGuideScreen({
           accessibilityRole="button"
           onPress={onBack}
           style={[styles.done, {backgroundColor: colors.accent}]}>
-          <Text style={[styles.doneText, {color: colors.white}]}>
+          <Text style={[styles.doneText, {color: colors.onAccent}]}>
             {texts.guideBack}
           </Text>
         </Pressable>
       </ScrollView>
-    </View>
+    </FlowPage>
   );
 }
 
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   title: {fontSize: fontSize.pageHeader + 2, fontWeight: fontWeight.bold},
   lead: {fontSize: fontSize.message, lineHeight: BODY_LINE},
   card: {
-    borderRadius: radii.lg,
+    borderRadius: cm.cardRadius,
     padding: space.md,
     gap: space.sm + 4,
   },

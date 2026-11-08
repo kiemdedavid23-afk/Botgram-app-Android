@@ -4,7 +4,8 @@
 import React from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {Key, Shield, Link2, EyeOff} from 'lucide-react-native';
-import {useTheme, associateMetrics as m} from '../../../shared/theme';
+import {associateMetrics as m} from '../../../shared/theme';
+import {useFlowColors} from '../../accounts/company/flowColors';
 import {AssociateShell} from '../components/AssociateShell';
 import {useAssociateStore} from '../store/associateStore';
 import {texts} from '../texts';
@@ -28,7 +29,7 @@ export function AssociateIntroScreen({
   onBack,
   onOpenGuide,
 }: Props): React.JSX.Element {
-  const {colors} = useTheme();
+  const colors = useFlowColors();
   const acknowledged = useAssociateStore(s => s.acknowledged);
   const setAcknowledged = useAssociateStore(s => s.setAcknowledged);
 
@@ -83,7 +84,7 @@ export function AssociateIntroScreen({
             },
           ]}>
           {acknowledged ? (
-            <Text style={[styles.tick, {color: colors.white}]}>✓</Text>
+            <Text style={[styles.tick, {color: colors.onAccent}]}>✓</Text>
           ) : null}
         </View>
         <Text style={[styles.checkText, {color: colors.textPrimary}]}>
@@ -112,7 +113,7 @@ export function AssociateIntroScreen({
         <Text
           style={[
             styles.btnText,
-            {color: acknowledged ? colors.white : colors.textSecondary},
+            {color: acknowledged ? colors.onAccent : colors.textSecondary},
           ]}>
           {texts.continue}
         </Text>

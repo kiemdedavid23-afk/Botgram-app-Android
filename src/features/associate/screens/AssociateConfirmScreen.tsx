@@ -5,7 +5,8 @@
 import React, {useEffect, useState} from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {AlertTriangle} from 'lucide-react-native';
-import {useTheme, associateMetrics as m} from '../../../shared/theme';
+import {associateMetrics as m} from '../../../shared/theme';
+import {useFlowColors} from '../../accounts/company/flowColors';
 import {AssociateShell} from '../components/AssociateShell';
 import {useAssociateStore} from '../store/associateStore';
 import {texts, confirmError} from '../texts';
@@ -24,7 +25,7 @@ export function AssociateConfirmScreen({
   onBack,
   onNeedToken,
 }: Props): React.JSX.Element {
-  const {colors} = useTheme();
+  const colors = useFlowColors();
   const token = useAssociateStore(s => s.token);
   const preview = useAssociateStore(s => s.preview);
   const confirming = useAssociateStore(s => s.confirming);
@@ -119,7 +120,7 @@ export function AssociateConfirmScreen({
                 },
               ]}>
               {replaceOk ? (
-                <Text style={[styles.tick, {color: colors.white}]}>✓</Text>
+                <Text style={[styles.tick, {color: colors.onAccent}]}>✓</Text>
               ) : null}
             </View>
             <AlertTriangle size={m.ghostIcon} color={colors.warn} />
@@ -147,7 +148,7 @@ export function AssociateConfirmScreen({
         <Text
           style={[
             styles.btnText,
-            {color: canSubmit ? colors.white : colors.textSecondary},
+            {color: canSubmit ? colors.onAccent : colors.textSecondary},
           ]}>
           {confirming ? texts.confirming : texts.confirmBtn}
         </Text>

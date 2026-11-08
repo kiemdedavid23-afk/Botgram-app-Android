@@ -4,7 +4,8 @@
 import React from 'react';
 import {View, Text, TextInput, Pressable, StyleSheet} from 'react-native';
 import {KeyRound, Eye, EyeOff} from 'lucide-react-native';
-import {useTheme, associateMetrics as m} from '../../../shared/theme';
+import {associateMetrics as m} from '../../../shared/theme';
+import {useFlowColors} from '../../accounts/company/flowColors';
 import {AssociateShell} from '../components/AssociateShell';
 import {
   useAssociateStore,
@@ -22,7 +23,7 @@ export function AssociateTokenScreen({
   onVerified,
   onBack,
 }: Props): React.JSX.Element {
-  const {colors} = useTheme();
+  const colors = useFlowColors();
   const token = useAssociateStore(s => s.token) ?? '';
   const revealed = useAssociateStore(s => s.revealed);
   const verifying = useAssociateStore(s => s.verifying);
@@ -106,7 +107,7 @@ export function AssociateTokenScreen({
         <Text
           style={[
             styles.btnText,
-            {color: canVerify ? colors.white : colors.textSecondary},
+            {color: canVerify ? colors.onAccent : colors.textSecondary},
           ]}>
           {verifying ? texts.verifying : texts.verify}
         </Text>
