@@ -1,11 +1,12 @@
 /**
- * Briques visuelles communes des pages Paramètres (style de référence) :
- * cartes blanches à plat, titres de carte en bleu, lignes d'action à icône.
+ * Briques visuelles communes des pages Paramètres : cartes, titres de carte, lignes d'action à icône.
+ * Elles lisent la palette (useSettingsPalette) : habillage entreprise ou Botgram.
  */
 import React from 'react';
 import {View, Text, Pressable, StyleSheet, type StyleProp, type ViewStyle} from 'react-native';
 import type {LucideIcon} from 'lucide-react-native';
-import {useTheme, settingsMetrics as sm, fontWeight} from '../../../shared/theme';
+import {settingsMetrics as sm, fontWeight} from '../../../shared/theme';
+import {useSettingsPalette} from './settingsPalette';
 
 export function SettingsCard({
   children,
@@ -14,24 +15,47 @@ export function SettingsCard({
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }): React.JSX.Element {
-  const {colors} = useTheme();
+  const p = useSettingsPalette();
   return (
-    <View style={[styles.card, {backgroundColor: colors.bgPrimary}, style]}>
+    <View
+      style={[
+        styles.card,
+        {backgroundColor: p.surface, marginHorizontal: p.cardMarginH, borderRadius: p.cardRadius},
+        p.company
+          ? {
+              borderWidth: 1,
+              borderColor: p.cardBorder,
+              shadowColor: p.shadow,
+              shadowOpacity: p.shadowOpacity,
+              shadowRadius: 18,
+              shadowOffset: {width: 0, height: 8},
+              elevation: 3,
+            }
+          : null,
+        style,
+      ]}>
       {children}
     </View>
   );
 }
 
 export function CardTitle({children}: {children: string}): React.JSX.Element {
-  const {colors} = useTheme();
+  const p = useSettingsPalette();
   return (
-    <Text style={[styles.cardTitle, {color: colors.accent}]}>{children}</Text>
+    <Text
+      style={[
+        styles.cardTitle,
+        {color: p.titleColor, fontSize: p.titleSize, fontFamily: p.titleFont},
+        p.company ? styles.cardTitleCompany : null,
+      ]}>
+      {children}
+    </Text>
   );
 }
 
 export function RowDivider(): React.JSX.Element {
-  const {colors} = useTheme();
-  return <View style={[styles.divider, {backgroundColor: colors.borderSoft}]} />;
+  const p = useSettingsPalette();
+  return <View style={[styles.divider, {backgroundColor: p.line}]} />;
 }
 
 type LinkRowProps = {
@@ -52,8 +76,8 @@ export function LinkRow({
   last,
   danger,
 }: LinkRowProps): React.JSX.Element {
-  const {colors} = useTheme();
-  const tint = danger ? colors.danger : colors.accent;
+  const p = useSettingsPalette();
+  const tint = danger ? p.danger : p.accent;
   return (
     <>
       <Pressable
@@ -61,7 +85,7 @@ export function LinkRow({
         accessibilityLabel={label}
         onPress={onPress}
         disabled={!onPress}
-        android_ripple={{color: colors.accentSoft}}
+        android_ripple={{color: p.accentSoft}}
         style={styles.row}>
         <Icon size={24} color={tint} strokeWidth={1.75} />
         <Text style={[styles.rowLabel, {color: tint}]} numberOfLines={1}>
@@ -87,6 +111,7 @@ const styles = StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 6,
   },
+  cardTitleCompany: {fontWeight: '700', letterSpacing: -0.2, paddingTop: 20, paddingBottom: 8},
   divider: {height: StyleSheet.hairlineWidth, marginLeft: 68},
   row: {
     flexDirection: 'row',
