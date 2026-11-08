@@ -39,6 +39,12 @@ describe('contrastes de la palette entreprise', () => {
       expect(contrastRatio(BASE_LIGHT.onPrimary, p.accentLight)).toBeGreaterThanOrEqual(AA);
     }
   });
+  it('l’accent reste lisible comme texte (liens, titres de ligne) sur le fond et la carte', () => {
+    for (const p of BRAND_PRESETS) {
+      expect(contrastRatio(p.accentLight, BASE_LIGHT.bg)).toBeGreaterThanOrEqual(AA);
+      expect(contrastRatio(p.accentLight, BASE_LIGHT.card)).toBeGreaterThanOrEqual(AA);
+    }
+  });
   it('en mode sombre, l’accent est lisible sur la carte et porte un texte sombre', () => {
     for (const p of BRAND_PRESETS) {
       expect(contrastRatio(p.accentDark, BASE_DARK.card)).toBeGreaterThanOrEqual(AA);
