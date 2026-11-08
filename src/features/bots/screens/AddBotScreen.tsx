@@ -4,11 +4,10 @@
 import React, {useRef} from 'react';
 import {View, Text, Pressable, StyleSheet, Animated} from 'react-native';
 import {Link2, ChevronRight} from 'lucide-react-native';
-import {SettingsShell} from '../../../shared/components/SettingsShell';
-import {
-  useTheme,
-  dashboardMetrics as dm,
-} from '../../../shared/theme';
+import {dashboardMetrics as dm} from '../../../shared/theme';
+import {useFlowColors} from '../../accounts/company/flowColors';
+import {companyMetrics as cm} from '../../accounts/company/companyTheme';
+import {FlowPage} from '../../accounts/company/components/FlowPage';
 import {texts} from '../../dashboard/texts';
 import {useReducedMotion} from '../../../shared/hooks/useReducedMotion';
 
@@ -18,7 +17,7 @@ type Props = {
 };
 
 export function AddBotScreen({onBack, onAssociate}: Props): React.JSX.Element {
-  const {colors} = useTheme();
+  const colors = useFlowColors();
   const reduceMotion = useReducedMotion();
   const scale = useRef(new Animated.Value(1)).current;
 
@@ -32,7 +31,7 @@ export function AddBotScreen({onBack, onAssociate}: Props): React.JSX.Element {
   };
 
   return (
-    <SettingsShell title={texts.addBot} onBack={onBack}>
+    <FlowPage title={texts.addBot} onBack={onBack}>
       <View style={styles.body}>
         <Text style={[styles.intro, {color: colors.textSecondary}]}>
           {texts.addBotIntro}
@@ -51,7 +50,7 @@ export function AddBotScreen({onBack, onAssociate}: Props): React.JSX.Element {
               },
             ]}>
             <View style={[styles.icon, {backgroundColor: colors.accent}]}>
-              <Link2 size={dm.addbotIconSize} color={colors.white} />
+              <Link2 size={dm.addbotIconSize} color={colors.onAccent} />
             </View>
             <View style={styles.meta}>
               <Text style={[styles.title, {color: colors.textPrimary}]}>
@@ -68,7 +67,7 @@ export function AddBotScreen({onBack, onAssociate}: Props): React.JSX.Element {
           {texts.associateHelp}
         </Text>
       </View>
-    </SettingsShell>
+    </FlowPage>
   );
 }
 
@@ -85,11 +84,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: dm.addbotCardGap,
     padding: dm.addbotCardPad,
-    borderRadius: dm.addbotCardRadius,
-    elevation: dm.shadowElevation,
-    shadowOpacity: dm.shadowOpacity,
-    shadowRadius: dm.shadowRadius,
-    shadowOffset: {width: 0, height: dm.shadowOffsetY},
+    borderRadius: cm.cardRadius,
+    elevation: 3,
+    shadowOpacity: 0.1,
+    shadowRadius: 18,
+    shadowOffset: {width: 0, height: 8},
   },
   icon: {
     width: dm.addbotIconBox,
