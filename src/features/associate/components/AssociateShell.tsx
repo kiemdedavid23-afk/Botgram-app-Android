@@ -1,10 +1,12 @@
 /**
- * En-tête + barre de progression — AssociateFlow.css .assoc / .assoc__head.
+ * En-tête + barre de progression du parcours d'association, style entreprise :
+ * page en dégradé, segments de progression dans la couleur de marque.
  */
 import React from 'react';
 import {View, Text, ScrollView, StyleSheet} from 'react-native';
-import {ScreenHeader} from '../../../shared/components/ScreenHeader';
-import {useTheme, associateMetrics as m} from '../../../shared/theme';
+import {associateMetrics as m} from '../../../shared/theme';
+import {companyFonts, useCompanyTheme} from '../../accounts/company/companyTheme';
+import {FlowPage} from '../../accounts/company/components/FlowPage';
 import {stepLabel} from '../texts';
 
 type Props = {
@@ -22,13 +24,15 @@ export function AssociateShell({
   onBack,
   children,
 }: Props): React.JSX.Element {
-  const {colors} = useTheme();
+  const t = useCompanyTheme();
   const dots = Array.from({length: totalSteps}, (_, i) => i + 1);
 
   return (
-    <View style={[styles.root, {backgroundColor: colors.bgSecondary}]}>
-      <ScreenHeader title={title} onBack={onBack} />
-      <View style={[styles.progress, {backgroundColor: colors.bgPrimary}]}>
+    <FlowPage title={title} onBack={onBack}>
+      <View
+        accessible
+        accessibilityLabel={stepLabel(step, totalSteps)}
+        style={styles.progress}>
         {dots.map(d => {
           const active = d === step;
           const done = d < step;
@@ -37,17 +41,14 @@ export function AssociateShell({
               key={d}
               style={[
                 styles.dot,
-                {
-                  backgroundColor:
-                    active || done ? colors.accent : colors.bgTertiary,
-                },
+                {backgroundColor: active || done ? t.primary : t.chipBorder},
                 done && !active ? styles.dotDone : null,
               ]}
             />
           );
         })}
       </View>
-      <Text style={[styles.stepLbl, {color: colors.textSecondary}]}>
+      <Text style={[styles.stepLbl, {color: t.inkSoft}]}>
         {stepLabel(step, totalSteps)}
       </Text>
       <ScrollView
@@ -55,12 +56,11 @@ export function AssociateShell({
         keyboardShouldPersistTaps="handled">
         {children}
       </ScrollView>
-    </View>
+    </FlowPage>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {flex: 1},
   progress: {
     flexDirection: 'row',
     gap: m.progressGap,
@@ -75,6 +75,7 @@ const styles = StyleSheet.create({
   },
   dotDone: {opacity: m.progressDoneOpacity},
   stepLbl: {
+    fontFamily: companyFonts.body,
     fontSize: m.stepLabelSize,
     textAlign: 'center',
     marginTop: m.stepLabelMarginTop,
