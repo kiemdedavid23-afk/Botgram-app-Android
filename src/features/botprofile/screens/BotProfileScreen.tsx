@@ -3,8 +3,11 @@ import React, {useEffect, useMemo, useState} from 'react';
 import {
   View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator,
 } from 'react-native';
-import {useTheme, botProfileMetrics as m} from '../../../shared/theme';
-import type {ColorTokens} from '../../../shared/theme';
+import {botProfileMetrics as m} from '../../../shared/theme';
+import {useFlowColors} from '../../accounts/company/flowColors';
+import type {FlowColors} from '../../accounts/company/flowColors';
+import {GradientView} from '../../../shared/components/GradientView';
+import {useCompanyTheme} from '../../accounts/company/companyTheme';
 import {useAuthStore} from '../../auth';
 import {useBotsStore} from '../../bots';
 import {useAccess} from '../../accounts';
@@ -21,7 +24,7 @@ import {fireAndForget} from '../../../core/utils/fireAndForget';
 
 type Props = {onAddBot?: () => void; onOpenBotfactor?: () => void};
 
-function makeStyles(c: ColorTokens) {
+function makeStyles(c: FlowColors) {
   return StyleSheet.create({
     root: {flex: 1, backgroundColor: c.bgSecondary},
     center: {
@@ -33,13 +36,13 @@ function makeStyles(c: ColorTokens) {
       marginTop: m.ctaMarginTop, paddingVertical: m.ctaPadV, paddingHorizontal: m.ctaPadH,
       borderRadius: m.inputRadius, backgroundColor: c.accent,
     },
-    ctaText: {fontWeight: m.ctaTextWeight, color: c.white},
+    ctaText: {fontWeight: m.ctaTextWeight, color: c.onAccent},
     err: {textAlign: 'center', color: c.danger},
     scroll: {
       paddingHorizontal: m.scrollPadH, paddingBottom: m.scrollPadBottom,
       gap: m.scrollGap, paddingTop: m.scrollPadTop,
     },
-    tabsBar: {backgroundColor: c.bgSecondary},
+    tabsBar: {backgroundColor: 'transparent'},
     tabs: {flexDirection: 'row', gap: m.gap, paddingVertical: m.paddingV},
     tab: {
       flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: m.tabIconGap,
@@ -48,7 +51,7 @@ function makeStyles(c: ColorTokens) {
     },
     tabOn: {backgroundColor: c.accent},
     tabOff: {backgroundColor: c.bgPrimary},
-    tabTextOn: {fontSize: m.tabLabelSize, fontWeight: m.tabFontWeight, color: c.white},
+    tabTextOn: {fontSize: m.tabLabelSize, fontWeight: m.tabFontWeight, color: c.onAccent},
     tabTextOff: {fontSize: m.tabLabelSize, fontWeight: m.tabFontWeight, color: c.textSecondary},
     head: {gap: m.headGap, paddingBottom: m.headPadBottom},
     headTitle: {
@@ -66,7 +69,8 @@ export function BotProfileScreen({
   onAddBot,
   onOpenBotfactor,
 }: Props): React.JSX.Element {
-  const {colors} = useTheme();
+  const colors = useFlowColors();
+  const co = useCompanyTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const member = useAuthStore(s => s.member);
   const access = useAccess();
@@ -158,6 +162,7 @@ export function BotProfileScreen({
 
   return (
     <View style={styles.root}>
+      <GradientView colors={[co.bg, co.bgGlow]} angle={165} style={StyleSheet.absoluteFill} />
       <ScrollView contentContainerStyle={styles.scroll}>
         <BotHero key={profile.bot_id} profile={profile} status={bot.status} />
         <View style={styles.tabsBar}>
@@ -173,7 +178,7 @@ export function BotProfileScreen({
                     style={[styles.tab, on ? styles.tabOn : styles.tabOff]}>
                     <Icon
                       size={m.tabIconSize}
-                      color={on ? colors.white : colors.textSecondary}
+                      color={on ? colors.onAccent : colors.textSecondary}
                     />
                     <Text style={on ? styles.tabTextOn : styles.tabTextOff}>
                       {t.label}
