@@ -1,11 +1,10 @@
 /**
- * Briques visuelles communes des pages Paramètres : cartes, titres de carte, lignes d'action à icône.
- * Elles lisent la palette (useSettingsPalette) : habillage entreprise ou Botgram.
+ * Briques visuelles communes des pages Paramètres, style entreprise :
+ * grandes cartes douces, titres de carte, lignes d'action à icône. Lisent la palette (couleur de marque comprise).
  */
 import React from 'react';
 import {View, Text, Pressable, StyleSheet, type StyleProp, type ViewStyle} from 'react-native';
 import type {LucideIcon} from 'lucide-react-native';
-import {settingsMetrics as sm, fontWeight} from '../../../shared/theme';
 import {useSettingsPalette} from './settingsPalette';
 
 export function SettingsCard({
@@ -20,18 +19,14 @@ export function SettingsCard({
     <View
       style={[
         styles.card,
-        {backgroundColor: p.surface, marginHorizontal: p.cardMarginH, borderRadius: p.cardRadius},
-        p.company
-          ? {
-              borderWidth: 1,
-              borderColor: p.cardBorder,
-              shadowColor: p.shadow,
-              shadowOpacity: p.shadowOpacity,
-              shadowRadius: 18,
-              shadowOffset: {width: 0, height: 8},
-              elevation: 3,
-            }
-          : null,
+        {
+          backgroundColor: p.surface,
+          marginHorizontal: p.cardMarginH,
+          borderRadius: p.cardRadius,
+          borderColor: p.cardBorder,
+          shadowColor: p.shadow,
+          shadowOpacity: p.shadowOpacity,
+        },
         style,
       ]}>
       {children}
@@ -42,12 +37,7 @@ export function SettingsCard({
 export function CardTitle({children}: {children: string}): React.JSX.Element {
   const p = useSettingsPalette();
   return (
-    <Text
-      style={[
-        styles.cardTitle,
-        {color: p.titleColor, fontSize: p.titleSize, fontFamily: p.titleFont},
-        p.company ? styles.cardTitleCompany : null,
-      ]}>
+    <Text style={[styles.cardTitle, {color: p.titleColor, fontSize: p.titleSize, fontFamily: p.titleFont}]}>
       {children}
     </Text>
   );
@@ -100,18 +90,19 @@ export function LinkRow({
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: sm.cardMarginH,
-    borderRadius: sm.cardRadius,
     overflow: 'hidden',
+    borderWidth: 1,
+    shadowRadius: 18,
+    shadowOffset: {width: 0, height: 8},
+    elevation: 3,
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: fontWeight.semibold,
+    fontWeight: '700',
+    letterSpacing: -0.2,
     paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 6,
+    paddingTop: 20,
+    paddingBottom: 8,
   },
-  cardTitleCompany: {fontWeight: '700', letterSpacing: -0.2, paddingTop: 20, paddingBottom: 8},
   divider: {height: StyleSheet.hairlineWidth, marginLeft: 68},
   row: {
     flexDirection: 'row',

@@ -1,12 +1,8 @@
 /**
- * Page Paramètres : en-tête unique + fond. Le contenu gère son défilement.
- * Compte entreprise : fond en dégradé lavande, comme le tableau de bord.
+ * Page Paramètres : fond en dégradé + en-tête, style entreprise. Le contenu gère son défilement.
  */
 import React from 'react';
-import {View, StyleSheet} from 'react-native';
-import {GradientView} from '../../../shared/components/GradientView';
-import {SettingsHeader} from './SettingsHeader';
-import {useSettingsPalette} from './settingsPalette';
+import {FlowPage} from '../../accounts/company/components/FlowPage';
 
 type Props = {
   title: string;
@@ -16,14 +12,9 @@ type Props = {
 };
 
 export function SettingsPage({title, onBack, right, children}: Props): React.JSX.Element {
-  const p = useSettingsPalette();
   return (
-    <View style={[styles.root, {backgroundColor: p.bg}]}>
-      {p.company ? <GradientView colors={[p.bg, p.bgGlow]} angle={165} style={StyleSheet.absoluteFill} /> : null}
-      <SettingsHeader title={title} onBack={onBack} right={right} />
+    <FlowPage title={title} onBack={onBack} right={right}>
       {children}
-    </View>
+    </FlowPage>
   );
 }
-
-const styles = StyleSheet.create({root: {flex: 1}});
