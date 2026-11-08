@@ -12,7 +12,7 @@ export type BrandPreset = {
   /** Dégradé des grandes cartes colorées : texte blanc lisible (≥ 4,5:1) sur les deux bouts. */
   heroHi: string;
   heroLo: string;
-  /** Accent sur surface claire (boutons, icônes) : texte blanc ≥ 4,5:1 dessus. */
+  /** Accent sur surface claire (boutons, liens, icônes) : ≥ 4,5:1 sur le fond et la carte, et texte blanc ≥ 4,5:1 dessus. */
   accentLight: string;
   /** Accent sur surface sombre : ≥ 4,5:1 sur la carte sombre, texte sombre dessus. */
   accentDark: string;
@@ -24,11 +24,11 @@ export type BrandPreset = {
 export const DEFAULT_BRAND_ID: BrandId = 'indigo';
 
 export const BRAND_PRESETS: readonly BrandPreset[] = [
-  {id: 'indigo', label: 'Indigo', heroHi: '#5263FF', heroLo: '#3F52FF', accentLight: '#3F52FF', accentDark: '#7582FF', softLight: '#E3E7FF', softDark: '#2C315C'},
-  {id: 'teal', label: 'Turquoise', heroHi: '#12837E', heroLo: '#0B7F7A', accentLight: '#0B7F7A', accentDark: '#419B97', softLight: '#DFEEEE', softDark: '#223647'},
-  {id: 'emerald', label: 'Émeraude', heroHi: '#228558', heroLo: '#0F7A4A', accentLight: '#0F7A4A', accentDark: '#4D9D79', softLight: '#E0EEE7', softDark: '#243741'},
-  {id: 'orange', label: 'Orange', heroHi: '#BE581E', heroLo: '#B84A0A', accentLight: '#B84A0A', accentDark: '#CA794A', softLight: '#F6E7DF', softDark: '#3D2F38'},
-  {id: 'rose', label: 'Rose', heroHi: '#CD4074', heroLo: '#C72B64', accentLight: '#C72B64', accentDark: '#D86B92', softLight: '#F8E3EB', softDark: '#402D46'},
+  {id: 'indigo', label: 'Indigo', heroHi: '#5364FC', heroLo: '#3E51FC', accentLight: '#3E51FC', accentDark: '#7482FD', softLight: '#E6E8FF', softDark: '#2C315B'},
+  {id: 'teal', label: 'Turquoise', heroHi: '#20817D', heroLo: '#0A7570', accentLight: '#0A7570', accentDark: '#4C9A97', softLight: '#DFEDEC', softDark: '#243647'},
+  {id: 'emerald', label: 'Émeraude', heroHi: '#258459', heroLo: '#0F7849', accentLight: '#0F7849', accentDark: '#4D9D79', softLight: '#E0EDE7', softDark: '#243741'},
+  {id: 'orange', label: 'Orange', heroHi: '#BA5A22', heroLo: '#B2480A', accentLight: '#B2480A', accentDark: '#C87B4F', softLight: '#F5E7DF', softDark: '#3D3039'},
+  {id: 'rose', label: 'Rose', heroHi: '#CA4475', heroLo: '#C32A62', accentLight: '#C32A62', accentDark: '#D86B92', softLight: '#F7E3EB', softDark: '#402D46'},
   {id: 'violet', label: 'Violet', heroHi: '#865AE2', heroLo: '#6A33DB', accentLight: '#6A33DB', accentDark: '#9E7AE8', softLight: '#ECE4FA', softDark: '#343057'},
   {id: 'slate', label: 'Ardoise', heroHi: '#6B768E', heroLo: '#3A4868', accentLight: '#3A4868', accentDark: '#858EA1', softLight: '#E5E7EB', softDark: '#2F3449'},
 ];
@@ -139,4 +139,31 @@ export function contrastRatio(a: string, b: string): number {
   const hi = Math.max(la, lb);
   const lo = Math.min(la, lb);
   return (hi + 0.05) / (lo + 0.05);
+}
+
+/** Jetons complets d'habillage entreprise (surfaces + couleur de marque), clairs ou sombres. */
+export type CompanyTokens = BaseTokens & {
+  /** Accent de la marque (boutons pleins, liens, icônes, indicateur d'actualisation). */
+  primary: string;
+  primaryHi: string;
+  primarySoft: string;
+  /** Dégradé des grandes cartes colorées (texte `onHero` dessus). */
+  heroHi: string;
+  heroLo: string;
+  /** Teintes des pastilles de bot. */
+  botTints: readonly string[];
+};
+
+export function companyTokensFor(dark: boolean, brandId: string | null | undefined): CompanyTokens {
+  const b = brandById(brandId);
+  const base = dark ? BASE_DARK : BASE_LIGHT;
+  return {
+    ...base,
+    primary: dark ? b.accentDark : b.accentLight,
+    primaryHi: dark ? b.accentDark : b.heroHi,
+    primarySoft: dark ? b.softDark : b.softLight,
+    heroHi: b.heroHi,
+    heroLo: b.heroLo,
+    botTints: BOT_TINTS,
+  };
 }

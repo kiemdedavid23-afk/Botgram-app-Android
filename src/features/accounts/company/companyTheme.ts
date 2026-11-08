@@ -9,27 +9,9 @@ import {useTheme} from '../../../shared/theme';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {useWorkspaceStore} from '../store/workspaceStore';
 import {useBrandStore} from '../store/brandStore';
-import {
-  BASE_DARK,
-  BASE_LIGHT,
-  BOT_TINTS,
-  DEFAULT_BRAND_ID,
-  brandById,
-  type BaseTokens,
-  type BrandId,
-} from './companyPalette';
+import {DEFAULT_BRAND_ID, companyTokensFor, type BrandId, type CompanyTokens} from './companyPalette';
 
-export type CompanyTokens = BaseTokens & {
-  /** Accent de la marque (boutons pleins, icônes, indicateur d'actualisation). */
-  primary: string;
-  primaryHi: string;
-  primarySoft: string;
-  /** Dégradé des grandes cartes colorées (texte `onHero` dessus). */
-  heroHi: string;
-  heroLo: string;
-  /** Teintes des pastilles de bot. */
-  botTints: readonly string[];
-};
+export type {CompanyTokens};
 
 /** Polices système Android : aucune police à embarquer. */
 export const companyFonts = {
@@ -81,17 +63,5 @@ export function useBrandId(): BrandId {
 export function useCompanyTheme(): CompanyTokens {
   const dark = useTheme().mode === 'dark';
   const brandId = useBrandId();
-  return useMemo(() => {
-    const b = brandById(brandId);
-    const base = dark ? BASE_DARK : BASE_LIGHT;
-    return {
-      ...base,
-      primary: dark ? b.accentDark : b.accentLight,
-      primaryHi: dark ? b.accentDark : b.heroHi,
-      primarySoft: dark ? b.softDark : b.softLight,
-      heroHi: b.heroHi,
-      heroLo: b.heroLo,
-      botTints: BOT_TINTS,
-    };
-  }, [dark, brandId]);
+  return useMemo(() => companyTokensFor(dark, brandId), [dark, brandId]);
 }
