@@ -4,10 +4,7 @@
  */
 import React, {useCallback, useEffect, useState} from 'react';
 import {View, StyleSheet, BackHandler} from 'react-native';
-import {
-  BotSettingsHubScreen,
-  type SettingsRoute,
-} from '../screens/BotSettingsHubScreen';
+import type {SettingsRoute} from '../screens/BotSettingsHubScreen';
 import {AppearanceScreen} from '../screens/AppearanceScreen';
 import {DiscussionsScreen} from '../screens/DiscussionsScreen';
 import {FoldersSettingsScreen} from '../screens/FoldersSettingsScreen';
@@ -17,12 +14,9 @@ import {CompanySettingsHubScreen} from '../screens/CompanySettingsHubScreen';
 import {StorageSettingsScreen} from '../StorageSettingsScreen';
 import {ComingSoonScreen} from '../screens/ComingSoonScreen';
 import {settingsTexts as t} from '../texts';
-import {useAuthStore} from '../../auth';
-import {accountTypeOf} from '../../accounts/accountType';
 
 export function BotSettingsStack(): React.JSX.Element {
   const [route, setRoute] = useState<SettingsRoute>('hub');
-  const company = accountTypeOf(useAuthStore(s => s.member)) === 'company';
 
   const goHub = useCallback(() => setRoute('hub'), []);
 
@@ -101,11 +95,7 @@ export function BotSettingsStack(): React.JSX.Element {
 
   return (
     <View style={styles.root}>
-      {company ? (
-        <CompanySettingsHubScreen onNavigate={setRoute} />
-      ) : (
-        <BotSettingsHubScreen onNavigate={setRoute} />
-      )}
+      <CompanySettingsHubScreen onNavigate={setRoute} />
     </View>
   );
 }
