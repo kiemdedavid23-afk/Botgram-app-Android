@@ -1,86 +1,34 @@
 /**
  * Habillage « entreprise » : doux et aéré. Fond lavande très clair, grandes cartes très arrondies,
- * un bleu vif pour l'élément principal, pastilles blanches pour les actions.
+ * un accent vif pour l'élément principal (couleur de marque au choix, voir companyPalette),
+ * pastilles blanches pour les actions.
  * Suit le mode clair / sombre de l'app ; polices système Android seulement.
  */
+import {useEffect, useMemo} from 'react';
 import {useTheme} from '../../../shared/theme';
+import {fireAndForget} from '../../../core/utils/fireAndForget';
+import {useWorkspaceStore} from '../store/workspaceStore';
+import {useBrandStore} from '../store/brandStore';
+import {
+  BASE_DARK,
+  BASE_LIGHT,
+  BOT_TINTS,
+  DEFAULT_BRAND_ID,
+  brandById,
+  type BaseTokens,
+  type BrandId,
+} from './companyPalette';
 
-export type CompanyTokens = {
-  /** Fond de page (haut du dégradé). */
-  bg: string;
-  /** Fond de page (bas du dégradé, halo bleuté). */
-  bgGlow: string;
-  /** Carte. */
-  card: string;
-  /** Liseré clair d'une carte. */
-  cardEdge: string;
-  /** Pastille / tuile blanche posée sur une carte. */
-  tile: string;
-  /** Petit bouton carré de l'en-tête. */
-  soft: string;
-  ink: string;
-  inkSoft: string;
-  line: string;
-  chipBorder: string;
+export type CompanyTokens = BaseTokens & {
+  /** Accent de la marque (boutons pleins, icônes, indicateur d'actualisation). */
   primary: string;
   primaryHi: string;
   primarySoft: string;
-  onPrimary: string;
-  good: string;
-  goodSoft: string;
-  warn: string;
-  warnSoft: string;
-  bad: string;
-  badSoft: string;
-  shadow: string;
-};
-
-const LIGHT: CompanyTokens = {
-  bg: '#E8EBF5',
-  bgGlow: '#D9DEF6',
-  card: '#EEF0F8',
-  cardEdge: 'rgba(255,255,255,0.85)',
-  tile: '#FFFFFF',
-  soft: '#F1F3FA',
-  ink: '#2A2C3A',
-  inkSoft: '#767A90',
-  line: '#DDE0EC',
-  chipBorder: '#C5CADB',
-  primary: '#3F52FF',
-  primaryHi: '#6574FF',
-  primarySoft: '#E3E7FF',
-  onPrimary: '#FFFFFF',
-  good: '#14A36B',
-  goodSoft: '#D9F3E8',
-  warn: '#D68A0B',
-  warnSoft: '#FBEBCB',
-  bad: '#D8453B',
-  badSoft: '#F9DDDA',
-  shadow: '#3D4A9A',
-};
-
-const DARK: CompanyTokens = {
-  bg: '#0F1122',
-  bgGlow: '#171A38',
-  card: '#1A1D33',
-  cardEdge: 'rgba(255,255,255,0.06)',
-  tile: '#262A48',
-  soft: '#1F2340',
-  ink: '#ECEEF8',
-  inkSoft: '#9197B2',
-  line: '#2A2E4D',
-  chipBorder: '#3A3F63',
-  primary: '#6A79FF',
-  primaryHi: '#8794FF',
-  primarySoft: '#242A5C',
-  onPrimary: '#FFFFFF',
-  good: '#3CC38D',
-  goodSoft: '#12302A',
-  warn: '#E4A93A',
-  warnSoft: '#33290F',
-  bad: '#EB6A60',
-  badSoft: '#3A1B19',
-  shadow: '#000000',
+  /** Dégradé des grandes cartes colorées (texte `onHero` dessus). */
+  heroHi: string;
+  heroLo: string;
+  /** Teintes des pastilles de bot. */
+  botTints: readonly string[];
 };
 
 /** Polices système Android : aucune police à embarquer. */
@@ -103,11 +51,47 @@ export const companyMetrics = {
   tile: 56,
   tileRadius: 16,
   arrowBtn: 34,
-  headerBtn: 38,
+  headerBtn: 40,
   headerBtnRadius: 14,
   chipRadius: 18,
+  /** Tailles de texte : toutes ici, jamais déduites d'une marge. */
+  nameSize: 24,
+  titleSize: 22,
+  rowTitleSize: 18,
+  bodySize: 17,
+  valueSize: 16,
+  subSize: 15,
+  captionSize: 13,
+  greetSize: 16,
+  heroValueSize: 44,
+  tileValueSize: 28,
 } as const;
 
+/** Couleur de marque de l'entreprise (choisie sur cet appareil), ou celle par défaut. */
+export function useBrandId(): BrandId {
+  const wsId = useWorkspaceStore(s => s.workspaces[0]?.id ?? null);
+  const chosen = useBrandStore(s => (wsId ? s.byWorkspace[wsId] : undefined));
+  const hydrate = useBrandStore(s => s.hydrate);
+  useEffect(() => {
+    fireAndForget(hydrate());
+  }, [hydrate]);
+  return chosen ?? DEFAULT_BRAND_ID;
+}
+
 export function useCompanyTheme(): CompanyTokens {
-  return useTheme().mode === 'dark' ? DARK : LIGHT;
+  const dark = useTheme().mode === 'dark';
+  const brandId = useBrandId();
+  return useMemo(() => {
+    const b = brandById(brandId);
+    const base = dark ? BASE_DARK : BASE_LIGHT;
+    return {
+      ...base,
+      primary: dark ? b.accentDark : b.accentLight,
+      primaryHi: dark ? b.accentDark : b.heroHi,
+      primarySoft: dark ? b.softDark : b.softLight,
+      heroHi: b.heroHi,
+      heroLo: b.heroLo,
+      botTints: BOT_TINTS,
+    };
+  }, [dark, brandId]);
 }

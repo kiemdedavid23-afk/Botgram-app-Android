@@ -7,6 +7,7 @@ import {useTheme} from '../../../shared/theme';
 import {greetingWord, firstName} from '../../dashboard/logic';
 import {useWorkspaceStore} from '../store/workspaceStore';
 import {companyFonts, companyMetrics as cm, useCompanyTheme} from './companyTheme';
+import {CompanyMark} from './components/CompanyMark';
 
 export type CompanyHeaderProps = {
   /** Complet : salutation, avatar et trois boutons. Absent : barre compacte avec `right`. */
@@ -34,7 +35,7 @@ function SquareButton({label, onPress, children}: {label: string; onPress: () =>
   );
 }
 
-/** En-tête entreprise : sans marque Botgram, fond de page, salutation à gauche, carrés d'action à droite. */
+/** En-tête entreprise : sans marque Botgram ; salutation et pastille de l'entreprise à gauche, carrés d'action à droite. */
 export function CompanyHeader({hello, right}: CompanyHeaderProps): React.JSX.Element {
   const t = useCompanyTheme();
   const {mode} = useTheme();
@@ -55,6 +56,14 @@ export function CompanyHeader({hello, right}: CompanyHeaderProps): React.JSX.Ele
             <Text style={[styles.name, {color: t.ink}]} numberOfLines={1}>
               {firstName(hello.displayName) || hello.displayName}
             </Text>
+            {ws ? (
+              <View style={styles.org}>
+                <CompanyMark name={ws.name} size={22} />
+                <Text style={[styles.orgName, {color: t.ink}]} numberOfLines={1}>
+                  {ws.name}
+                </Text>
+              </View>
+            ) : null}
           </View>
           {hello.onAdd ? (
             <SquareButton label="Lier un bot" onPress={hello.onAdd}>
@@ -70,6 +79,7 @@ export function CompanyHeader({hello, right}: CompanyHeaderProps): React.JSX.Ele
         </View>
       ) : (
         <View style={styles.row}>
+          {ws ? <CompanyMark name={ws.name} size={28} /> : null}
           <Text style={[styles.compact, {color: t.ink}]} numberOfLines={1}>
             {ws?.name ?? 'Entreprise'}
           </Text>
@@ -83,9 +93,11 @@ export function CompanyHeader({hello, right}: CompanyHeaderProps): React.JSX.Ele
 const styles = StyleSheet.create({
   row: {flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: cm.pageH, paddingTop: 8, paddingBottom: 14},
   greet: {flex: 1, marginLeft: 6},
-  hi: {fontFamily: companyFonts.body, fontSize: 16},
-  name: {fontFamily: companyFonts.display, fontSize: 24, fontWeight: '700', letterSpacing: -0.3},
-  square: {width: cm.headerBtn + 2, height: cm.headerBtn + 2, borderRadius: cm.headerBtnRadius, alignItems: 'center', justifyContent: 'center'},
-  compact: {flex: 1, fontFamily: companyFonts.display, fontSize: 22, fontWeight: '700'},
+  hi: {fontFamily: companyFonts.body, fontSize: cm.greetSize},
+  name: {fontFamily: companyFonts.display, fontSize: cm.nameSize, fontWeight: '700', letterSpacing: -0.3},
+  org: {flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4},
+  orgName: {flex: 1, fontFamily: companyFonts.value, fontSize: cm.captionSize + 1, fontWeight: '600'},
+  square: {width: cm.headerBtn, height: cm.headerBtn, borderRadius: cm.headerBtnRadius, alignItems: 'center', justifyContent: 'center'},
+  compact: {flex: 1, fontFamily: companyFonts.display, fontSize: cm.titleSize, fontWeight: '700'},
   right: {flexDirection: 'row', alignItems: 'center'},
 });

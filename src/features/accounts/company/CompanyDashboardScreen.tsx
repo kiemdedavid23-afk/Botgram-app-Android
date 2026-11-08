@@ -6,10 +6,10 @@ import {useWorkspaceStore} from '../store/workspaceStore';
 import {useBotsStore} from '../../bots/store/botsStore';
 import {useQuotaStore} from '../../member/store/quotaStore';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
-import {botState, clockLabel, TEAM_MAX} from './companyLogic';
+import {botState, clockLabel, quotaLevel, quotaNote, teamFill, TEAM_MAX} from './companyLogic';
 import {companyMetrics as cm, useCompanyTheme} from './companyTheme';
 import {Rise} from './components/Rise';
-import {HeroCarousel, type HeroSlide} from './components/HeroCarousel';
+import {HeroStats} from './components/HeroStats';
 import {BotsCard} from './components/BotsCard';
 import {TeamCard} from './components/TeamCard';
 import {ActionsCard} from './components/ActionsCard';
@@ -61,29 +61,7 @@ export function CompanyDashboardScreen({
   const used = quota?.used ?? null;
   const limit = quota?.limit ?? null;
 
-  const slides: HeroSlide[] = [
-    {
-      label: 'Envois aujourd’hui',
-      value: used === null ? '–' : String(used),
-      of: limit === null ? undefined : `/ ${limit}`,
-      fill: used !== null && limit ? used / limit : undefined,
-      note: `Compteur partagé par l’équipe${reset ? ` · remis à zéro à ${reset}` : ''}`,
-    },
-    {
-      label: 'Bots en ligne',
-      value: String(online),
-      of: `/ ${bots.length}`,
-      fill: bots.length ? online / bots.length : 0,
-      note: bots.length ? 'Faites défiler pour voir le reste' : 'Aucun bot lié',
-    },
-    {
-      label: 'Équipe',
-      value: String(team),
-      of: `/ ${TEAM_MAX}`,
-      fill: team / TEAM_MAX,
-      note: team > 1 ? 'Personnes qui répondent à vos clients' : 'Invitez votre première personne',
-    },
-  ];
+  const level = quotaLevel(used, limit);
 
   return (
     <View style={styles.root}>
@@ -101,7 +79,35 @@ export function CompanyDashboardScreen({
           />
         }>
         <Rise index={0}>
-          <HeroCarousel title="Aujourd’hui" slides={slides} onOpen={onOpenGestion} openLabel="Ouvrir la gestion" />
+          <HeroStats
+            title="Aujourd’hui"
+            onOpen={onOpenGestion}
+            openLabel="Ouvrir la gestion"
+            main={{
+              label: 'Envois aujourd’hui',
+              value: used === null ? '–' : String(used),
+              of: limit === null ? undefined : `/ ${limit}`,
+              fill: used !== null && limit ? used / limit : undefined,
+              level,
+              note: quotaNote(level, reset),
+            }}
+            tiles={[
+              {
+                label: 'Bots en ligne',
+                value: String(online),
+                of: `/ ${bots.length}`,
+                fill: bots.length ? online / bots.length : 0,
+                onPress: onOpenGestion,
+              },
+              {
+                label: 'Équipe',
+                value: String(team),
+                of: `/ ${TEAM_MAX}`,
+                fill: teamFill(team),
+                onPress: onOpenTeam,
+              },
+            ]}
+          />
         </Rise>
         <Rise index={1}>
           <BotsCard
@@ -126,8 +132,6 @@ export function CompanyDashboardScreen({
         <Rise index={3}>
           <ActionsCard
             onInvite={access.canManageTeam ? onOpenTeam : undefined}
-            onTeam={onOpenTeam}
-            onGestion={onOpenGestion}
             onProfile={onOpenProfile}
             onLink={access.canLinkBot ? onAddBot : undefined}
           />

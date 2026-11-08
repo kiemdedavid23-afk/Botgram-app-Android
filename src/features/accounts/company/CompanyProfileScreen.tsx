@@ -12,6 +12,7 @@ import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {companyFonts, companyMetrics as cm, useCompanyTheme} from './companyTheme';
 import {Rise} from './components/Rise';
 import {Card, CardTitle, Divider, KeyValue, OutlineButton} from './components/ui';
+import {BrandPicker} from './components/BrandPicker';
 
 export function CompanyProfileScreen(): React.JSX.Element {
   const t = useCompanyTheme();
@@ -34,8 +35,8 @@ export function CompanyProfileScreen(): React.JSX.Element {
       <GradientView colors={[t.bg, t.bgGlow]} angle={165} style={StyleSheet.absoluteFill} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Rise index={0}>
-          <View style={[styles.hero, {shadowColor: t.primary}]}>
-            <GradientView colors={[t.primaryHi, t.primary]} angle={160} style={StyleSheet.absoluteFill} />
+          <View style={[styles.hero, {shadowColor: t.heroLo}]}>
+            <GradientView colors={[t.heroHi, t.heroLo]} angle={160} style={StyleSheet.absoluteFill} />
             <Avatar size={64} title={member.display_name} />
             <View style={styles.heroText}>
               <Text style={styles.heroName} numberOfLines={1}>
@@ -87,7 +88,16 @@ export function CompanyProfileScreen(): React.JSX.Element {
           </Rise>
         ) : null}
 
-        <Rise index={3}>
+        {ws ? (
+          <Rise index={3}>
+            <Card>
+              <CardTitle title="Couleur de l’entreprise" />
+              <BrandPicker />
+            </Card>
+          </Rise>
+        ) : null}
+
+        <Rise index={4}>
           <Card>
             <CardTitle title="Session" />
             <View style={styles.rows}>
@@ -123,16 +133,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 16,
     padding: cm.cardPad,
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.3,
     shadowRadius: 20,
     shadowOffset: {width: 0, height: 10},
     elevation: 5,
   },
   heroText: {flex: 1},
-  heroName: {fontFamily: companyFonts.display, fontSize: 24, fontWeight: '700', color: '#FFFFFF'},
-  heroSub: {fontFamily: companyFonts.body, fontSize: 15, color: 'rgba(255,255,255,0.85)', marginTop: 2},
+  heroName: {fontFamily: companyFonts.display, fontSize: cm.nameSize, fontWeight: '700', color: '#FFFFFF'},
+  heroSub: {fontFamily: companyFonts.body, fontSize: cm.subSize, color: '#FFFFFF', marginTop: 2},
   rows: {marginTop: 8},
   btn: {marginTop: 12},
   action: {paddingVertical: 15},
-  actionText: {fontFamily: companyFonts.value, fontSize: 17},
+  actionText: {fontFamily: companyFonts.value, fontSize: cm.bodySize},
 });

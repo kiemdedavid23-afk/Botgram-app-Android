@@ -76,3 +76,23 @@ export function teamFill(count: number): number {
   if (!Number.isFinite(count) || count <= 0) return 0;
   return Math.min(1, count / TEAM_MAX);
 }
+
+/**
+ * Indice stable (0 … count-1) d'après l'identifiant : un même bot garde toujours la même teinte.
+ */
+export function botTintIndex(id: string, count: number): number {
+  if (count <= 0) return 0;
+  let h = 0;
+  for (let i = 0; i < id.length; i += 1) {
+    h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  }
+  return h % count;
+}
+
+/** Phrase sous le compteur d'envois ; avertit quand la limite approche. */
+export function quotaNote(level: QuotaLevel, resetLabel: string): string {
+  const tail = resetLabel ? ` · remis à zéro à ${resetLabel}` : '';
+  if (level === 'bad') return `Limite presque atteinte${tail}`;
+  if (level === 'warn') return `Compteur partagé · plus de 65 % utilisés${tail}`;
+  return `Compteur partagé par l’équipe${tail}`;
+}
