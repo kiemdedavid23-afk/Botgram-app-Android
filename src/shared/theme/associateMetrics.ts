@@ -17,12 +17,12 @@ export const associateMetrics = {
   progressPadBottom: 12,
   progressPadTop: 4,
   /** .assoc__progress-dot l.36-37 h 4 radius 2 */
-  progressH: 4,
-  progressRadius: 2,
+  progressH: 6,
+  progressRadius: 3,
   /** .assoc__progress-dot--done l.48 opacity 0.5 */
   progressDoneOpacity: 0.5,
   /** .assoc__step-label l.252 font 13 */
-  stepLabelSize: 13,
+  stepLabelSize: 14,
   stepLabelMarginTop: 4,
   stepLabelMarginBottom: -4,
   /** .assoc__body l.52-55 padding 20 16 32, gap 16 */
@@ -31,11 +31,11 @@ export const associateMetrics = {
   bodyPadBottom: 32,
   bodyGap: 16,
   /** .assoc__card l.62-63 radius-lg≈16, pad 20 */
-  cardRadius: 16,
+  cardRadius: 30,
   cardPad: 20,
   /** .assoc__card h2 l.68-69 18/600, margin-bottom 8 */
-  cardTitleSize: 18,
-  cardTitleWeight: '600' as const,
+  cardTitleSize: 20,
+  cardTitleWeight: '700' as const,
   cardTitleMarginBottom: 8,
   /** .assoc__card p/li l.78 font 15, line 1.5 → 22.5 */
   cardTextSize: 15,
@@ -48,7 +48,7 @@ export const associateMetrics = {
   /** .assoc__demo l.93-94 pad 12 14, font 14, border-left 3 */
   bannerPadV: 12,
   bannerPadH: 14,
-  bannerRadius: 12,
+  bannerRadius: 18,
   bannerFont: 14,
   bannerLeftBorder: 3,
   /** .assoc__check l.130-136 gap 12, pad 14, font 15 */
@@ -63,7 +63,7 @@ export const associateMetrics = {
   checkBoxMarginTop: 2,
   tickFont: 12,
   /** .assoc__input l.149-153 radius-md≈12, pad 14 16, font 16, margin-top 8 */
-  inputRadius: 12,
+  inputRadius: 16,
   inputPadV: 14,
   inputPadH: 16,
   inputFont: 16,
@@ -93,7 +93,7 @@ export const associateMetrics = {
   pressScale: 0.98,
   /** .assoc__bot-preview l.219 gap 14 ; avatar 52, font 20 */
   previewGap: 14,
-  avatar: 52,
+  avatar: 56,
   avatarFont: 20,
   botNameSize: 17,
   botUserSize: 14,
@@ -106,10 +106,10 @@ export const associateMetrics = {
   /** Done icon 48 */
   doneIcon: 48,
   /** Card shadow sm */
-  shadowElevation: 1,
-  shadowOpacity: 0.06,
-  shadowRadius: 2,
-  shadowOffsetY: 1,
+  shadowElevation: 3,
+  shadowOpacity: 0.1,
+  shadowRadius: 18,
+  shadowOffsetY: 8,
   weight500: '500' as const,
   weight600: '600' as const,
   weight700: '700' as const,

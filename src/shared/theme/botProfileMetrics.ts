@@ -4,8 +4,8 @@
 import type {TextStyle} from 'react-native';
 
 export const botProfileMetrics = {
-  scrollPadH: 14, scrollPadBottom: 110, scrollGap: 12, scrollPadTop: 12,
-  heroMinHeight: 300, heroRadius: 22, heroPad: 16, heroAvatar: 104,
+  scrollPadH: 16, scrollPadBottom: 110, scrollGap: 16, scrollPadTop: 12,
+  heroMinHeight: 300, heroRadius: 30, heroPad: 20, heroAvatar: 104,
   heroNameSize: 22, /** BotProfile.css:113 font-weight 800 */
   heroNameWeight: '800' as TextStyle['fontWeight'],
   heroGap: 10, heroAvatarBorder: 3, heroInitialSize: 40,
@@ -16,14 +16,14 @@ export const botProfileMetrics = {
   tabPadV: 10, tabPadH: 14, tabFont: 14,
   tabFontWeight: '700' as TextStyle['fontWeight'],
   gap: 6, paddingV: 6, paddingH: 14, tabMinHeight: 52, tabMinWidth: 66,
-  tabRadius: 14, tabFontSize: 11.5, tabPaddingV: 6, tabPaddingH: 10, tabGap: 3,
+  tabRadius: 18, tabFontSize: 11.5, tabPaddingV: 6, tabPaddingH: 10, tabGap: 3,
   tabRowMinHeight: 42, tabIconSize: 16, tabIconGap: 8, tabLabelSize: 14,
   headTitleSize: 18, headTitleWeight: '800' as TextStyle['fontWeight'],
   headHintSize: 13, headHintLineHeight: 18, headGap: 2, headPadH: 4, headPadBottom: 12,
   reportPad: 14, reportLineSize: 13, reportGap: 6, reportTitleMarginBottom: 4,
   reportCloseMarginTop: 8, reportCloseWeight: '600' as TextStyle['fontWeight'],
   reportTitleWeight: '700' as TextStyle['fontWeight'],
-  fieldGap: 10, inputHeight: 48, inputRadius: 14, stackGap: 14, fieldInnerGap: 6,
+  fieldGap: 10, inputHeight: 48, inputRadius: 16, stackGap: 14, fieldInnerGap: 6,
   labelSize: 13, labelWeight: '600' as TextStyle['fontWeight'], counterSize: 12,
   inputPadH: 14, inputPadV: 10, inputFontSize: 15, areaMinHeight: 88, errFontSize: 12,
   borderWidth: 1,
@@ -52,7 +52,7 @@ export const botProfileMetrics = {
   toolIconSize: 18, toolPadTop: 4, fieldGapInner: 8, lineGap: 6, scopeRowGap: 8,
   scopeRowMarginBottom: 8, labelMarginBottom: 6, labelMarginTop: 8,
   optionGap: 10, optionPaddingV: 12, optionPaddingH: 16, optionRadius: 14,
-  fieldMarginTop: 12, cardRadius: 16, cardMarginH: 14, noteSize: 13,
+  fieldMarginTop: 12, cardRadius: 24, cardMarginH: 16, noteSize: 13,
   noteLineHeight: 18, noteMarginBottom: 12, radioDotSize: 20, radioDotBorder: 2,
   rowGap: 12, valSize: 15, valWeight: '600' as TextStyle['fontWeight'],
   keySize: 12, keyLineHeight: 16, fieldsPad: 14, fieldsGap: 12, titlePadBottom: 8,
