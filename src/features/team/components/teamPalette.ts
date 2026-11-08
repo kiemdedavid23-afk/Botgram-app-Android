@@ -73,7 +73,7 @@ export function useTeamPalette(): TeamPalette {
       sheetRadius: cm.cardRadius,
       cardBorder: c.cardEdge,
       shadow: c.shadow,
-      shadowOpacity: 0.1,
+      shadowOpacity: c.shadowOpacity,
       ghostBorder: c.chipBorder,
       titleFont: companyFonts.display,
       labelFont: companyFonts.value,
