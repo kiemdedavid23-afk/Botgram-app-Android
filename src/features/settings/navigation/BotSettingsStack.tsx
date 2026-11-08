@@ -13,12 +13,16 @@ import {DiscussionsScreen} from '../screens/DiscussionsScreen';
 import {FoldersSettingsScreen} from '../screens/FoldersSettingsScreen';
 import {LanguageScreen} from '../screens/LanguageScreen';
 import {PermissionsScreen} from '../screens/PermissionsScreen';
+import {CompanySettingsHubScreen} from '../screens/CompanySettingsHubScreen';
 import {StorageSettingsScreen} from '../StorageSettingsScreen';
 import {ComingSoonScreen} from '../screens/ComingSoonScreen';
 import {settingsTexts as t} from '../texts';
+import {useAuthStore} from '../../auth';
+import {accountTypeOf} from '../../accounts/accountType';
 
 export function BotSettingsStack(): React.JSX.Element {
   const [route, setRoute] = useState<SettingsRoute>('hub');
+  const company = accountTypeOf(useAuthStore(s => s.member)) === 'company';
 
   const goHub = useCallback(() => setRoute('hub'), []);
 
@@ -97,7 +101,11 @@ export function BotSettingsStack(): React.JSX.Element {
 
   return (
     <View style={styles.root}>
-      <BotSettingsHubScreen onNavigate={setRoute} />
+      {company ? (
+        <CompanySettingsHubScreen onNavigate={setRoute} />
+      ) : (
+        <BotSettingsHubScreen onNavigate={setRoute} />
+      )}
     </View>
   );
 }
