@@ -1,34 +1,31 @@
 import React from 'react';
-import {View, Text, StyleSheet} from 'react-native';
-import {companyFonts, useCompanyTheme} from '../companyTheme';
+import {View, StyleSheet} from 'react-native';
 import {Card, CardTitle, Chip, OutlineButton} from './ui';
 
 type Props = {
+  /** Absent : pas de « Inviter une personne » (réservé à qui gère l'équipe). */
   onInvite?: () => void;
-  onTeam: () => void;
-  onGestion: () => void;
   onProfile: () => void;
   /** Absent : pas de « Lier un nouveau bot ». */
   onLink?: () => void;
 };
 
-/** Raccourcis : pastilles à contour, puis un grand bouton à contour. */
-export function ActionsCard({onInvite, onTeam, onGestion, onProfile, onLink}: Props): React.JSX.Element {
-  const t = useCompanyTheme();
+/**
+ * Raccourcis : uniquement ce qu'on ne trouve pas déjà sur l'écran. L'équipe et la gestion des bots
+ * ont leur propre carte (avec flèche) ; ici, inviter, le profil et lier un bot.
+ */
+export function ActionsCard({onInvite, onProfile, onLink}: Props): React.JSX.Element {
   return (
     <Card>
       <CardTitle title="Raccourcis" />
       <View style={styles.chips}>
         {onInvite ? <Chip label="Inviter une personne" onPress={onInvite} /> : null}
-        <Chip label="Équipe" onPress={onTeam} />
-        <Chip label="Gestion des bots" onPress={onGestion} />
         <Chip label="Mon profil" onPress={onProfile} />
       </View>
       {onLink ? (
-        <>
-          <Text style={[styles.or, {color: t.inkSoft}]}>Ou</Text>
+        <View style={styles.link}>
           <OutlineButton label="+ Lier un nouveau bot" onPress={onLink} />
-        </>
+        </View>
       ) : null}
     </Card>
   );
@@ -36,5 +33,5 @@ export function ActionsCard({onInvite, onTeam, onGestion, onProfile, onLink}: Pr
 
 const styles = StyleSheet.create({
   chips: {flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginTop: 18},
-  or: {fontFamily: companyFonts.body, fontSize: 17, textAlign: 'center', marginVertical: 14},
+  link: {marginTop: 14},
 });

@@ -19,7 +19,7 @@ export function Card({
     <View
       style={[
         styles.card,
-        {backgroundColor: t.card, borderColor: t.cardEdge, shadowColor: t.shadow},
+        {backgroundColor: t.card, borderColor: t.cardEdge, shadowColor: t.shadow, shadowOpacity: t.shadowOpacity},
         padded ? {padding: cm.cardPad} : null,
         style,
       ]}>
@@ -36,7 +36,7 @@ export function ArrowButton({
 }: {
   onPress: () => void;
   label: string;
-  /** Sur fond bleu : bouton blanc, flèche bleue. */
+  /** Sur fond coloré : bouton blanc, flèche de la couleur de marque. */
   onColor?: boolean;
 }): React.JSX.Element {
   const t = useCompanyTheme();
@@ -48,9 +48,9 @@ export function ArrowButton({
       hitSlop={8}
       style={({pressed}) => [
         styles.arrow,
-        {backgroundColor: t.tile, opacity: pressed ? 0.7 : 1},
+        {backgroundColor: onColor ? '#FFFFFF' : t.tile, opacity: pressed ? 0.7 : 1},
       ]}>
-      <ArrowRight size={18} color={onColor ? t.primary : t.ink} />
+      <ArrowRight size={18} color={onColor ? t.heroLo : t.ink} />
     </Pressable>
   );
 }
@@ -170,7 +170,6 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: cm.cardRadius,
     borderWidth: 1,
-    shadowOpacity: 0.1,
     shadowRadius: 18,
     shadowOffset: {width: 0, height: 8},
     elevation: 3,
@@ -183,16 +182,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   titleRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12},
-  title: {flex: 1, fontFamily: companyFonts.display, fontSize: 22, fontWeight: '700', letterSpacing: -0.2},
+  title: {flex: 1, fontFamily: companyFonts.display, fontSize: cm.titleSize, fontWeight: '700', letterSpacing: -0.2},
   tile: {width: cm.tile, height: cm.tile, borderRadius: cm.tileRadius, alignItems: 'center', justifyContent: 'center'},
   chip: {borderWidth: 1, borderRadius: cm.chipRadius, paddingHorizontal: 22, paddingVertical: 14},
-  chipText: {fontFamily: companyFonts.body, fontSize: 17},
+  chipText: {fontFamily: companyFonts.body, fontSize: cm.bodySize},
   outline: {borderWidth: 1, borderRadius: 14, paddingVertical: 15, alignItems: 'center'},
-  outlineText: {fontFamily: companyFonts.body, fontSize: 17},
+  outlineText: {fontFamily: companyFonts.body, fontSize: cm.bodySize},
   divider: {height: StyleSheet.hairlineWidth},
   kv: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, paddingVertical: 13},
-  kvLabel: {fontFamily: companyFonts.body, fontSize: 15},
-  kvValue: {flex: 1, textAlign: 'right', fontFamily: companyFonts.value, fontSize: 16},
+  kvLabel: {fontFamily: companyFonts.body, fontSize: cm.subSize},
+  kvValue: {flex: 1, textAlign: 'right', fontFamily: companyFonts.value, fontSize: cm.valueSize},
   dotBox: {width: 14, height: 14, alignItems: 'center', justifyContent: 'center'},
   dot: {width: 9, height: 9, borderRadius: 5},
   halo: {position: 'absolute', width: 9, height: 9, borderRadius: 5},
