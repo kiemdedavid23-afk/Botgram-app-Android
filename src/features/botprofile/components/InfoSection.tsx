@@ -4,7 +4,8 @@
  */
 import React from 'react';
 import {View, Text, Pressable, StyleSheet, ActivityIndicator} from 'react-native';
-import {useTheme, botProfileMetrics as m} from '../../../shared/theme';
+import {botProfileMetrics as m} from '../../../shared/theme';
+import {useFlowColors} from '../../accounts/company/flowColors';
 import type {BotProfile} from '../../../core/api/endpoints/botProfile.types';
 import type {BotStatus} from '../../../core/api/endpoints/bots';
 import {STATUS_LABELS} from '../utils/labels';
@@ -28,7 +29,7 @@ export function InfoSection({
   onResync,
   onOpenBotfactor,
 }: Props): React.JSX.Element {
-  const {colors} = useTheme();
+  const colors = useFlowColors();
   const rows: Row[] = [
     {
       key: 'username',
@@ -79,7 +80,7 @@ export function InfoSection({
         <Pressable
           onPress={onOpenBotfactor}
           style={[styles.btn, {backgroundColor: colors.accent}]}>
-          <Text style={[styles.btnText, {color: colors.white}]}>
+          <Text style={[styles.btnText, {color: colors.onAccent}]}>
             {texts.editWithBotfactor}
           </Text>
         </Pressable>
@@ -89,9 +90,9 @@ export function InfoSection({
         disabled={loading}
         style={[styles.btn, {backgroundColor: colors.accent}]}>
         {loading ? (
-          <ActivityIndicator color={colors.white} />
+          <ActivityIndicator color={colors.onAccent} />
         ) : (
-          <Text style={[styles.btnText, {color: colors.white}]}>
+          <Text style={[styles.btnText, {color: colors.onAccent}]}>
             {texts.infoResync}
           </Text>
         )}

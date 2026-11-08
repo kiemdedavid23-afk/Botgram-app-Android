@@ -7,7 +7,9 @@ import React, {useState} from 'react';
 import {View, Text, Alert, StyleSheet} from 'react-native';
 import {pick, types, isErrorWithCode, errorCodes} from '@react-native-documents/picker';
 import {GradientView} from '../../../shared/components/GradientView';
-import {useTheme, botProfileMetrics as m, gradients} from '../../../shared/theme';
+import {botProfileMetrics as m} from '../../../shared/theme';
+import {useFlowColors} from '../../accounts/company/flowColors';
+import {useCompanyTheme} from '../../accounts/company/companyTheme';
 import {botHeroMetrics as h} from '../../../shared/theme/botHeroMetrics';
 import type {BotStatus} from '../../../core/api/endpoints/bots';
 import type {BotProfile} from '../../../core/api/endpoints/botProfile.types';
@@ -25,7 +27,8 @@ import {HeroCompletion} from './HeroCompletion';
 type Props = {profile: BotProfile; status?: BotStatus};
 
 export function BotHero({profile, status}: Props): React.JSX.Element {
-  const {colors, mode} = useTheme();
+  const colors = useFlowColors();
+  const t = useCompanyTheme();
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -33,7 +36,6 @@ export function BotHero({profile, status}: Props): React.JSX.Element {
     profile.texts[DEFAULT_LANG]?.name || profile.info.username || 'Bot';
   const initial = name.trim().charAt(0).toUpperCase() || '?';
   const {pct, missing} = completeness(profile);
-  const grad = mode === 'dark' ? gradients.brandHeroAlt : gradients.brandHero;
   const link = botLink(profile.info.username);
 
   const fail = (message: string) => Alert.alert(texts.photoErrorTitle, message);
@@ -69,7 +71,7 @@ export function BotHero({profile, status}: Props): React.JSX.Element {
   };
 
   return (
-    <GradientView colors={[...grad.colors]} angle={grad.angle} style={styles.hero}>
+    <GradientView colors={[t.heroHi, t.heroLo]} angle={160} style={styles.hero}>
       <View pointerEvents="none" style={styles.deco} />
       <HeroActions
         link={link}

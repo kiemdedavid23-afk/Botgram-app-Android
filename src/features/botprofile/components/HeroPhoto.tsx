@@ -4,7 +4,8 @@
 import React, {useEffect} from 'react';
 import {View, Text, Pressable, ActivityIndicator, StyleSheet} from 'react-native';
 import {Camera} from 'lucide-react-native';
-import {useTheme, botProfileMetrics as m} from '../../../shared/theme';
+import {botProfileMetrics as m} from '../../../shared/theme';
+import {useFlowColors} from '../../accounts/company/flowColors';
 import {botHeroMetrics as h} from '../../../shared/theme/botHeroMetrics';
 import {BotPhoto} from '../../../shared/components/BotPhoto';
 import {useBotPhotoStore} from '../../../shared/botPhoto/botPhotoStore';
@@ -25,7 +26,7 @@ export function HeroPhoto({
   busy,
   onChangePhoto,
 }: Props): React.JSX.Element {
-  const {colors} = useTheme();
+  const colors = useFlowColors();
   const setPhotoPresent = useBotProfileStore(s => s.setPhotoPresent);
   const known = useBotPhotoStore(s => s.photos[botId]?.known ?? false);
   const photoUri = useBotPhotoStore(s => s.photos[botId]?.uri ?? null);

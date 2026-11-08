@@ -6,7 +6,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {View, Pressable, Share, StyleSheet} from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import {Copy, Check, Share2, Trash2} from 'lucide-react-native';
-import {useTheme} from '../../../shared/theme';
+import {useFlowColors} from '../../accounts/company/flowColors';
 import {botHeroMetrics as h} from '../../../shared/theme/botHeroMetrics';
 import {fireAndForget} from '../../../core/utils/fireAndForget';
 import {texts} from '../texts';
@@ -22,7 +22,7 @@ export function HeroActions({
   canDeletePhoto,
   onDeletePhoto,
 }: Props): React.JSX.Element | null {
-  const {colors} = useTheme();
+  const colors = useFlowColors();
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 

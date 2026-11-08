@@ -5,14 +5,14 @@
 import React, {useState} from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import {ChevronDown, ChevronUp} from 'lucide-react-native';
-import {useTheme} from '../../../shared/theme';
+import {useFlowColors} from '../../accounts/company/flowColors';
 import {botHeroMetrics as h} from '../../../shared/theme/botHeroMetrics';
 import {texts} from '../texts';
 
 type Props = {pct: number; missing: string[]};
 
 export function HeroCompletion({pct, missing}: Props): React.JSX.Element {
-  const {colors} = useTheme();
+  const colors = useFlowColors();
   const [open, setOpen] = useState(false);
   const complete = missing.length === 0;
   const Chevron = open ? ChevronUp : ChevronDown;

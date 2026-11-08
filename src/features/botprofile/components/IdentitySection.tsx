@@ -3,7 +3,8 @@
  */
 import React from 'react';
 import {View, StyleSheet} from 'react-native';
-import {useTheme, botProfileMetrics as m} from '../../../shared/theme';
+import {botProfileMetrics as m} from '../../../shared/theme';
+import {useFlowColors} from '../../accounts/company/flowColors';
 import type {BotProfile} from '../../../core/api/endpoints/botProfile.types';
 import {DEFAULT_LANG} from '../../../core/api/endpoints/botProfile.types';
 import {texts} from '../texts';
@@ -21,7 +22,7 @@ export function IdentitySection({
   lang,
   onLang,
 }: Props): React.JSX.Element {
-  const {colors} = useTheme();
+  const colors = useFlowColors();
   const t = profile.texts[lang] ?? profile.texts[DEFAULT_LANG] ?? {
     name: '',
     description: '',

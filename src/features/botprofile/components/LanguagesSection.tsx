@@ -3,7 +3,8 @@
  */
 import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
-import {useTheme, botProfileMetrics as m} from '../../../shared/theme';
+import {botProfileMetrics as m} from '../../../shared/theme';
+import {useFlowColors} from '../../accounts/company/flowColors';
 import type {BotProfile} from '../../../core/api/endpoints/botProfile.types';
 import {DEFAULT_LANG} from '../../../core/api/endpoints/botProfile.types';
 import {languagesOf, langLabel} from '../utils/languages';
@@ -13,7 +14,7 @@ type Props = {
 };
 
 export function LanguagesSection({profile}: Props): React.JSX.Element {
-  const {colors} = useTheme();
+  const colors = useFlowColors();
   return (
     <View style={styles.stack}>
       {languagesOf(profile.texts).map(code => (

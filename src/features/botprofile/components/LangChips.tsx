@@ -1,6 +1,7 @@
 import React from 'react';
 import {View, Text, Pressable, StyleSheet, ScrollView} from 'react-native';
-import {useTheme, botProfileMetrics as m} from '../../../shared/theme';
+import {botProfileMetrics as m} from '../../../shared/theme';
+import {useFlowColors} from '../../accounts/company/flowColors';
 import {langLabel} from '../utils/languages';
 
 type Props = {
@@ -11,7 +12,7 @@ type Props = {
 
 /** Sélecteur de langue à afficher (pas d'édition). Actif : bleu pâle, comme le site. */
 export function LangChips({languages, active, onSelect}: Props): React.JSX.Element {
-  const {colors} = useTheme();
+  const colors = useFlowColors();
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
       <View style={styles.row}>

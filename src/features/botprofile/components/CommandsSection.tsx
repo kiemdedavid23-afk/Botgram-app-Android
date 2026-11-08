@@ -1,7 +1,8 @@
 /** Commandes (lecture seule) — alignées sur la marge de l'écran (aucun retrait propre). */
 import React, {useMemo, useState} from 'react';
 import {View, Text, Pressable, StyleSheet, ScrollView} from 'react-native';
-import {useTheme, botProfileMetrics as m} from '../../../shared/theme';
+import {botProfileMetrics as m} from '../../../shared/theme';
+import {useFlowColors} from '../../accounts/company/flowColors';
 import type {ColorTokens} from '../../../shared/theme';
 import type {BotProfile, CommandScope} from '../../../core/api/endpoints/botProfile.types';
 import {COMMAND_SCOPES} from '../../../core/api/endpoints/botProfile.types';
@@ -53,7 +54,7 @@ function makeStyles(c: ColorTokens) {
 }
 
 export function CommandsSection({profile, lang, onLang}: Props): React.JSX.Element {
-  const {colors} = useTheme();
+  const colors = useFlowColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [scope, setScope] = useState<CommandScope>('default');
   const list = profile.commands[cmdKey(scope, lang)] ?? [];

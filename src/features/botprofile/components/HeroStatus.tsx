@@ -1,7 +1,7 @@
 /** Pastille d'état de connexion du bot (ex. « Connecté »). */
 import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
-import {useTheme} from '../../../shared/theme';
+import {useFlowColors} from '../../accounts/company/flowColors';
 import {botHeroMetrics as h} from '../../../shared/theme/botHeroMetrics';
 import type {BotStatus} from '../../../core/api/endpoints/bots';
 import {STATUS_LABELS} from '../utils/labels';
@@ -9,7 +9,7 @@ import {STATUS_LABELS} from '../utils/labels';
 type Props = {status: BotStatus | undefined};
 
 export function HeroStatus({status}: Props): React.JSX.Element | null {
-  const {colors} = useTheme();
+  const colors = useFlowColors();
   if (!status) return null;
   let dot = colors.heroTextMuted;
   if (status === 'connected') dot = colors.online;

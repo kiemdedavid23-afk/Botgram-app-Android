@@ -4,7 +4,8 @@
  */
 import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
-import {useTheme, botProfileMetrics as m} from '../../../shared/theme';
+import {botProfileMetrics as m} from '../../../shared/theme';
+import {useFlowColors} from '../../accounts/company/flowColors';
 import {texts} from '../texts';
 
 type Props = {
@@ -14,7 +15,7 @@ type Props = {
 };
 
 export function ReadOnlyField({label, value, hint}: Props): React.JSX.Element {
-  const {colors} = useTheme();
+  const colors = useFlowColors();
   const empty = value.trim().length === 0;
   return (
     <View style={styles.field}>
